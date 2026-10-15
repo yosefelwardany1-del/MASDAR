@@ -22,12 +22,18 @@ import/export) was harvested from the INSHARO ERP; every business module is buil
 composer install && npm install && npm run build
 cp .env.example .env && php artisan key:generate
 php artisan migrate --seed
+php artisan db:seed --class=DemoUsersSeeder   # local only: {role}@alquds.test / password
+php artisan serve                              # http://localhost:8000
+php artisan queue:work                         # large imports run here
 php artisan test            # PostgreSQL only (see phpunit.xml) — never SQLite
+php artisan test --filter=RoleMatrixTest
 ./vendor/bin/pint           # before every commit
+php artisan user:create someone@example.com "Name" --role=manager --generate
 ```
 
 Tests need a local PostgreSQL 16 with role `alquds` / password `alquds` and a database
-`alquds_test`.
+`alquds_test` (CI runs the same in `.github/workflows/ci.yml`). The backup test runs a real
+`pg_dump`, so the client must be 16 or newer.
 
 ## Standing rule (every sub-project)
 
@@ -61,3 +67,76 @@ push the other way, so:
   which printers bill per signature vs per ream (`print_pricing_method`), and whether
   `pages_per_signature` is always 16. A missing rate-master key fails loudly — never default
   a price, margin or waste percentage silently.
+
+## Architecture
+
+Laravel 12, PHP 8.3+ (8.4 in Docker), PostgreSQL 16 (Neon in production), Blade + Bootstrap 5.3
+RTL bundled by Vite (no CDN — the offline pages will cache it). IBM Plex Sans Arabic; brand
+tokens `--aq-navy` / `--aq-maroon` in `resources/css/app.css`. Arabic UI through `__()` with
+English keys in `lang/ar.json`; logical CSS properties only (`ms-`/`me-`, `inline-size`).
+
+### Kernel and engines (spec §3, §4 — from Sub-project 2)
+
+Everything reads from **four registries**: `parties` (one record per party, roles are rows),
+`stock_movements` (signed, append-only), `ledger_entries` (additive; reversal = new row) and
+`documents` (immutable once approved). **Nine shared engines** serve every module: rate master,
+FX, dual calendar, notifications, discrepancy, approvals, barcode, offline sync, audit log.
+Build an engine once — never per module. Layout: `app/Core/{Parties,Catalogue,Stock,Ledger,Documents}`,
+`app/Engines/*`, `app/Modules/*` (screens and workflow only; a module owns no balance, price
+or status). Invariants I1–I11 (spec §1) are failing tests in `tests/invariants/` before any
+module, and live in PostgreSQL.
+
+### Screens, roles and permissions
+
+- `config/screens.php` is the ONE screen registry. Each screen has a key, Arabic label,
+  route, sidebar group, icon and its levels. It drives the sidebar AND the permissions.
+- Permissions are `{screen}.{level}`, levels cumulative: `view` ⊂ `edit` ⊂ `approve`
+  (`App\Security\Screens::grantsFor`). Screens marked `signed_in` need sign-in only.
+- Ten global Spatie roles (`App\Security\Roles`, spec §10.2). A user may hold several: the
+  union applies. **There is no `Gate::before` and no bypass role.** `system_admin` is the
+  vendor's support staff: users, roles, settings, audit log — never business data or approvals.
+- `RolesAndPermissionsSeeder` runs on every deploy: it creates what is missing and grants a
+  role its defaults only when it creates the role. It never revokes an editor change.
+- `RoleManagementGuard` holds the assignment rules: nobody edits their own roles or a role
+  they hold; only a manager grants manager, only a system_admin grants system_admin; an actor
+  must hold every permission a role carries; the last active manager and the last active
+  user who can edit users cannot be removed.
+- Routes: `$pres($uri, $controller, $screen)` in `routes/web.php` expands to the resource
+  routes with `can:{screen}.view|edit`. Each later sub-project adds its own screens.
+
+### Platform services (Sub-project 1)
+
+| Service | Where | Notes |
+|---|---|---|
+| Audit | `App\Support\Audit\AuditTrail::record()` | Called EXPLICITLY inside each writer's transaction (fail-closed). Sub-project 2 replaces it with the trigger audit (spec §4.9). |
+| Settings | `App\Models\Setting::current()` | One row (`CHECK id = 1`); a read never writes. |
+| Attachments | `HasAttachments`, `AttachmentService`, `config/attachments.php` | Private disk; access = the parent's screen (`attachmentModule()`). |
+| Notifications | `App\Services\Notifications\NotificationService::send()` | In-app only for now. |
+| AI | `OpenRouterClient` (resolves to `AnthropicClient` when `ANTHROPIC_API_KEY` is set), `AiFeature::enabled()` | Drafts only. Features register in `config/ai.php`; none ship yet. |
+| WhatsApp | `App\Services\WhatsApp\{WhatsAppClient,PhoneNumber}` | Env-only credentials; numbers default to Egypt (`20`), Arabic-Indic digits accepted. |
+| Import/export | `App\Support\IO\*`, `config/io.php` `resources` | Two gates: `import_export.*` and the resource's own screen. The generic upsert is for tables WITHOUT a writer; a writer-owned table supplies `customImporter()`. |
+| Backup | `backup:run` (02:15 daily), `config/backup.php` | Off-box only in production (S3-compatible and/or Google Drive). |
+| Sign-in | `LoginController`, Google SSO behind `SSO_GOOGLE_ENABLED` (off) | Passwords always work while `SSO_PASSWORDS_RETIRED=false`. |
+
+Guard tests in `tests/Feature/Guards/` fail on a `company_id` column, a float column, a stored
+`balance`, a reference to removed ERP code, or a screen whose route does not exist.
+`tests/Unit/NoProcessLevelMemoTest` fails on a function-level `static` in `app/`.
+
+## Sub-projects
+
+| # | Sub-project | Status |
+|---|---|---|
+| 1 | Copy & cut — platform layer, Arabic shell, roles, CI | done |
+| 2 | Invariants & kernel (I1–I11, four registries, audit trigger) — **human review gate** | next |
+| 3 | Shared engines (rate master, FX, discrepancy, notifications, calendar, barcode, offline) | |
+| 4 | Packing-list demo — assisted correction | |
+| 5 | Warehouses → Purchasing & Import | |
+| 6 | Sales → Finance → Collections | |
+| 7 | Costing → BOM → Job Orders — **opens with the two client questions** | |
+| 8 | Freight & Containers | |
+| 9 | Exhibitions, Reporting, Daily tracking | |
+| 10 | portalScope + WhatsApp agent + in-system assistant | |
+| 11 | Go-live (migration, stock count import, ETA e-invoicing) | |
+
+Milestone 1 = Sub-projects 1–4. Each sub-project gets its own spec → plan → build cycle.
+

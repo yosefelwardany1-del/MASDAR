@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    # Tests run on PostgreSQL only: the invariants live in the database (CLAUDE.md).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: alquds
+          POSTGRES_PASSWORD: alquds
+          POSTGRES_DB: alquds_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U alquds -d alquds_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, gd, zip, intl, mbstring, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      # The backup test runs a real pg_dump against the service; it must be 16 or newer.
+      - name: PostgreSQL client
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-client-16
+          pg_dump --version
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Build assets
+        run: npm ci && npm run build
+
+      - name: Environment
+        run: cp .env.example .env && php artisan key:generate
+
+      - name: Pint
+        run: ./vendor/bin/pint --test
+
+      - name: Tests
+        run: php artisan test

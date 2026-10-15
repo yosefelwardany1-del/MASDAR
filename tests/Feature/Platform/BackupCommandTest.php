@@ -86,6 +86,43 @@ class BackupCommandTest extends TestCase
         );
     }
 
+    /**
+     * By default BACKUP_DISK follows PRIVATE_DISK: the backups live in the same bucket as
+     * the uploads. Archiving "every file on the uploads disk" then zipped every earlier
+     * backup into tonight's uploads.zip, and the archive grew without bound.
+     */
+    public function test_earlier_backups_are_not_archived_as_uploads(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('attachments/invoice.pdf', 'pretend-pdf-bytes');
+        Storage::disk('local')->put('backups/2026-10-14_021500/database.sql.gz', 'yesterday');
+        Storage::disk('local')->put('backups/2026-10-14_021500/uploads.zip', 'yesterday');
+
+        config([
+            'backup.disk' => 'local',
+            'backup.path' => 'backups',
+            'backup.file_disks' => ['local'],
+            'backup.include.database' => false,
+            'backup.include.files' => true,
+        ]);
+
+        $this->artisan('backup:run')->assertExitCode(0);
+
+        $tonight = collect(Storage::disk('local')->allFiles('backups'))
+            ->first(fn ($f) => str_ends_with($f, 'uploads.zip') && ! str_contains($f, '2026-10-14'));
+        $this->assertNotNull($tonight);
+
+        $zip = new \ZipArchive;
+        $zip->open(Storage::disk('local')->path($tonight));
+        $names = [];
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $names[] = $zip->getNameIndex($i);
+        }
+        $zip->close();
+
+        $this->assertSame(['local/attachments/invoice.pdf'], $names);
+    }
+
     public function test_runs_older_than_the_retention_window_are_pruned(): void
     {
         Storage::fake('backups');

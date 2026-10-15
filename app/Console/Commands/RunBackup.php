@@ -440,15 +440,23 @@ class RunBackup extends Command
             throw new \RuntimeException('Could not create the uploads archive.');
         }
 
+        // By default the backups live on the uploads disk itself (BACKUP_DISK follows
+        // PRIVATE_DISK). Their folder there is not an upload: archiving it would zip every
+        // earlier run into tonight's, and the archive would grow without bound.
+        $destination = config('filesystems.disks.'.config('backup.disk'));
+        $backupPrefix = trim((string) config('backup.path', 'backups'), '/').'/';
+
         $count = 0;
         foreach ($disks as $name) {
-            if (config("filesystems.disks.{$name}") === null) {
+            $cfg = config("filesystems.disks.{$name}");
+            if ($cfg === null) {
                 continue;
             }
+            $holdsBackups = $cfg === $destination;
 
             $storage = Storage::disk($name);
             foreach ($storage->allFiles() as $file) {
-                if (str_starts_with($file, 'backup-tmp/')) {
+                if (str_starts_with($file, 'backup-tmp/') || ($holdsBackups && str_starts_with($file, $backupPrefix))) {
                     continue; // never nest a backup inside a backup
                 }
                 if ($stream = $storage->readStream($file)) {

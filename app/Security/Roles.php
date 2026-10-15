@@ -4,7 +4,7 @@ namespace App\Security;
 
 /**
  * The ten roles (spec §10.2). A user may hold several; their permissions are the union.
- * `system_admin` is INSHARO support only: users, roles, settings and the audit log —
+ * `system_admin` is the software vendor's support staff only: users, roles, settings and the audit log —
  * never business data, never an approval. There is no bypass role.
  */
 final class Roles
