@@ -6,7 +6,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfilePhotoController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserSsoIdentityController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 // Sign-in
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
@@ -25,15 +29,27 @@ Route::middleware('auth')->group(function () {
      * A resource gated by its screen (config/screens.php): reading (index, show) needs
      * `{screen}.view`; writing (create, store, edit, update, destroy) needs `{screen}.edit`.
      * `create` registers before the `{model}` routes so it is never captured by show.
+     * $except drops actions the resource must not have (e.g. users are never deleted).
      */
-    $pres = function (string $uri, string $controller, string $screen, ?string $param = null) {
+    $pres = function (string $uri, string $controller, string $screen, array $except = [], ?string $param = null) {
         $bind = fn ($registration) => $param ? $registration->parameters([$uri => $param]) : $registration;
+        $only = fn (array $actions) => array_values(array_diff($actions, $except));
 
-        Route::resource($uri, $controller)->only(['index'])->middleware("can:{$screen}.view");
-        Route::resource($uri, $controller)->only(['create', 'store'])->middleware("can:{$screen}.edit");
-        $bind(Route::resource($uri, $controller)->only(['show']))->middleware("can:{$screen}.view");
-        $bind(Route::resource($uri, $controller)->only(['edit', 'update', 'destroy']))->middleware("can:{$screen}.edit");
+        Route::resource($uri, $controller)->only($only(['index']))->middleware("can:{$screen}.view");
+        Route::resource($uri, $controller)->only($only(['create', 'store']))->middleware("can:{$screen}.edit");
+        $bind(Route::resource($uri, $controller)->only($only(['show'])))->whereNumber(Str::singular($uri))->middleware("can:{$screen}.view");
+        $bind(Route::resource($uri, $controller)->only($only(['edit', 'update', 'destroy'])))->whereNumber(Str::singular($uri))->middleware("can:{$screen}.edit");
     };
+
+    // Users are deactivated, never deleted: every row is attributed to one (spec I4).
+    $pres('users', UserController::class, 'users', except: ['destroy']);
+    Route::post('users/{user}/sso-identities', [UserSsoIdentityController::class, 'store'])
+        ->whereNumber('user')->middleware('can:users.edit')->name('users.sso-identities.store');
+    Route::delete('users/{user}/sso-identities/{identity}', [UserSsoIdentityController::class, 'destroy'])
+        ->whereNumber(['user', 'identity'])->middleware('can:users.edit')->name('users.sso-identities.destroy');
+
+    // The ten roles are fixed (spec §10.2): their matrix is edited, they are never created or deleted.
+    $pres('roles', RoleController::class, 'roles', except: ['create', 'store', 'destroy']);
 
     // Sign-in only: the home page is where a user with no roles lands.
     Route::get('/', DashboardController::class)->name('dashboard');

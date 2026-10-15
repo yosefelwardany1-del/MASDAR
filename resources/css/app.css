@@ -60,6 +60,12 @@ h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: 0; color: var(--aq-in
     --bs-btn-active-bg: var(--aq-maroon-dark); --bs-btn-active-border-color: var(--aq-maroon-dark);
 }
 
+/* Bootstrap compiles these colours in; point them at the brand. */
+.form-check-input:checked { background-color: var(--aq-maroon); border-color: var(--aq-maroon); }
+.form-check-input:focus, .form-control:focus, .form-select:focus { border-color: rgba(var(--aq-maroon-rgb), .5); box-shadow: 0 0 0 .2rem rgba(var(--aq-maroon-rgb), .15); }
+.pagination { --bs-pagination-active-bg: var(--aq-maroon); --bs-pagination-active-border-color: var(--aq-maroon); --bs-pagination-color: var(--aq-maroon); }
+.btn-outline-primary { --bs-btn-color: var(--aq-maroon); --bs-btn-border-color: var(--aq-maroon); --bs-btn-hover-bg: var(--aq-maroon); --bs-btn-hover-border-color: var(--aq-maroon); }
+
 /* ---------- Sidebar ---------- */
 #aq-sidebar {
     position: fixed; inset-block: 0; inset-inline-start: 0; z-index: 1040;
