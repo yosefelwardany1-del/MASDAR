@@ -1,0 +1,17 @@
+{
+    "Alquds": "القدس",
+    "Home": "الرئيسية",
+    "Overview": "عام",
+    "Administration": "الإدارة",
+    "Main menu": "القائمة الرئيسية",
+    "Menu": "القائمة",
+    "Sign out": "تسجيل الخروج",
+    "My profile": "ملفي الشخصي",
+    "Close": "إغلاق",
+    "Cancel": "إلغاء",
+    "Delete": "حذف",
+    "Confirm delete": "تأكيد الحذف",
+    "Are you sure? This cannot be undone.": "هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.",
+    "Welcome, :name": "مرحباً، :name",
+    "Nothing here yet. Your screens appear in the menu as each part of the system is built.": "لا يوجد شيء هنا بعد. ستظهر شاشاتك في القائمة مع اكتمال كل جزء من النظام."
+}

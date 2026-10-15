@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
@@ -17,4 +18,7 @@ Route::middleware('auth')->group(function () {
         $bind(Route::resource($uri, $controller)->only(['show']))->middleware("can:{$screen}.view");
         $bind(Route::resource($uri, $controller)->only(['edit', 'update', 'destroy']))->middleware("can:{$screen}.edit");
     };
+
+    // Sign-in only: the home page is where a user with no roles lands.
+    Route::get('/', DashboardController::class)->name('dashboard');
 });
