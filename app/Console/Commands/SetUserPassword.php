@@ -62,9 +62,9 @@ class SetUserPassword extends Command
             }
         }
 
-        // The model cast hashes it; the remember token is rotated so every other
-        // browser holding a "remember me" cookie for this account is signed out.
-        $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
+        // The model cast hashes it; every browser signed in to this account is signed out.
+        $user->forceFill(['password' => $password])->save();
+        $user->signOutEverywhere();
 
         Log::info('Password set from the console', ['user_id' => $user->id]);
         $this->info("Password updated for {$user->email}.");

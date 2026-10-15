@@ -130,6 +130,7 @@ class UserController extends Controller
             ]);
             if (! empty($data['password'])) {
                 $user->update(['password' => Hash::make($data['password'])]);
+                $user->signOutEverywhere();
             }
             if ($approving) {
                 $user->forceFill(['approved_at' => now(), 'approved_by' => $request->user()->id])->save();

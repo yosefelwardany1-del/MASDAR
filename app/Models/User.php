@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -83,5 +85,24 @@ class User extends Authenticatable
     public function canSignIn(): bool
     {
         return $this->status === 'active';
+    }
+
+    /**
+     * End every sign-in of this account except $keepSessionId (the person changing their
+     * own password keeps the tab they are in). Called whenever the password changes: a
+     * password is replaced because it may have leaked, and a browser that used it would
+     * otherwise keep its session and its "remember me" cookie, which never asks again.
+     */
+    public function signOutEverywhere(?string $keepSessionId = null): void
+    {
+        $this->forceFill(['remember_token' => Str::random(60)])->save();
+
+        // Only database sessions can be found by user; the other drivers cannot be listed.
+        if (config('session.driver') === 'database') {
+            DB::table((string) config('session.table', 'sessions'))
+                ->where('user_id', $this->id)
+                ->when($keepSessionId, fn ($q) => $q->where('id', '!=', $keepSessionId))
+                ->delete();
+        }
     }
 }

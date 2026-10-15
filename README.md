@@ -91,8 +91,9 @@ destination. Set at least one of:
   Publish the OAuth consent screen: while it is in "Testing", Google expires the token after
   7 days and backups stop.
 
-Set `BACKUP_NOTIFY_EMAILS` so a failed night reaches a person, and run `php artisan backup:run`
-once by hand after setting it up.
+Set `BACKUP_NOTIFY_EMAILS` so a failed night reaches a person — that needs a real mailer:
+`render.yaml` ships `MAIL_MAILER=log`, which writes the warning to the log and mails nobody.
+Run `php artisan backup:run` once by hand after setting it up.
 
 ### Restore
 

@@ -101,6 +101,13 @@ module, and live in PostgreSQL.
   they hold; only a manager grants manager, only a system_admin grants system_admin; an actor
   must hold every permission a role carries; the last active manager and the last active
   user who can edit users cannot be removed.
+- **OPEN — decide before Sub-project 5 gives the business roles their screens.** Because an
+  actor must hold every permission a role carries, `system_admin` (which holds no business
+  screen) will be unable to assign a business role, or to edit, deactivate or reset the
+  password of anyone who holds one. That is what stops the vendor's support account from
+  minting an account with business-data access (spec §10.2: "no business data"), but spec
+  §10.4 also gives it "Manage users and roles". Until the client decides, only a manager
+  administers business staff.
 - Routes: `$pres($uri, $controller, $screen)` in `routes/web.php` expands to the resource
   routes with `can:{screen}.view|edit`. Each later sub-project adds its own screens.
 

@@ -46,6 +46,7 @@ class ProfileController extends Controller
 
         DB::transaction(function () use ($request) {
             auth()->user()->update(['password' => Hash::make($request->password)]);
+            auth()->user()->signOutEverywhere(keepSessionId: $request->session()->getId());
             AuditTrail::record('password_changed', auth()->user());
         });
 

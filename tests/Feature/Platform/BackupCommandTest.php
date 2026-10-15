@@ -123,6 +123,66 @@ class BackupCommandTest extends TestCase
         $this->assertSame(['local/attachments/invoice.pdf'], $names);
     }
 
+    /**
+     * The uploads are passport scans and customs papers by the thousand. Reading each into
+     * a PHP string held the whole bucket in memory until the archive closed; the process
+     * is capped at 256 MB, so the nightly run would die as soon as the bucket outgrew it.
+     */
+    public function test_uploads_are_archived_without_being_held_in_memory(): void
+    {
+        Storage::fake('backups');
+        Storage::fake('local');
+        $bytes = str_repeat('x', 24 * 1024 * 1024);
+        Storage::disk('local')->put('scans/passport.pdf', $bytes);
+        unset($bytes);
+
+        config([
+            'backup.disk' => 'backups',
+            'backup.file_disks' => ['local'],
+            'backup.include.database' => false,
+            'backup.include.files' => true,
+        ]);
+
+        memory_reset_peak_usage();
+        $before = memory_get_usage();
+
+        $this->artisan('backup:run')->assertExitCode(0);
+
+        $grew = memory_get_peak_usage() - $before;
+        $this->assertLessThan(8 * 1024 * 1024, $grew, 'a 24 MB upload must not pass through memory whole');
+
+        $zipPath = collect(Storage::disk('backups')->allFiles())->first(fn ($f) => str_ends_with($f, 'uploads.zip'));
+        $zip = new \ZipArchive;
+        $zip->open(Storage::disk('backups')->path($zipPath));
+        $this->assertSame(24 * 1024 * 1024, $zip->statName('local/scans/passport.pdf')['size']);
+        $zip->close();
+    }
+
+    public function test_an_archive_written_in_several_batches_keeps_every_file(): void
+    {
+        Storage::fake('backups');
+        Storage::fake('local');
+        foreach (range(1, 120) as $i) {
+            Storage::disk('local')->put("scans/{$i}.pdf", "scan {$i}");
+        }
+
+        config([
+            'backup.disk' => 'backups',
+            'backup.file_disks' => ['local'],
+            'backup.include.database' => false,
+            'backup.include.files' => true,
+        ]);
+
+        $this->artisan('backup:run')->assertExitCode(0);
+
+        $zipPath = collect(Storage::disk('backups')->allFiles())->first(fn ($f) => str_ends_with($f, 'uploads.zip'));
+        $zip = new \ZipArchive;
+        $zip->open(Storage::disk('backups')->path($zipPath));
+        $this->assertSame(120, $zip->numFiles);
+        $this->assertSame('scan 77', $zip->getFromName('local/scans/77.pdf'));
+        $zip->close();
+    }
+
     public function test_runs_older_than_the_retention_window_are_pruned(): void
     {
         Storage::fake('backups');

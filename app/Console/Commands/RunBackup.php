@@ -425,6 +425,52 @@ class RunBackup extends Command
         };
     }
 
+    /** Files added between two closes of the uploads archive. */
+    private const ARCHIVE_BATCH = 50;
+
+    /**
+     * Copy one upload to a temp file in fixed-size chunks and add it to the archive BY PATH.
+     * Never through a PHP string: the uploads are scans by the thousand, and a string per
+     * file held the whole bucket in memory (capped at 256 MB) until the archive closed.
+     *
+     * @param  resource|null  $stream
+     * @param  list<string>  $pending
+     */
+    private function addToArchive(ZipArchive $zip, $stream, string $entry, array &$pending): bool
+    {
+        if (! $stream) {
+            return false;
+        }
+
+        $temp = tempnam($this->work, 'up_');
+        $out = fopen($temp, 'wb');
+        stream_copy_to_stream($stream, $out);
+        fclose($out);
+        fclose($stream);
+
+        $pending[] = $temp;
+
+        return $zip->addFile($temp, $entry);
+    }
+
+    /** @param  list<string>  $pending */
+    private function flushArchive(ZipArchive $zip, string $path, array &$pending): void
+    {
+        if (! $zip->close() || $zip->open($path) !== true) {
+            throw new \RuntimeException('Could not write the uploads archive.');
+        }
+        $this->forget($pending);
+    }
+
+    /** @param  list<string>  $pending */
+    private function forget(array &$pending): void
+    {
+        foreach ($pending as $temp) {
+            @unlink($temp);
+        }
+        $pending = [];
+    }
+
     /**
      * Zip the durable upload disks. Returns null when there is nothing to archive,
      * which is itself worth saying out loud: it usually means PRIVATE_DISK was never
@@ -439,6 +485,8 @@ class RunBackup extends Command
         if ($zip->open($out, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             throw new \RuntimeException('Could not create the uploads archive.');
         }
+        /** @var list<string> $pending temp copies the archive still has to read */
+        $pending = [];
 
         // By default the backups live on the uploads disk itself (BACKUP_DISK follows
         // PRIVATE_DISK). Their folder there is not an upload: archiving it would zip every
@@ -459,14 +507,19 @@ class RunBackup extends Command
                 if (str_starts_with($file, 'backup-tmp/') || ($holdsBackups && str_starts_with($file, $backupPrefix))) {
                     continue; // never nest a backup inside a backup
                 }
-                if ($stream = $storage->readStream($file)) {
-                    $zip->addFromString("{$name}/{$file}", (string) stream_get_contents($stream));
-                    fclose($stream);
+                if ($this->addToArchive($zip, $storage->readStream($file), "{$name}/{$file}", $pending)) {
                     $count++;
+                }
+                // libzip reads the added files only when the archive closes. Close and
+                // reopen every batch so neither the pending temp copies nor libzip's
+                // bookkeeping grow with the size of the bucket.
+                if (count($pending) >= self::ARCHIVE_BATCH) {
+                    $this->flushArchive($zip, $out, $pending);
                 }
             }
         }
         $zip->close();
+        $this->forget($pending);
 
         if ($count === 0) {
             @unlink($out);
