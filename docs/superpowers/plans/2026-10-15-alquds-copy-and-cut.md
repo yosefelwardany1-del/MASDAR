@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A new private repo `INSHARODEV/Alquds` that boots as a single-company, Arabic RTL Laravel 12 app with sign-in, 10 roles, a screen-permission matrix, audit log, attachments, notifications, AI/WhatsApp clients and import/export. Tests run on PostgreSQL, and nothing of the ERP's business modules or INSHARO internals is carried over.
+**Goal:** A new private repo `yosefelwardany1-del/Alquds` that boots as a single-company, Arabic RTL Laravel 12 app with sign-in, 10 roles, a screen-permission matrix, audit log, attachments, notifications, AI/WhatsApp clients and import/export. Tests run on PostgreSQL, and nothing of the ERP's business modules or INSHARO internals is carried over.
 
 **Architecture:**
 - The platform layer is harvested file by file from `/home/user/erp` (source commit `eaed57d`) into an empty working tree, then adapted: no company layer, no Super Admin bypass, screens-driven RBAC, Arabic shell.
@@ -16,7 +16,7 @@
 
 ## Global Constraints
 
-- `src` = `/home/user/erp` (read-only); `dst` = `/home/user/Alquds` (the new clone).
+- `src` = `/home/user/erp` (read-only); `dst` = `/home/user/alquds` (the new clone).
 - Codebase English; UI Arabic (`app.locale = ar`, `<html lang="ar" dir="rtl">`). Use logical spacing classes (`ms-`/`me-`/`ps-`/`pe-`), never `ml-`/`mr-` or physical `left`/`right` in new CSS.
 - No `company_id` column, no `CompanyScope`/`BelongsToCompany`/`CompanyContext`, no `Gate::before`, anywhere.
 - Permission names are `{screen}.{level}`, level ∈ `view|edit|approve`. Verb mapping in harvested code: view/export → `view`; create/edit/delete/import → `edit`.
@@ -39,7 +39,7 @@
 ### Task 1: New repo, skeleton and PostgreSQL test harness (commit 1)
 
 **Files:**
-- Create repo: `INSHARODEV/Alquds` (private, empty) with `mcp__github__create_repository`, then `add_repo` (access `push`), clone to `dst`.
+- Create repo: `yosefelwardany1-del/Alquds` (private, empty; created by the user — the integration may not create repos), then `add_repo` (access `push`), clone to `dst`.
 - Harvest (manifest A1/A2):
   - `artisan`, `bootstrap/app.php` (manifest C: web routes + console + `/up`, `ProfileRequest`, `trustProxies`, `EnsureAccountCanSignIn` added in Task 5), `bootstrap/providers.php` (only `AppServiceProvider`)
   - `public/{index.php,.htaccess,robots.txt,favicon.ico}`, `.gitignore`, `.gitattributes`, `.editorconfig`, `.dockerignore`, the `storage/**/.gitignore` files

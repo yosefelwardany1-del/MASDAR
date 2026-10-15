@@ -24,7 +24,7 @@ Decisions taken with the user (15 Oct 2026):
 
 | # | Decision |
 |---|---|
-| D1 | New private repo `INSHARODEV/Alquds`, **fresh git history**. |
+| D1 | New private repo, **fresh git history**. Lives at `yosefelwardany1-del/Alquds` (the session's GitHub access could not create a repo in the INSHARODEV organisation; moved there on the user's instruction, 15 Oct). |
 | D2 | **Al-Quds only.** No multi-company layer. |
 | D3 | **Copy, then cut.** Harvest the platform layer from the ERP; build all business logic to the spec. The spec's §2 stack (NestJS/React) is replaced by Laravel 12 + PostgreSQL, a deliberate ENGINEERING change permitted by §2. |
 | D4 | **Commit 1 holds kept files only.** None of INSHARO's internal notes, staff names or lead data enter the history. The source ERP commit is named in the message. |
