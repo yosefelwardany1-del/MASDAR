@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\GoogleSsoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
@@ -7,6 +9,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserSsoIdentityController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +53,20 @@ Route::middleware('auth')->group(function () {
 
     // The ten roles are fixed (spec §10.2): their matrix is edited, they are never created or deleted.
     $pres('roles', RoleController::class, 'roles', except: ['create', 'store', 'destroy']);
+
+    // Company settings (one row) and its logo, which any signed-in user may see.
+    Route::get('settings', [SettingsController::class, 'edit'])->middleware('can:settings.view')->name('settings.edit');
+    Route::put('settings', [SettingsController::class, 'update'])->middleware('can:settings.edit')->name('settings.update');
+    Route::post('settings/logo', [SettingsController::class, 'storeLogo'])->middleware('can:settings.edit')->name('settings.logo.store');
+    Route::delete('settings/logo', [SettingsController::class, 'destroyLogo'])->middleware('can:settings.edit')->name('settings.logo.destroy');
+    Route::get('settings/logo', [SettingsController::class, 'showLogo'])->name('settings.logo');
+
+    Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('can:audit_log.view')->name('audit-logs.index');
+
+    // Attachments for every registered attachable; the parent's screen decides access.
+    Route::post('attachments/{type}/{id}', [AttachmentController::class, 'store'])->whereNumber('id')->name('attachments.store');
+    Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->whereNumber('attachment')->name('attachments.download');
+    Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->whereNumber('attachment')->name('attachments.destroy');
 
     // Sign-in only: the home page is where a user with no roles lands.
     Route::get('/', DashboardController::class)->name('dashboard');

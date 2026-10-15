@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Attachment;
+use App\Policies\AttachmentPolicy;
 use App\Support\Session\LazyDatabaseSessionHandler;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -28,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
             (int) $app['config']['session.lifetime'],
             $app,
         ));
+
+        Gate::policy(Attachment::class, AttachmentPolicy::class);
 
         // TLS ends at the hosting proxy; generate https links in production.
         if ($this->app->environment('production')) {

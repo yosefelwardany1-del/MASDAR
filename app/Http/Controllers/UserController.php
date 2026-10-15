@@ -8,7 +8,9 @@ use App\Security\Roles;
 use App\Services\Auth\SsoSignIn;
 use App\Services\Notifications\NotificationService;
 use App\Services\Notifications\NotificationType;
+use App\Support\Audit\AuditTrail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -60,14 +62,17 @@ class UserController extends Controller
             abort_unless($this->guard->canAssignRole($request->user(), $role), 403, __('You may not assign this role.'));
         }
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'password' => Hash::make($data['password']),
-            'status' => $data['status'],
-        ]);
-        $user->syncRoles($roles);
+        DB::transaction(function () use ($data, $roles) {
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+                'password' => Hash::make($data['password']),
+                'status' => $data['status'],
+            ]);
+            $user->syncRoles($roles);
+            AuditTrail::record('created', $user, [], $user->only(['name', 'email', 'phone', 'status']) + ['roles' => $roles]);
+        });
 
         return redirect()->route('users.index')->with('success', __('User created.'));
     }
@@ -113,19 +118,30 @@ class UserController extends Controller
 
         $approving = $user->isPending() && $data['status'] === 'active';
 
-        $user->update([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'status' => $data['status'],
-        ]);
-        if (! empty($data['password'])) {
-            $user->update(['password' => Hash::make($data['password'])]);
-        }
-        if ($approving) {
-            $user->forceFill(['approved_at' => now(), 'approved_by' => $request->user()->id])->save();
-        }
-        $user->syncRoles($roles);
+        DB::transaction(function () use ($request, $user, $data, $roles, $approving) {
+            $fields = ['name', 'email', 'phone', 'status'];
+            $old = $user->only($fields) + ['roles' => $user->getRoleNames()->all()];
+
+            $user->update([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+                'status' => $data['status'],
+            ]);
+            if (! empty($data['password'])) {
+                $user->update(['password' => Hash::make($data['password'])]);
+            }
+            if ($approving) {
+                $user->forceFill(['approved_at' => now(), 'approved_by' => $request->user()->id])->save();
+            }
+            $user->syncRoles($roles);
+
+            $new = $user->only($fields) + ['roles' => $roles];
+            if (! empty($data['password'])) {
+                $new['password_changed'] = true;
+            }
+            AuditTrail::record($approving ? 'approved' : 'updated', $user, $old, $new);
+        });
 
         if ($approving) {
             app(NotificationService::class)->send(

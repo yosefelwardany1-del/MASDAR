@@ -4,6 +4,7 @@
     use Illuminate\Support\Str;
 
     $user = auth()->user();
+    $setting = \App\Models\Setting::current();
     $groupLabels = ['overview' => __('Overview'), 'admin' => __('Administration')];
     $sections = collect(Screens::visibleFor($user))->groupBy('group');
     $link = fn (array $item) => Route::has($item['route']) ? route($item['route']) : '#';
@@ -24,8 +25,8 @@
 
 <nav id="aq-sidebar" aria-label="{{ __('Main menu') }}">
     <div class="aq-brand">
-        <span class="aq-brand__logo"><i class="bi bi-book"></i></span>
-        <span class="aq-brand__name">{{ __('Alquds') }}</span>
+        <span class="aq-brand__logo">@if($setting->logo)<img src="{{ route('settings.logo') }}" alt="">@else<i class="bi bi-book"></i>@endif</span>
+        <span class="aq-brand__name">{{ $setting->company_name_ar }}</span>
     </div>
 
     <div class="aq-nav">

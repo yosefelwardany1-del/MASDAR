@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Audit\AuditTrail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
@@ -22,7 +24,11 @@ class ProfileController extends Controller
             'email' => 'required|email|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:20',
         ]);
-        $user->update($data);
+        DB::transaction(function () use ($user, $data) {
+            $old = $user->only(['name', 'email', 'phone']);
+            $user->update($data);
+            AuditTrail::record('updated', $user, $old, $user->only(['name', 'email', 'phone']));
+        });
 
         return redirect()->route('profile')->with('success', __('Profile updated.'));
     }
@@ -38,7 +44,10 @@ class ProfileController extends Controller
             return back()->with('error', __('Current password is incorrect.'));
         }
 
-        auth()->user()->update(['password' => Hash::make($request->password)]);
+        DB::transaction(function () use ($request) {
+            auth()->user()->update(['password' => Hash::make($request->password)]);
+            AuditTrail::record('password_changed', auth()->user());
+        });
 
         return redirect()->route('profile')->with('success', __('Password updated.'));
     }

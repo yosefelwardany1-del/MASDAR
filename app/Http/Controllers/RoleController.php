@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Security\RoleManagementGuard;
 use App\Security\Roles;
 use App\Security\Screens;
+use App\Support\Audit\AuditTrail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
@@ -69,10 +71,14 @@ class RoleController extends Controller
 
         abort_unless($this->guard->canChangeGrants($request->user(), $role, $desired), 403, __('You may not grant or remove permissions you do not hold.'));
 
-        $keep = $role->permissions->pluck('name')
-            ->reject(fn (string $p) => array_key_exists(strstr($p, '.', true), $desired))
-            ->all();
-        $role->syncPermissions(array_merge($keep, ...array_values($desired)));
+        DB::transaction(function () use ($role, $desired) {
+            $before = $role->permissions->pluck('name')->sort()->values()->all();
+            $keep = array_values(array_filter($before, fn (string $p) => ! array_key_exists(strstr($p, '.', true), $desired)));
+            $role->syncPermissions(array_merge($keep, ...array_values($desired)));
+            $after = $role->fresh()->permissions->pluck('name')->sort()->values()->all();
+
+            AuditTrail::record('updated', $role, ['permissions' => $before], ['permissions' => $after]);
+        });
 
         return redirect()->route('roles.show', $role)->with('success', __('Role updated.'));
     }
