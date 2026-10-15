@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Models\Attachment;
 use App\Policies\AttachmentPolicy;
+use App\Services\Ai\AiProvider;
+use App\Services\Ai\AnthropicClient;
+use App\Services\Ai\OpenRouterClient;
 use App\Support\Session\LazyDatabaseSessionHandler;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
@@ -15,7 +18,18 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        /*
+         * The AI seam. Every feature type-hints OpenRouterClient; when the Claude API is
+         * the configured provider (config/ai.php 'provider', or simply an
+         * ANTHROPIC_API_KEY being present) they receive AnthropicClient instead — the
+         * same chat()/json()/model() surface on the official SDK. Not a singleton, on
+         * purpose: each resolution reads the current config.
+         */
+        $this->app->bind(OpenRouterClient::class, function () {
+            return AiProvider::resolve() === AiProvider::ANTHROPIC
+                ? new AnthropicClient
+                : new OpenRouterClient;
+        });
     }
 
     public function boot(): void

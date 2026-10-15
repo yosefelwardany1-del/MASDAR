@@ -5,6 +5,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\GoogleSsoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImportExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfilePhotoController;
@@ -62,6 +63,15 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/logo', [SettingsController::class, 'showLogo'])->name('settings.logo');
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('can:audit_log.view')->name('audit-logs.index');
+
+    // Bulk import / export, one controller for every registered resource. Two gates: the
+    // import_export screen here, and the resource's own screen inside the controller.
+    Route::get('import-export', [ImportExportController::class, 'index'])->middleware('can:import_export.view')->name('import-export.index');
+    Route::get('io/{resource}/template', [ImportExportController::class, 'template'])->middleware('can:import_export.view')->name('io.template');
+    Route::get('io/{resource}/export', [ImportExportController::class, 'export'])->middleware('can:import_export.view')->name('io.export');
+    Route::post('io/{resource}/preview', [ImportExportController::class, 'preview'])->middleware('can:import_export.edit')->name('io.preview');
+    Route::post('io/{resource}/import', [ImportExportController::class, 'import'])->middleware('can:import_export.edit')->name('io.import');
+    Route::get('io/runs/{run}', [ImportExportController::class, 'status'])->whereNumber('run')->middleware('can:import_export.view')->name('io.run-status');
 
     // Attachments for every registered attachable; the parent's screen decides access.
     Route::post('attachments/{type}/{id}', [AttachmentController::class, 'store'])->whereNumber('id')->name('attachments.store');
