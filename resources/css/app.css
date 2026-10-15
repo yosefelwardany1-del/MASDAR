@@ -118,6 +118,22 @@ h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: 0; color: var(--aq-in
     color: #fff; font-weight: 600; flex-shrink: 0; position: relative; overflow: hidden;
 }
 
+/* ---------- Sign-in shell ---------- */
+.aq-auth { background: var(--aq-surface); }
+.aq-auth__wrap { min-block-size: 100vh; display: grid; grid-template-columns: minmax(360px, 44%) 1fr; }
+.aq-auth__brand {
+    background: linear-gradient(160deg, var(--aq-navy-2), var(--aq-navy)); color: #fff;
+    padding: 2.5rem 3rem; display: flex; flex-direction: column; justify-content: space-between;
+}
+.aq-auth__form { display: flex; align-items: center; justify-content: center; padding: 3rem 1.5rem; }
+.aq-auth__card { inline-size: 100%; max-inline-size: 420px; }
+.aq-auth details > summary { cursor: pointer; }
+@media (max-width: 991.98px) {
+    .aq-auth__wrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .aq-auth__brand { padding: 1rem 1.25rem; }
+    .aq-auth__form { align-items: flex-start; }
+}
+
 /* ---------- Small screens: the sidebar slides in from the inline start ---------- */
 .aq-overlay { display: none; }
 @media (max-width: 991.98px) {

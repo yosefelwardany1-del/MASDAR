@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountCanSignIn;
 use App\Http\Middleware\ProfileRequest;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Trust the hosting proxy so X-Forwarded-Proto (https) is honoured.
         $middleware->trustProxies(at: '*');
+
+        // A paused account is signed out on its next request, however it got in: a
+        // remembered sign-in outlives the session, so a sign-in-time check is not enough.
+        $middleware->web(append: [
+            EnsureAccountCanSignIn::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
