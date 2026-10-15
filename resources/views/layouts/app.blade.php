@@ -56,6 +56,7 @@
 
         <div class="ms-auto d-flex align-items-center gap-2">
             @stack('topbar')
+            @include('partials.notification-bell')
             <div class="dropdown">
                 <button class="btn btn-link text-decoration-none d-flex align-items-center gap-2 p-1" data-bs-toggle="dropdown" aria-expanded="false">
                     <x-avatar :name="$user->name" :src="$user->avatarUrl()" :size="34" />

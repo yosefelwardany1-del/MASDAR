@@ -101,6 +101,11 @@ h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: 0; color: var(--aq-in
     background: transparent; color: var(--aq-ink-soft); display: inline-flex; align-items: center; justify-content: center;
     font-size: 1.15rem; position: relative;
 }
+.aq-badge {
+    position: absolute; inset-block-start: 4px; inset-inline-end: 4px; min-inline-size: 16px; block-size: 16px; padding-inline: 4px;
+    border-radius: 10px; background: var(--aq-maroon); color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
 .aq-iconbtn:hover { background: var(--aq-surface-2); border-color: var(--aq-line); color: var(--aq-ink); }
 .aq-content { padding: 1.5rem; flex: 1; }
 .aq-card { background: var(--aq-surface); border: 1px solid var(--aq-line); border-radius: var(--aq-radius); box-shadow: var(--aq-shadow); }
