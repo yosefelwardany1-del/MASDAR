@@ -1,0 +1,105 @@
+services:
+  - type: web
+    name: alquds
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: standard
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: Alquds
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        sync: false  # set manually: the production URL
+      - key: APP_TIMEZONE
+        value: Africa/Cairo
+      - key: APP_LOCALE
+        value: ar
+
+      # PostgreSQL (Neon). The invariants live in the database: triggers and CHECKs.
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        sync: false  # set manually: Neon host
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        sync: false  # set manually: Neon database name
+      - key: DB_USERNAME
+        sync: false  # set manually: Neon username
+      - key: DB_PASSWORD
+        sync: false  # set manually: Neon password
+      - key: DB_SSLMODE
+        value: require
+
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_LIFETIME
+        value: "10080"
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: FILESYSTEM_DISK
+        value: local
+
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+
+      - key: MAIL_MAILER
+        value: log
+      - key: MAIL_FROM_ADDRESS
+        sync: false  # set manually
+      - key: MAIL_FROM_NAME
+        value: Alquds
+
+      # Private uploads (Cloudflare R2). The container disk is wiped on every deploy.
+      - key: PRIVATE_DISK
+        sync: false  # set to 's3' once the bucket exists
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_DEFAULT_REGION
+        value: auto
+      - key: AWS_BUCKET
+        sync: false
+      - key: AWS_ENDPOINT
+        sync: false  # the R2 endpoint, without the bucket name
+      - key: AWS_USE_PATH_STYLE_ENDPOINT
+        value: "true"
+
+      # Nightly backup (backup:run)
+      - key: BACKUP_DISK
+        sync: false  # leave unset to follow PRIVATE_DISK
+      - key: BACKUP_RETENTION_DAYS
+        value: "30"
+      - key: BACKUP_NOTIFY_EMAILS
+        sync: false
+      - key: BACKUP_GOOGLE_DRIVE
+        value: "false"
+      - key: GOOGLE_DRIVE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_DRIVE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_DRIVE_REFRESH_TOKEN
+        sync: false
+
+      # AI (drafts only — see CLAUDE.md)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+      # WhatsApp (Meta Cloud API)
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false

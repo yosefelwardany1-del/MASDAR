@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_URL" value="http://localhost"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_STORE" value="array"/>
+        <!-- The permission registry lives on the 'local' cache store in production;
+             tests keep it in memory so no run leaks into the next. -->
+        <env name="CACHE_LOCAL_DRIVER" value="array"/>
+        <!-- PostgreSQL only: the invariants are enforced by PostgreSQL triggers and
+             CHECK constraints, which SQLite would not exercise. -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="5432"/>
+        <env name="DB_DATABASE" value="alquds_test"/>
+        <env name="DB_USERNAME" value="alquds"/>
+        <env name="DB_PASSWORD" value="alquds"/>
+        <env name="DB_SSLMODE" value="disable"/>
+        <env name="DB_PERSISTENT" value="false"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <!-- Never let the suite reach a real AI provider: tests stub HTTP with Http::fake(). -->
+        <env name="OPENROUTER_API_KEY" value="test-key-not-a-real-credential"/>
+        <env name="SESSION_DRIVER" value="array"/>
+    </php>
+</phpunit>
