@@ -1,5 +1,7 @@
 <?php
 
+use App\Support\AppKey;
+
 return [
 
     /*
@@ -97,7 +99,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
-    'key' => env('APP_KEY'),
+    // A bare 32-byte base64 key (Render's generateValue) is read as "base64:…".
+    'key' => AppKey::normalise(env('APP_KEY')),
 
     'previous_keys' => [
         ...array_filter(
