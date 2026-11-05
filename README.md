@@ -1,9 +1,12 @@
-# Alquds
+# Empty ERP
 
-The ERP for Al-Quds (Cairo): publishing, outsourced printing, book export and freight
-consolidation. Arabic RTL interface, single company.
+A starter ERP: the platform layer (sign-in, roles and screen permissions, audit log, settings,
+attachments, notifications, AI and WhatsApp clients, import/export, backups) behind an Arabic RTL
+shell, single company, with no business module yet. Each client's ERP starts as a copy of it.
 
-- **What to build:** `docs/spec/Alquds_Project.md` (the client build spec — the authority).
+- **What to build:** `docs/spec/PROJECT.md` (the client's build spec — the authority; a
+  template until a client's spec replaces it). `CLAUDE.md` § Starting a client lists what to
+  set first.
 - **How the code is organised and the rules it follows:** `CLAUDE.md`.
 - **Designs and build plans:** `docs/superpowers/`.
 
@@ -14,17 +17,17 @@ Requirements: PHP 8.3+ with `pdo_pgsql`, `gd`, `zip`, `intl`; Composer 2; Node 2
 
 ```bash
 # 1. Databases (once): one for the app, one for the tests
-sudo -u postgres psql -c "CREATE ROLE alquds LOGIN PASSWORD 'alquds' CREATEDB"
-sudo -u postgres createdb -O alquds alquds
-sudo -u postgres createdb -O alquds alquds_test
+sudo -u postgres psql -c "CREATE ROLE erp LOGIN PASSWORD 'erp' CREATEDB"
+sudo -u postgres createdb -O erp erp
+sudo -u postgres createdb -O erp erp_test
 
 # 2. The app
 composer install
 npm install && npm run build
 cp .env.example .env
 php artisan key:generate
-php artisan migrate --seed                      # tables + the ten roles
-php artisan db:seed --class=DemoUsersSeeder     # one user per role: {role}@alquds.test / password
+php artisan migrate --seed                      # tables + the starter roles
+php artisan db:seed --class=DemoUsersSeeder     # one user per role: {role}@example.test / password
 php artisan serve                               # http://localhost:8000
 
 # 3. Checks (CI runs exactly these)
@@ -77,7 +80,7 @@ Credentials live in the environment only, never in the database.
 
 ## Backups
 
-`backup:run` runs every night at 02:15 (Cairo time): a `pg_dump` of the database
+`backup:run` runs every night at 02:15 (`APP_TIMEZONE`): a `pg_dump` of the database
 (`database.sql.gz`) and a zip of the private uploads (`uploads.zip`), in one folder per run,
 named by its UTC date and time (`backups/2026-10-15_001500/`). Runs older than `BACKUP_RETENTION_DAYS` (30) are deleted.
 

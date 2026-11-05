@@ -7,7 +7,7 @@
 <p class="text-muted mb-3">{{ __('Levels add up: Edit includes View, Approve includes Edit. You can only grant or remove what you hold yourself.') }}</p>
 <form method="POST" action="{{ route('roles.update', $role) }}">
     @csrf @method('PUT')
-    <div class="aq-card">
+    <div class="app-card">
         @include('roles._matrix', ['editable' => true])
     </div>
     <div class="mt-3 d-flex gap-2">

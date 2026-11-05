@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
 /**
- * One demo user per role ({role}@alquds.test / password "password") for local work and
+ * One demo user per role ({role}@example.test / password "password") for local work and
  * screenshots. Refuses to run in production: those addresses and that password must never
  * exist there.
  */
@@ -23,7 +23,7 @@ class DemoUsersSeeder extends Seeder
 
         foreach (Roles::ALL as $role) {
             $user = User::firstOrCreate(
-                ['email' => "{$role}@alquds.test"],
+                ['email' => "{$role}@example.test"],
                 ['name' => Roles::label($role), 'password' => Hash::make('password'), 'status' => 'active'],
             );
             $user->syncRoles([$role]);

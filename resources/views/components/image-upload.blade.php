@@ -17,7 +17,7 @@
 @endphp
 <div {{ $attributes->merge(['class' => 'text-center']) }}>
     @if($src)
-        <div style="inline-size:{{ $size }}px;block-size:{{ $size }}px;border-radius:{{ $radius }};margin-inline:auto;border:1px solid var(--aq-line);background:#fff url('{{ $src }}') center/cover no-repeat;"></div>
+        <div style="inline-size:{{ $size }}px;block-size:{{ $size }}px;border-radius:{{ $radius }};margin-inline:auto;border:1px solid var(--app-line);background:#fff url('{{ $src }}') center/cover no-repeat;"></div>
     @else
         <x-avatar :name="$name" :size="$size" style="border-radius:{{ $radius }};" />
     @endif

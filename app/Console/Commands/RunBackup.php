@@ -604,7 +604,7 @@ class RunBackup extends Command
         // and reuse it from then on.
         $root = (string) config('backup.google_drive.folder_id');
         if ($root === '') {
-            $root = $drive->ensureFolder((string) config('backup.google_drive.folder_name', 'Alquds Backups'), 'root');
+            $root = $drive->ensureFolder((string) config('backup.google_drive.folder_name', config('app.name').' Backups'), 'root');
         }
 
         $folder = $drive->ensureFolder($stamp, $root);
@@ -686,7 +686,7 @@ class RunBackup extends Command
                 "The nightly backup did not complete.\n\n"
                 .$e->getMessage()."\n\n"
                 .'Host: '.config('app.url'),
-                fn ($m) => $m->to($to)->subject('[Alquds] Nightly backup FAILED'),
+                fn ($m) => $m->to($to)->subject('['.config('app.name').'] Nightly backup FAILED'),
             );
         } catch (Throwable) {
             // Mail being down must not mask the original failure in the log.

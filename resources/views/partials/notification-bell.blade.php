@@ -4,9 +4,9 @@
     $recent = $notificationService->recentFor(auth()->user(), 8);
 @endphp
 <div class="dropdown" data-unread="{{ $unread }}">
-    <button class="aq-iconbtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="{{ __('Notifications') }}">
+    <button class="app-iconbtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="{{ __('Notifications') }}">
         <i class="bi bi-bell"></i>
-        @if($unread > 0)<span class="aq-badge">{{ $unread > 9 ? '9+' : $unread }}</span>@endif
+        @if($unread > 0)<span class="app-badge">{{ $unread > 9 ? '9+' : $unread }}</span>@endif
     </button>
     <div class="dropdown-menu dropdown-menu-end shadow p-0" style="inline-size:340px;max-inline-size:92vw;">
         <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">

@@ -6,7 +6,7 @@
 <h1 class="h4 mb-3">{{ __('Company settings') }}</h1>
 <div class="row g-4">
     <div class="col-lg-8">
-        <div class="aq-card p-4">
+        <div class="app-card p-4">
             <form method="POST" action="{{ route('settings.update') }}">
                 @csrf @method('PUT')
                 <fieldset @disabled(! $editable)>
@@ -26,7 +26,7 @@
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="aq-card p-4 text-center">
+        <div class="app-card p-4 text-center">
             <h2 class="h6 mb-3">{{ __('Logo') }}</h2>
             <x-image-upload :src="$setting->logo ? route('settings.logo') : null" field="logo" :name="$setting->company_name_ar"
                             :action="route('settings.logo.store')" :remove="route('settings.logo.destroy')"

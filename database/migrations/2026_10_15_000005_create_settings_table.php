@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->string('company_name')->default('Al Quds');
-            $table->string('company_name_ar')->default('القدس');
+            $table->string('company_name')->default('Company');
+            $table->string('company_name_ar')->default('الشركة');
             $table->string('logo')->nullable();
             $table->string('logo_disk', 30)->nullable();
             $table->timestamps();

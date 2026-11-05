@@ -54,6 +54,31 @@ class NoLeftoversTest extends TestCase
         $this->assertSame([], $hits);
     }
 
+    /**
+     * The starter is for any client: nothing names the client it was harvested from, in the
+     * code, the docs or the deploy files. A client's own name goes in through settings and env.
+     */
+    public function test_no_former_client_is_named(): void
+    {
+        $paths = ['README.md', 'CLAUDE.md', '.env.example', 'render.yaml', 'composer.json', 'package.json', 'phpunit.xml', '.github/workflows/ci.yml'];
+        $hits = [];
+        foreach ([...self::DIRS, 'docs'] as $dir) {
+            $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path($dir), RecursiveDirectoryIterator::SKIP_DOTS));
+            foreach ($files as $file) {
+                if ($file->getPathname() !== __FILE__ && preg_match('/\.(php|js|css|json|md|yml|yaml|xml)$/', $file->getPathname())) {
+                    $paths[] = substr($file->getPathname(), strlen(base_path()) + 1);
+                }
+            }
+        }
+        foreach ($paths as $path) {
+            if (is_file(base_path($path)) && preg_match('/alquds|al[- ]quds|القدس/iu', (string) file_get_contents(base_path($path)))) {
+                $hits[] = $path;
+            }
+        }
+
+        $this->assertSame([], $hits);
+    }
+
     public function test_every_screen_route_exists(): void
     {
         $missing = [];

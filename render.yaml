@@ -1,13 +1,13 @@
 services:
   - type: web
-    name: alquds
+    name: erp
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: standard
     healthCheckPath: /up
     envVars:
       - key: APP_NAME
-        value: Alquds
+        value: ERP
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
@@ -58,7 +58,7 @@ services:
       - key: MAIL_FROM_ADDRESS
         sync: false  # set manually
       - key: MAIL_FROM_NAME
-        value: Alquds
+        value: ERP
 
       # Private uploads (Cloudflare R2). The container disk is wiped on every deploy.
       - key: PRIVATE_DISK

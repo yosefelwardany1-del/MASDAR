@@ -12,7 +12,7 @@
     </div>
 @endif
 
-<div class="aq-card p-4">
+<div class="app-card p-4">
     <form method="POST" action="{{ route('users.update', $user) }}">
         @csrf @method('PUT')
         @include('users._form', ['user' => $user])
@@ -24,12 +24,12 @@
 </div>
 
 @if($ssoEnabled || $ssoIdentities->isNotEmpty())
-    <div class="aq-card p-4 mt-4">
+    <div class="app-card p-4 mt-4">
         <h2 class="h6 mb-3">{{ __('Google sign-in addresses') }}</h2>
         <ul class="list-unstyled mb-3">
             @forelse($ssoIdentities as $identity)
                 <li class="d-flex justify-content-between align-items-center py-1">
-                    <span class="aq-ltr">{{ $identity->email }}</span>
+                    <span class="app-ltr">{{ $identity->email }}</span>
                     @if($identity->email !== \App\Models\UserSsoIdentity::normalise($user->email))
                         <form method="POST" action="{{ route('users.sso-identities.destroy', [$user, $identity]) }}">@csrf @method('DELETE')
                             <button class="btn btn-sm btn-light text-danger">{{ __('Unlink') }}</button>

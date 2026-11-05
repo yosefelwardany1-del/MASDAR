@@ -29,7 +29,7 @@ class RoleManagementGuardTest extends TestCase
     private function newUser(array $roles): array
     {
         return [
-            'name' => 'New Person', 'email' => 'new.'.uniqid().'@alquds.example',
+            'name' => 'New Person', 'email' => 'new.'.uniqid().'@acme.example',
             'password' => 'password123', 'password_confirmation' => 'password123',
             'status' => 'active', 'roles' => $roles,
         ];
@@ -73,12 +73,12 @@ class RoleManagementGuardTest extends TestCase
 
     public function test_a_role_carrying_permissions_the_actor_lacks_cannot_be_assigned(): void
     {
-        Role::findByName(Roles::ACCOUNTANT)->givePermissionTo(Screens::grantsFor('import_export', 'view'));
+        Role::findByName(Roles::SUPERVISOR)->givePermissionTo(Screens::grantsFor('import_export', 'view'));
         $sysadmin = $this->make(Roles::SYSTEM_ADMIN);
 
-        $this->assertFalse($this->guard()->canAssignRole($sysadmin, Roles::ACCOUNTANT));
-        $this->actingAs($sysadmin)->post(route('users.store'), $this->newUser([Roles::ACCOUNTANT]))->assertForbidden();
-        $this->assertTrue($this->guard()->canAssignRole($sysadmin, Roles::STOREKEEPER), 'a role with nothing the actor lacks is fine');
+        $this->assertFalse($this->guard()->canAssignRole($sysadmin, Roles::SUPERVISOR));
+        $this->actingAs($sysadmin)->post(route('users.store'), $this->newUser([Roles::SUPERVISOR]))->assertForbidden();
+        $this->assertTrue($this->guard()->canAssignRole($sysadmin, Roles::STAFF), 'a role with nothing the actor lacks is fine');
     }
 
     public function test_a_system_admin_cannot_edit_a_manager_account(): void
@@ -98,7 +98,7 @@ class RoleManagementGuardTest extends TestCase
         $only = $this->make(Roles::MANAGER);
 
         try {
-            $this->guard()->assertKeepsAdmins($only, [Roles::STOREKEEPER], 'active');
+            $this->guard()->assertKeepsAdmins($only, [Roles::STAFF], 'active');
             $this->fail('removing the last active manager was allowed');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('roles', $e->errors());
@@ -112,7 +112,7 @@ class RoleManagementGuardTest extends TestCase
         }
 
         $this->make(Roles::MANAGER);
-        $this->guard()->assertKeepsAdmins($only->fresh(), [Roles::STOREKEEPER], 'active');
+        $this->guard()->assertKeepsAdmins($only->fresh(), [Roles::STAFF], 'active');
         $this->addToAssertionCount(1);
     }
 
@@ -121,7 +121,7 @@ class RoleManagementGuardTest extends TestCase
         // No manager yet (a fresh install): the system admin is the only one who can edit users.
         $admin = $this->make(Roles::SYSTEM_ADMIN);
 
-        foreach ([[[Roles::STOREKEEPER], 'active', 'roles'], [[Roles::SYSTEM_ADMIN], 'inactive', 'status']] as [$roles, $status, $field]) {
+        foreach ([[[Roles::STAFF], 'active', 'roles'], [[Roles::SYSTEM_ADMIN], 'inactive', 'status']] as [$roles, $status, $field]) {
             try {
                 $this->guard()->assertKeepsAdmins($admin, $roles, $status);
                 $this->fail('the last user admin was removed');
@@ -131,14 +131,14 @@ class RoleManagementGuardTest extends TestCase
         }
 
         $this->make(Roles::SYSTEM_ADMIN);
-        $this->guard()->assertKeepsAdmins($admin->fresh(), [Roles::STOREKEEPER], 'active');
+        $this->guard()->assertKeepsAdmins($admin->fresh(), [Roles::STAFF], 'active');
         $this->addToAssertionCount(1);
     }
 
     public function test_users_cannot_be_deleted_only_deactivated(): void
     {
         $manager = $this->make(Roles::MANAGER);
-        $victim = $this->make(Roles::STOREKEEPER);
+        $victim = $this->make(Roles::STAFF);
 
         $this->actingAs($manager)->delete('/users/'.$victim->id)->assertMethodNotAllowed();
         $this->assertNotNull($victim->fresh());

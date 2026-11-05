@@ -15,9 +15,9 @@ class RoleMatrixTest extends TestCase
 {
     use RefreshDatabase, SeedsRoles;
 
-    public function test_ten_roles_exist(): void
+    public function test_the_starter_roles_exist(): void
     {
-        $this->assertCount(10, Roles::ALL);
+        $this->assertSame(['manager', 'supervisor', 'staff', 'system_admin'], Roles::ALL);
         $this->assertEqualsCanonicalizing(Roles::ALL, Role::pluck('name')->all());
     }
 
@@ -44,7 +44,7 @@ class RoleMatrixTest extends TestCase
         $this->assertNotContains('import_export.view', $held);
     }
 
-    public function test_the_eight_business_roles_hold_nothing_yet(): void
+    public function test_the_business_roles_hold_nothing_yet(): void
     {
         foreach (array_diff(Roles::ALL, [Roles::MANAGER, Roles::SYSTEM_ADMIN]) as $role) {
             $this->assertCount(0, Role::findByName($role)->permissions, $role);

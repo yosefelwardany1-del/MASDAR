@@ -1,5 +1,5 @@
 /*
- * Alquds — the staff shell. Bootstrap 5.3's RTL build plus a small layer of our own.
+ * The staff shell. Bootstrap 5.3's RTL build plus a small layer of our own.
  * Logical properties only (inline-start / inline-end, ms-/me-): the layout must read
  * correctly right-to-left without a single physical left/right.
  * Brand: navy (كحلي) and maroon (نبيتي), the company's logo colours. The exact hex
@@ -13,138 +13,138 @@
 @import '@fontsource/ibm-plex-sans-arabic/700.css';
 
 :root {
-    --aq-navy: #1b2a4a;
-    --aq-navy-2: #24365e;
-    --aq-navy-rgb: 27, 42, 74;
-    --aq-maroon: #7a1f2b;
-    --aq-maroon-dark: #5e1721;
-    --aq-maroon-rgb: 122, 31, 43;
-    --aq-bg: #f5f6f8;
-    --aq-surface: #ffffff;
-    --aq-surface-2: #f8f9fb;
-    --aq-ink: #1c2333;
-    --aq-ink-soft: #566078;
-    --aq-line: #e2e5ec;
-    --aq-sidebar-w: 260px;
-    --aq-radius: 14px;
-    --aq-shadow: 0 1px 2px rgba(27, 42, 74, .05), 0 12px 32px -18px rgba(27, 42, 74, .25);
+    --app-primary: #1b2a4a;
+    --app-primary-2: #24365e;
+    --app-primary-rgb: 27, 42, 74;
+    --app-accent: #7a1f2b;
+    --app-accent-dark: #5e1721;
+    --app-accent-rgb: 122, 31, 43;
+    --app-bg: #f5f6f8;
+    --app-surface: #ffffff;
+    --app-surface-2: #f8f9fb;
+    --app-ink: #1c2333;
+    --app-ink-soft: #566078;
+    --app-line: #e2e5ec;
+    --app-sidebar-w: 260px;
+    --app-radius: 14px;
+    --app-shadow: 0 1px 2px rgba(27, 42, 74, .05), 0 12px 32px -18px rgba(27, 42, 74, .25);
 
-    --bs-primary: var(--aq-maroon);
-    --bs-primary-rgb: var(--aq-maroon-rgb);
-    --bs-link-color: var(--aq-maroon);
-    --bs-link-color-rgb: var(--aq-maroon-rgb);
-    --bs-link-hover-color: var(--aq-maroon-dark);
-    --bs-body-color: var(--aq-ink);
+    --bs-primary: var(--app-accent);
+    --bs-primary-rgb: var(--app-accent-rgb);
+    --bs-link-color: var(--app-accent);
+    --bs-link-color-rgb: var(--app-accent-rgb);
+    --bs-link-hover-color: var(--app-accent-dark);
+    --bs-body-color: var(--app-ink);
     --bs-body-font-family: 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
-    --bs-border-color: var(--aq-line);
-    --bs-focus-ring-color: rgba(var(--aq-maroon-rgb), .25);
+    --bs-border-color: var(--app-line);
+    --bs-focus-ring-color: rgba(var(--app-accent-rgb), .25);
 }
 
 body {
-    background: var(--aq-bg);
-    color: var(--aq-ink);
+    background: var(--app-bg);
+    color: var(--app-ink);
     font-family: var(--bs-body-font-family);
     font-size: 15px;
     line-height: 1.6;
 }
 
 /* Arabic needs no letter-spacing and no forced capitals. */
-h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: 0; color: var(--aq-ink); }
+h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: 0; color: var(--app-ink); }
 
 /* Figures, codes and e-mail addresses inside Arabic text keep their own direction. */
-.aq-ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.app-ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
 
 .btn-primary {
-    --bs-btn-bg: var(--aq-maroon); --bs-btn-border-color: var(--aq-maroon);
-    --bs-btn-hover-bg: var(--aq-maroon-dark); --bs-btn-hover-border-color: var(--aq-maroon-dark);
-    --bs-btn-active-bg: var(--aq-maroon-dark); --bs-btn-active-border-color: var(--aq-maroon-dark);
+    --bs-btn-bg: var(--app-accent); --bs-btn-border-color: var(--app-accent);
+    --bs-btn-hover-bg: var(--app-accent-dark); --bs-btn-hover-border-color: var(--app-accent-dark);
+    --bs-btn-active-bg: var(--app-accent-dark); --bs-btn-active-border-color: var(--app-accent-dark);
 }
 
 /* Bootstrap compiles these colours in; point them at the brand. */
-.form-check-input:checked { background-color: var(--aq-maroon); border-color: var(--aq-maroon); }
-.form-check-input:focus, .form-control:focus, .form-select:focus { border-color: rgba(var(--aq-maroon-rgb), .5); box-shadow: 0 0 0 .2rem rgba(var(--aq-maroon-rgb), .15); }
-.pagination { --bs-pagination-active-bg: var(--aq-maroon); --bs-pagination-active-border-color: var(--aq-maroon); --bs-pagination-color: var(--aq-maroon); }
-.btn-outline-primary { --bs-btn-color: var(--aq-maroon); --bs-btn-border-color: var(--aq-maroon); --bs-btn-hover-bg: var(--aq-maroon); --bs-btn-hover-border-color: var(--aq-maroon); }
+.form-check-input:checked { background-color: var(--app-accent); border-color: var(--app-accent); }
+.form-check-input:focus, .form-control:focus, .form-select:focus { border-color: rgba(var(--app-accent-rgb), .5); box-shadow: 0 0 0 .2rem rgba(var(--app-accent-rgb), .15); }
+.pagination { --bs-pagination-active-bg: var(--app-accent); --bs-pagination-active-border-color: var(--app-accent); --bs-pagination-color: var(--app-accent); }
+.btn-outline-primary { --bs-btn-color: var(--app-accent); --bs-btn-border-color: var(--app-accent); --bs-btn-hover-bg: var(--app-accent); --bs-btn-hover-border-color: var(--app-accent); }
 
 /* ---------- Sidebar ---------- */
-#aq-sidebar {
+#app-sidebar {
     position: fixed; inset-block: 0; inset-inline-start: 0; z-index: 1040;
-    width: var(--aq-sidebar-w);
-    background: var(--aq-navy); color: #fff;
+    width: var(--app-sidebar-w);
+    background: var(--app-primary); color: #fff;
     display: flex; flex-direction: column;
     transition: transform .25s ease;
 }
-.aq-brand { display: flex; align-items: center; gap: .75rem; padding: 1.1rem 1.1rem 1rem; border-block-end: 1px solid rgba(255, 255, 255, .1); }
-.aq-brand__logo {
+.app-brand { display: flex; align-items: center; gap: .75rem; padding: 1.1rem 1.1rem 1rem; border-block-end: 1px solid rgba(255, 255, 255, .1); }
+.app-brand__logo {
     inline-size: 42px; block-size: 42px; border-radius: 12px; flex: 0 0 42px;
     display: flex; align-items: center; justify-content: center;
-    background: var(--aq-maroon); color: #fff; font-size: 1.2rem; overflow: hidden;
+    background: var(--app-accent); color: #fff; font-size: 1.2rem; overflow: hidden;
 }
-.aq-brand__logo img { max-inline-size: 100%; max-block-size: 100%; object-fit: contain; }
-.aq-brand__name { font-weight: 700; font-size: .95rem; line-height: 1.3; }
-.aq-nav { flex: 1; overflow-y: auto; padding: .5rem .75rem 1.25rem; }
-.aq-nav__group { color: rgba(255, 255, 255, .55); font-size: .75rem; font-weight: 600; padding: 1rem .75rem .4rem; }
-.aq-nav__link {
+.app-brand__logo img { max-inline-size: 100%; max-block-size: 100%; object-fit: contain; }
+.app-brand__name { font-weight: 700; font-size: .95rem; line-height: 1.3; }
+.app-nav { flex: 1; overflow-y: auto; padding: .5rem .75rem 1.25rem; }
+.app-nav__group { color: rgba(255, 255, 255, .55); font-size: .75rem; font-weight: 600; padding: 1rem .75rem .4rem; }
+.app-nav__link {
     display: flex; align-items: center; gap: .65rem; padding: .5rem .75rem; margin-block-end: 2px;
     border-radius: 10px; color: rgba(255, 255, 255, .8); text-decoration: none; font-weight: 500;
 }
-.aq-nav__link i { font-size: 1.05rem; inline-size: 1.25rem; text-align: center; }
-.aq-nav__link:hover { background: rgba(255, 255, 255, .07); color: #fff; }
-.aq-nav__link.active { background: rgba(var(--aq-maroon-rgb), .55); color: #fff; font-weight: 600; }
-.aq-sidebar__foot { border-block-start: 1px solid rgba(255, 255, 255, .1); padding: .6rem .75rem; }
-.aq-sidebar__foot .aq-nav__link { inline-size: 100%; background: none; border: 0; font-family: inherit; }
+.app-nav__link i { font-size: 1.05rem; inline-size: 1.25rem; text-align: center; }
+.app-nav__link:hover { background: rgba(255, 255, 255, .07); color: #fff; }
+.app-nav__link.active { background: rgba(var(--app-accent-rgb), .55); color: #fff; font-weight: 600; }
+.app-sidebar__foot { border-block-start: 1px solid rgba(255, 255, 255, .1); padding: .6rem .75rem; }
+.app-sidebar__foot .app-nav__link { inline-size: 100%; background: none; border: 0; font-family: inherit; }
 
 /* ---------- Main ---------- */
-#aq-main { margin-inline-start: var(--aq-sidebar-w); min-block-size: 100vh; display: flex; flex-direction: column; }
-#aq-topbar {
+#app-main { margin-inline-start: var(--app-sidebar-w); min-block-size: 100vh; display: flex; flex-direction: column; }
+#app-topbar {
     position: sticky; inset-block-start: 0; z-index: 1020;
     block-size: 62px; display: flex; align-items: center; gap: .75rem; padding-inline: 1.5rem;
-    background: var(--aq-surface); border-block-end: 1px solid var(--aq-line);
+    background: var(--app-surface); border-block-end: 1px solid var(--app-line);
 }
-.aq-topbar__title { font-weight: 700; font-size: 1.05rem; }
-.aq-iconbtn {
+.app-topbar__title { font-weight: 700; font-size: 1.05rem; }
+.app-iconbtn {
     inline-size: 40px; block-size: 40px; border-radius: 10px; border: 1px solid transparent;
-    background: transparent; color: var(--aq-ink-soft); display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; color: var(--app-ink-soft); display: inline-flex; align-items: center; justify-content: center;
     font-size: 1.15rem; position: relative;
 }
-.aq-badge {
+.app-badge {
     position: absolute; inset-block-start: 4px; inset-inline-end: 4px; min-inline-size: 16px; block-size: 16px; padding-inline: 4px;
-    border-radius: 10px; background: var(--aq-maroon); color: #fff; font-size: 10px; font-weight: 700;
+    border-radius: 10px; background: var(--app-accent); color: #fff; font-size: 10px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
 }
-.aq-iconbtn:hover { background: var(--aq-surface-2); border-color: var(--aq-line); color: var(--aq-ink); }
-.aq-content { padding: 1.5rem; flex: 1; }
-.aq-card { background: var(--aq-surface); border: 1px solid var(--aq-line); border-radius: var(--aq-radius); box-shadow: var(--aq-shadow); }
-.aq-empty { text-align: center; padding: 3rem 1.5rem; color: var(--aq-ink-soft); }
-.aq-empty i { font-size: 2.25rem; color: var(--aq-navy); display: block; margin-block-end: .75rem; }
+.app-iconbtn:hover { background: var(--app-surface-2); border-color: var(--app-line); color: var(--app-ink); }
+.app-content { padding: 1.5rem; flex: 1; }
+.app-card { background: var(--app-surface); border: 1px solid var(--app-line); border-radius: var(--app-radius); box-shadow: var(--app-shadow); }
+.app-empty { text-align: center; padding: 3rem 1.5rem; color: var(--app-ink-soft); }
+.app-empty i { font-size: 2.25rem; color: var(--app-primary); display: block; margin-block-end: .75rem; }
 
 /* ---------- Avatar ---------- */
-.aq-avatar {
+.app-avatar {
     display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
     color: #fff; font-weight: 600; flex-shrink: 0; position: relative; overflow: hidden;
 }
 
 /* ---------- Sign-in shell ---------- */
-.aq-auth { background: var(--aq-surface); }
-.aq-auth__wrap { min-block-size: 100vh; display: grid; grid-template-columns: minmax(360px, 44%) 1fr; }
-.aq-auth__brand {
-    background: linear-gradient(160deg, var(--aq-navy-2), var(--aq-navy)); color: #fff;
+.app-auth { background: var(--app-surface); }
+.app-auth__wrap { min-block-size: 100vh; display: grid; grid-template-columns: minmax(360px, 44%) 1fr; }
+.app-auth__brand {
+    background: linear-gradient(160deg, var(--app-primary-2), var(--app-primary)); color: #fff;
     padding: 2.5rem 3rem; display: flex; flex-direction: column; justify-content: space-between;
 }
-.aq-auth__form { display: flex; align-items: center; justify-content: center; padding: 3rem 1.5rem; }
-.aq-auth__card { inline-size: 100%; max-inline-size: 420px; }
-.aq-auth details > summary { cursor: pointer; }
+.app-auth__form { display: flex; align-items: center; justify-content: center; padding: 3rem 1.5rem; }
+.app-auth__card { inline-size: 100%; max-inline-size: 420px; }
+.app-auth details > summary { cursor: pointer; }
 @media (max-width: 991.98px) {
-    .aq-auth__wrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    .aq-auth__brand { padding: 1rem 1.25rem; }
-    .aq-auth__form { align-items: flex-start; }
+    .app-auth__wrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .app-auth__brand { padding: 1rem 1.25rem; }
+    .app-auth__form { align-items: flex-start; }
 }
 
 /* ---------- Small screens: the sidebar slides in from the inline start ---------- */
-.aq-overlay { display: none; }
+.app-overlay { display: none; }
 @media (max-width: 991.98px) {
-    #aq-sidebar { transform: translateX(100%); }
-    body.aq-sidebar-open #aq-sidebar { transform: none; }
-    body.aq-sidebar-open .aq-overlay { display: block; position: fixed; inset: 0; z-index: 1030; background: rgba(0, 0, 0, .35); }
-    #aq-main { margin-inline-start: 0; }
+    #app-sidebar { transform: translateX(100%); }
+    body.app-sidebar-open #app-sidebar { transform: none; }
+    body.app-sidebar-open .app-overlay { display: block; position: fixed; inset: 0; z-index: 1030; background: rgba(0, 0, 0, .35); }
+    #app-main { margin-inline-start: 0; }
 }

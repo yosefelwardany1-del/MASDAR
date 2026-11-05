@@ -11,7 +11,7 @@ class AvatarComponentTest extends TestCase
     {
         // Two style attributes on one element and the browser keeps only the first:
         // the logo placeholder lost its background that way.
-        $html = Blade::render('<x-avatar name="Al Quds" :size="40" style="border-radius:12px;" />');
+        $html = Blade::render('<x-avatar name="Example Co" :size="40" style="border-radius:12px;" />');
 
         $this->assertSame(1, substr_count($html, 'style="'), $html);
         $this->assertStringContainsString('linear-gradient', $html);

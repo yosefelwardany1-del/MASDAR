@@ -14,7 +14,7 @@ use Tests\Concerns\SeedsRoles;
 use Tests\TestCase;
 
 /**
- * Sign in with Google — off by default, on once Al-Quds has a Workspace domain.
+ * Sign in with Google — off by default, on once the client has a Workspace domain.
  *
  * Who gets a session and what changes on the account when they do: only the allowed
  * domains; an existing account is matched by address and NOTHING about it changes; a new
@@ -35,7 +35,7 @@ class GoogleSsoSignInTest extends TestCase
             'sso.enabled' => true,
             'sso.client_id' => 'test-client-id',
             'sso.client_secret' => 'test-client-secret',
-            'sso.allowed_domains' => ['alquds.example', 'qudsexport.example'],
+            'sso.allowed_domains' => ['acme.example', 'acme-export.example'],
             'sso.passwords_retired' => false,
             'sso.breakglass_emails' => [],
         ]);
@@ -49,10 +49,10 @@ class GoogleSsoSignInTest extends TestCase
                 : Http::response(['access_token' => 'at-123', 'id_token' => 'x', 'expires_in' => 3599, 'token_type' => 'Bearer']),
             'openidconnect.googleapis.com/v1/userinfo' => Http::response(array_merge([
                 'sub' => '1234567890',
-                'email' => 'omar.hassan@alquds.example',
+                'email' => 'omar.hassan@acme.example',
                 'email_verified' => true,
                 'name' => 'Omar Hassan',
-                'hd' => 'alquds.example',
+                'hd' => 'acme.example',
             ], $claims)),
         ]);
     }
@@ -63,7 +63,7 @@ class GoogleSsoSignInTest extends TestCase
             ->get(route('sso.google.callback', ['state' => $state, 'code' => $code]));
     }
 
-    private function staff(string $email, ?string $role = Roles::STOREKEEPER, string $status = 'active'): User
+    private function staff(string $email, ?string $role = Roles::STAFF, string $status = 'active'): User
     {
         $user = User::create(['name' => $email, 'email' => $email, 'password' => bcrypt('secret123'), 'status' => $status]);
         if ($role) {
@@ -154,12 +154,12 @@ class GoogleSsoSignInTest extends TestCase
         $this->googleCallback()->assertSessionHasErrors('sso');
 
         $this->assertGuest();
-        $this->assertDatabaseMissing('users', ['email' => 'omar.hassan@alquds.example']);
+        $this->assertDatabaseMissing('users', ['email' => 'omar.hassan@acme.example']);
     }
 
     public function test_every_allowed_domain_gets_in(): void
     {
-        foreach (['a@alquds.example', 'b@qudsexport.example'] as $email) {
+        foreach (['a@acme.example', 'b@acme-export.example'] as $email) {
             $this->staff($email);
             $this->google(['email' => $email, 'sub' => 'sub-'.$email]);
 
@@ -174,7 +174,7 @@ class GoogleSsoSignInTest extends TestCase
 
     public function test_an_existing_account_signs_in_and_nothing_about_it_changes(): void
     {
-        $user = $this->staff('omar.hassan@alquds.example', Roles::ACCOUNTANT);
+        $user = $this->staff('omar.hassan@acme.example', Roles::SUPERVISOR);
         $rolesBefore = $user->getRoleNames()->all();
         $passwordBefore = $user->password;
         $this->google();
@@ -188,13 +188,13 @@ class GoogleSsoSignInTest extends TestCase
         $this->assertSame('active', $fresh->status);
         $this->assertNotNull($fresh->last_login);
         $this->assertDatabaseHas('user_sso_identities', [
-            'user_id' => $user->id, 'email' => 'omar.hassan@alquds.example', 'google_sub' => '1234567890',
+            'user_id' => $user->id, 'email' => 'omar.hassan@acme.example', 'google_sub' => '1234567890',
         ]);
     }
 
     public function test_a_google_sign_in_is_remembered_past_the_session(): void
     {
-        $user = $this->staff('omar.hassan@alquds.example');
+        $user = $this->staff('omar.hassan@acme.example');
         $this->google();
 
         $response = $this->googleCallback()->assertRedirect(route('dashboard'));
@@ -213,7 +213,7 @@ class GoogleSsoSignInTest extends TestCase
 
     public function test_a_paused_account_is_signed_out_and_other_devices_drop_too(): void
     {
-        $user = $this->staff('omar.hassan@alquds.example');
+        $user = $this->staff('omar.hassan@acme.example');
         $this->google();
         $this->googleCallback();
         $token = $user->fresh()->remember_token;
@@ -229,8 +229,8 @@ class GoogleSsoSignInTest extends TestCase
 
     public function test_the_match_ignores_the_case_of_the_stored_address(): void
     {
-        $user = $this->staff('Basma.Haggag@alquds.example');
-        $this->google(['email' => 'basma.haggag@alquds.example', 'sub' => 'sub-basma']);
+        $user = $this->staff('Basma.Haggag@acme.example');
+        $this->google(['email' => 'basma.haggag@acme.example', 'sub' => 'sub-basma']);
 
         $this->googleCallback()->assertRedirect(route('dashboard'));
 
@@ -240,7 +240,7 @@ class GoogleSsoSignInTest extends TestCase
 
     public function test_an_inactive_account_is_refused_even_with_a_valid_google_login(): void
     {
-        $this->staff('omar.hassan@alquds.example', status: 'inactive');
+        $this->staff('omar.hassan@acme.example', status: 'inactive');
         $this->google();
 
         $this->googleCallback()->assertRedirect(route('login'))->assertSessionHasErrors('sso');
@@ -252,15 +252,15 @@ class GoogleSsoSignInTest extends TestCase
 
     public function test_a_new_address_is_parked_as_pending_and_the_user_admins_are_told(): void
     {
-        $manager = $this->staff('manager@alquds.example', Roles::MANAGER);
-        $sysadmin = $this->staff('support@alquds.example', Roles::SYSTEM_ADMIN);
-        $storekeeper = $this->staff('store@alquds.example', Roles::STOREKEEPER);
-        $this->google(['email' => 'new.hire@qudsexport.example', 'name' => 'New Hire', 'sub' => 'sub-new']);
+        $manager = $this->staff('manager@acme.example', Roles::MANAGER);
+        $sysadmin = $this->staff('support@acme.example', Roles::SYSTEM_ADMIN);
+        $staff = $this->staff('store@acme.example', Roles::STAFF);
+        $this->google(['email' => 'new.hire@acme-export.example', 'name' => 'New Hire', 'sub' => 'sub-new']);
 
         $this->googleCallback()->assertRedirect(route('sso.pending'));
 
         $this->assertGuest();
-        $user = User::where('email', 'new.hire@qudsexport.example')->first();
+        $user = User::where('email', 'new.hire@acme-export.example')->first();
         $this->assertNotNull($user);
         $this->assertSame('pending', $user->status);
         $this->assertSame('New Hire', $user->name);
@@ -271,22 +271,22 @@ class GoogleSsoSignInTest extends TestCase
         foreach ([$manager, $sysadmin] as $admin) {
             $notice = ErpNotification::where('user_id', $admin->id)->latest('id')->first();
             $this->assertNotNull($notice, 'a user admin must be notified');
-            $this->assertStringContainsString('new.hire@qudsexport.example', $notice->message);
+            $this->assertStringContainsString('new.hire@acme-export.example', $notice->message);
         }
-        $this->assertSame(0, ErpNotification::where('user_id', $storekeeper->id)->count());
+        $this->assertSame(0, ErpNotification::where('user_id', $staff->id)->count());
 
-        $this->get(route('sso.pending'))->assertOk()->assertSee('new.hire@qudsexport.example');
+        $this->get(route('sso.pending'))->assertOk()->assertSee('new.hire@acme-export.example');
     }
 
     public function test_signing_in_again_while_pending_does_not_duplicate_or_renotify(): void
     {
-        $manager = $this->staff('manager@alquds.example', Roles::MANAGER);
-        $this->google(['email' => 'new.hire@qudsexport.example', 'sub' => 'sub-new']);
+        $manager = $this->staff('manager@acme.example', Roles::MANAGER);
+        $this->google(['email' => 'new.hire@acme-export.example', 'sub' => 'sub-new']);
 
         $this->googleCallback()->assertRedirect(route('sso.pending'));
         $this->googleCallback()->assertRedirect(route('sso.pending'));
 
-        $this->assertSame(1, User::where('email', 'new.hire@qudsexport.example')->count());
+        $this->assertSame(1, User::where('email', 'new.hire@acme-export.example')->count());
         $this->assertSame(1, ErpNotification::where('user_id', $manager->id)->count(), 'one arrival, one notice');
         $this->assertGuest();
     }
@@ -300,12 +300,12 @@ class GoogleSsoSignInTest extends TestCase
 
     public function test_a_linked_second_address_signs_in_as_the_same_account(): void
     {
-        $admin = $this->staff('manager@alquds.example', Roles::MANAGER);
-        $yosef = $this->staff('yosef@qudsexport.example');
+        $admin = $this->staff('manager@acme.example', Roles::MANAGER);
+        $yosef = $this->staff('yosef@acme-export.example');
 
-        app(SsoSignIn::class)->linkAddress($yosef, 'Yosef@Alquds.Example', $admin);
+        app(SsoSignIn::class)->linkAddress($yosef, 'Yosef@Acme.Example', $admin);
 
-        $this->google(['email' => 'yosef@alquds.example', 'sub' => 'sub-yosef']);
+        $this->google(['email' => 'yosef@acme.example', 'sub' => 'sub-yosef']);
         $this->googleCallback()->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticatedAs($yosef);
@@ -316,12 +316,12 @@ class GoogleSsoSignInTest extends TestCase
 
     public function test_retired_passwords_are_refused_for_our_domains_only(): void
     {
-        config(['sso.passwords_retired' => true, 'sso.breakglass_emails' => ['admin@alquds.example']]);
-        $this->staff('omar@alquds.example');
+        config(['sso.passwords_retired' => true, 'sso.breakglass_emails' => ['admin@acme.example']]);
+        $this->staff('omar@acme.example');
         $this->staff('agent@partner.test');
-        $this->staff('admin@alquds.example', Roles::SYSTEM_ADMIN);
+        $this->staff('admin@acme.example', Roles::SYSTEM_ADMIN);
 
-        $this->post(route('login.post'), ['email' => 'omar@alquds.example', 'password' => 'secret123'])
+        $this->post(route('login.post'), ['email' => 'omar@acme.example', 'password' => 'secret123'])
             ->assertSessionHasErrors('email');
         $this->assertGuest();
 
@@ -329,18 +329,18 @@ class GoogleSsoSignInTest extends TestCase
         $this->assertAuthenticated();
         $this->post(route('logout'));
 
-        $this->post(route('login.post'), ['email' => 'admin@alquds.example', 'password' => 'secret123'])->assertRedirect();
+        $this->post(route('login.post'), ['email' => 'admin@acme.example', 'password' => 'secret123'])->assertRedirect();
         $this->assertAuthenticated();
     }
 
     public function test_a_retired_password_is_refused_without_being_checked(): void
     {
         config(['sso.passwords_retired' => true]);
-        $this->staff('omar@alquds.example');
+        $this->staff('omar@acme.example');
 
-        $this->post(route('login.post'), ['email' => 'omar@alquds.example', 'password' => 'secret123']);
+        $this->post(route('login.post'), ['email' => 'omar@acme.example', 'password' => 'secret123']);
         $right = session('errors')?->first('email');
-        $this->post(route('login.post'), ['email' => 'omar@alquds.example', 'password' => 'nope']);
+        $this->post(route('login.post'), ['email' => 'omar@acme.example', 'password' => 'nope']);
         $wrong = session('errors')?->first('email');
 
         $this->assertSame('لم تعد كلمات المرور مستخدمة لهذه الحسابات. سجّل الدخول بحساب Google.', $right);
@@ -367,9 +367,9 @@ class GoogleSsoSignInTest extends TestCase
     public function test_password_login_works_when_sso_is_on_but_no_domain_is_configured(): void
     {
         config(['sso.passwords_retired' => true, 'sso.allowed_domains' => []]);
-        $user = $this->staff('omar@alquds.example');
+        $user = $this->staff('omar@acme.example');
 
-        $this->post(route('login.post'), ['email' => 'omar@alquds.example', 'password' => 'secret123'])->assertRedirect();
+        $this->post(route('login.post'), ['email' => 'omar@acme.example', 'password' => 'secret123'])->assertRedirect();
 
         $this->assertAuthenticatedAs($user);
     }
@@ -395,9 +395,9 @@ class GoogleSsoSignInTest extends TestCase
     {
         $rules = app(SsoSignIn::class);
 
-        $this->assertTrue($rules->isOrgAddress('X@QudsExport.Example'));
+        $this->assertTrue($rules->isOrgAddress('X@Acme-Export.Example'));
         $this->assertFalse($rules->isOrgAddress('x@elsewhere.test'));
         $this->assertFalse($rules->isOrgAddress('not-an-email'));
-        $this->assertFalse($rules->passwordRetiredFor('x@alquds.example'), 'switch is off');
+        $this->assertFalse($rules->passwordRetiredFor('x@acme.example'), 'switch is off');
     }
 }

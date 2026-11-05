@@ -1,5 +1,4 @@
 {
-    "Alquds": "القدس",
     "Home": "الرئيسية",
     "Overview": "عام",
     "Administration": "الإدارة",
@@ -37,8 +36,8 @@
     "E-mail": "البريد الإلكتروني",
     "Password": "كلمة المرور",
     "Remember me": "تذكرني",
-    "Publishing, printing and shipping — in one place.": "النشر والطباعة والشحن — في مكان واحد.",
-    "Stock, orders, containers and accounts, recorded once and never retyped.": "المخزون والطلبات والحاويات والحسابات، تُسجَّل مرة واحدة ولا يُعاد إدخالها.",
+    "Your whole business, in one place.": "عملك كله في مكان واحد.",
+    "Every record entered once, and never retyped.": "كل سجل يُدخَل مرة واحدة، ولا يُعاد إدخاله.",
     "This account is not active. Contact your administrator.": "هذا الحساب غير مفعّل. تواصل مع مسؤول النظام.",
     "This account is no longer active.": "هذا الحساب لم يعد مفعّلاً.",
     "The provided credentials do not match our records.": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",

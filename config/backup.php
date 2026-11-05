@@ -80,7 +80,7 @@ return [
         // reaches files this app created, so it makes (and then reuses) its own
         // folder of this name at the Drive root.
         'folder_id' => env('GOOGLE_DRIVE_FOLDER_ID'),
-        'folder_name' => env('GOOGLE_DRIVE_FOLDER_NAME', 'Alquds Backups'),
+        'folder_name' => env('GOOGLE_DRIVE_FOLDER_NAME', env('APP_NAME', 'ERP').' Backups'),
 
         // Seconds. A large uploads archive on a slow link needs room.
         'timeout' => (int) env('GOOGLE_DRIVE_TIMEOUT', 600),

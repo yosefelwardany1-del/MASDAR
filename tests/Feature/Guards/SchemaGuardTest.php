@@ -25,7 +25,7 @@ class SchemaGuardTest extends TestCase
 
     public function test_no_table_has_company_id(): void
     {
-        $this->assertSame([], $this->columns("column_name = 'company_id'"), 'Alquds is one company: there is no company layer');
+        $this->assertSame([], $this->columns("column_name = 'company_id'"), 'one company: there is no company layer');
     }
 
     public function test_no_float_columns(): void

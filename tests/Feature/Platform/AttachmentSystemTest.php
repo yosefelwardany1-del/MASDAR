@@ -85,7 +85,7 @@ class AttachmentSystemTest extends TestCase
         $this->upload([UploadedFile::fake()->create('a.pdf', 10, 'application/pdf')]);
         $att = $this->doc->attachments()->first();
 
-        $this->actingAs($this->make(Roles::STOREKEEPER));
+        $this->actingAs($this->make(Roles::STAFF));
         $this->upload([UploadedFile::fake()->create('b.pdf', 10, 'application/pdf')])->assertForbidden();
         $this->get(route('attachments.download', $att))->assertForbidden();
         $this->delete(route('attachments.destroy', $att))->assertForbidden();
@@ -97,8 +97,8 @@ class AttachmentSystemTest extends TestCase
         $this->upload([UploadedFile::fake()->create('a.pdf', 10, 'application/pdf')]);
         $att = $this->doc->attachments()->first();
 
-        Role::findByName(Roles::ACCOUNTANT)->givePermissionTo(Screens::grantsFor('settings', 'view'));
-        $this->actingAs($this->make(Roles::ACCOUNTANT));
+        Role::findByName(Roles::SUPERVISOR)->givePermissionTo(Screens::grantsFor('settings', 'view'));
+        $this->actingAs($this->make(Roles::SUPERVISOR));
 
         $this->get(route('attachments.download', $att))->assertOk();
         $this->upload([UploadedFile::fake()->create('b.pdf', 10, 'application/pdf')])->assertForbidden();

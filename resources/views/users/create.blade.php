@@ -4,7 +4,7 @@
 
 @section('content')
 <h1 class="h4 mb-3">{{ __('New user') }}</h1>
-<div class="aq-card p-4">
+<div class="app-card p-4">
     <form method="POST" action="{{ route('users.store') }}">
         @csrf
         @include('users._form', ['user' => null])

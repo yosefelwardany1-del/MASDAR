@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "insharodev/alquds",
+    "name": "insharodev/empty-erp",
     "type": "project",
-    "description": "Al-Quds ERP: publishing, printing, book export and freight consolidation.",
+    "description": "ERP starter: the platform shell (sign-in, roles, audit, notifications, attachments, Arabic RTL) to build a client's ERP on.",
     "license": "proprietary",
     "require": {
         "php": "^8.3",

@@ -14,8 +14,8 @@ class Setting extends Model
     protected $fillable = ['company_name', 'company_name_ar'];
 
     protected $attributes = [
-        'company_name' => 'Al Quds',
-        'company_name_ar' => 'القدس',
+        'company_name' => 'Company',
+        'company_name_ar' => 'الشركة',
     ];
 
     public static function current(): self

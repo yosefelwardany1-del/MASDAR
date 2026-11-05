@@ -9,7 +9,7 @@
         <a href="{{ route('roles.edit', $role) }}" class="btn btn-light"><i class="bi bi-pencil me-1"></i>{{ __('Edit') }}</a>
     @endif
 </div>
-<div class="aq-card">
+<div class="app-card">
     @include('roles._matrix', ['editable' => false])
 </div>
 @endsection

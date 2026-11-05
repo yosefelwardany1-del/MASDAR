@@ -14,7 +14,7 @@ class SetUserPasswordCommandTest extends TestCase
     private function user(): User
     {
         return User::create([
-            'name' => 'Admin', 'email' => 'Admin@Alquds.Example',
+            'name' => 'Admin', 'email' => 'Admin@Acme.Example',
             'password' => 'old-password-1234', 'status' => 'active', 'remember_token' => 'old-token',
         ]);
     }
@@ -23,7 +23,7 @@ class SetUserPasswordCommandTest extends TestCase
     {
         $user = $this->user();
 
-        $this->artisan('user:password', ['email' => 'admin@alquds.example'])
+        $this->artisan('user:password', ['email' => 'admin@acme.example'])
             ->expectsQuestion('New password (hidden)', 'correct horse battery staple')
             ->expectsQuestion('Once more', 'correct horse battery staple')
             ->assertSuccessful();
@@ -37,7 +37,7 @@ class SetUserPasswordCommandTest extends TestCase
     {
         $user = $this->user();
 
-        $this->artisan('user:password', ['email' => 'admin@alquds.example'])
+        $this->artisan('user:password', ['email' => 'admin@acme.example'])
             ->expectsQuestion('New password (hidden)', 'one-thing-entirely')
             ->expectsQuestion('Once more', 'another-thing-entirely')
             ->assertFailed();
@@ -49,7 +49,7 @@ class SetUserPasswordCommandTest extends TestCase
     {
         $user = $this->user();
 
-        $this->artisan('user:password', ['email' => 'admin@alquds.example'])
+        $this->artisan('user:password', ['email' => 'admin@acme.example'])
             ->expectsQuestion('New password (hidden)', 'short')
             ->expectsQuestion('Once more', 'short')
             ->assertFailed();
@@ -61,13 +61,13 @@ class SetUserPasswordCommandTest extends TestCase
     {
         $user = $this->user();
 
-        $this->artisan('user:password', ['email' => 'admin@alquds.example', '--generate' => true])->assertSuccessful();
+        $this->artisan('user:password', ['email' => 'admin@acme.example', '--generate' => true])->assertSuccessful();
 
         $this->assertFalse(Hash::check('old-password-1234', $user->fresh()->password));
     }
 
     public function test_an_unknown_address_fails_cleanly(): void
     {
-        $this->artisan('user:password', ['email' => 'nobody@alquds.example'])->assertFailed();
+        $this->artisan('user:password', ['email' => 'nobody@acme.example'])->assertFailed();
     }
 }

@@ -28,7 +28,7 @@
     <button class="btn btn-light">{{ __('Search') }}</button>
 </form>
 
-<div class="aq-card">
+<div class="app-card">
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead><tr>
@@ -39,7 +39,7 @@
             @forelse($users as $u)
                 <tr>
                     <td><div class="d-flex align-items-center gap-2"><x-avatar :name="$u->name" :src="$u->avatarUrl()" :size="30" />{{ $u->name }}</div></td>
-                    <td><span class="aq-ltr">{{ $u->email }}</span></td>
+                    <td><span class="app-ltr">{{ $u->email }}</span></td>
                     <td>{{ $u->roles->pluck('name')->map(fn ($r) => \App\Security\Roles::label($r))->join('، ') ?: '—' }}</td>
                     <td>@include('users._status', ['status' => $u->status])</td>
                     <td>{{ $u->last_login ? $u->last_login->diffForHumans() : __('Never') }}</td>
@@ -51,7 +51,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="aq-empty">{{ __('No users found.') }}</td></tr>
+                <tr><td colspan="6" class="app-empty">{{ __('No users found.') }}</td></tr>
             @endforelse
             </tbody>
         </table>

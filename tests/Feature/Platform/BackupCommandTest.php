@@ -224,7 +224,7 @@ class BackupCommandTest extends TestCase
 
         return json_encode([
             'type' => 'service_account',
-            'client_email' => 'alquds-backup@example.iam.gserviceaccount.com',
+            'client_email' => 'erp-backup@example.iam.gserviceaccount.com',
             'private_key' => $pem,
         ]);
     }
@@ -355,7 +355,7 @@ class BackupCommandTest extends TestCase
         $this->artisan('backup:run')->assertExitCode(0);
 
         Http::assertSent(fn ($r) => str_contains($r->url(), 'drive/v3/files')
-            && ($r->data()['name'] ?? null) === 'Alquds Backups');
+            && ($r->data()['name'] ?? null) === config('app.name').' Backups');
     }
 
     /**

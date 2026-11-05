@@ -69,7 +69,7 @@ return [
 
     // OpenRouter uses these two headers for its dashboard analytics (optional, non-secret).
     'referer' => env('OPENROUTER_REFERER', env('APP_URL', 'http://localhost')),
-    'app_title' => env('OPENROUTER_TITLE', env('APP_NAME', 'Alquds')),
+    'app_title' => env('OPENROUTER_TITLE', env('APP_NAME', 'ERP')),
 
     // Seconds for one OpenRouter reply. A timeout does not retry, so this is the
     // worst-case single wait.

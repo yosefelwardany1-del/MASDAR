@@ -1,7 +1,7 @@
 <?php
 
 /*
-| Sign in with Google (staff). OFF by default: it switches on once Al-Quds has a Google
+| Sign in with Google (staff). OFF by default: it switches on once the client has a Google
 | Workspace domain (OPEN). Until then sign-in is by password only, and passwords are
 | never retired by default. The rules live in App\Services\Auth\SsoSignIn.
 */

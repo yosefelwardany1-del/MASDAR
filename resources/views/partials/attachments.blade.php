@@ -4,14 +4,14 @@
     $screen = $attachable->attachmentModule();
     $items = $attachable->attachments;
 @endphp
-<div class="aq-card p-3 mt-3">
+<div class="app-card p-3 mt-3">
     <div class="fw-semibold mb-2"><i class="bi bi-paperclip me-1"></i>{{ __('Attachments') }} <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ $items->count() }}</span></div>
     @forelse($items as $att)
         <div class="d-flex align-items-center gap-3 py-2 border-bottom">
             <i class="bi {{ $att->iconClass() }} fs-4 text-secondary"></i>
             <div class="flex-grow-1">
                 <div>{{ $att->title ?: $att->file_name }}</div>
-                <div class="text-muted small"><span class="aq-ltr">{{ $att->humanSize() }}</span> · {{ $att->uploader?->name ?? '—' }} · {{ $att->created_at?->diffForHumans() }}</div>
+                <div class="text-muted small"><span class="app-ltr">{{ $att->humanSize() }}</span> · {{ $att->uploader?->name ?? '—' }} · {{ $att->created_at?->diffForHumans() }}</div>
             </div>
             <a href="{{ route('attachments.download', $att) }}" class="btn btn-sm btn-light" title="{{ __('Download') }}"><i class="bi bi-download"></i></a>
             @can($screen.'.edit')

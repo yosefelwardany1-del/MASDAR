@@ -22,7 +22,7 @@
     </div>
 </div>
 
-<div class="aq-card">
+<div class="app-card">
     @forelse($notifications as $n)
         <div class="d-flex align-items-start gap-3 p-3 border-bottom {{ $n->is_read ? '' : 'bg-light' }}">
             @php $tone = match($n->type ?? 'info') { 'success' => 'success', 'warning' => 'warning', 'danger' => 'danger', default => 'primary' }; @endphp
@@ -50,7 +50,7 @@
             </div>
         </div>
     @empty
-        <div class="aq-empty"><i class="bi bi-bell-slash"></i>{{ __('No notifications') }}</div>
+        <div class="app-empty"><i class="bi bi-bell-slash"></i>{{ __('No notifications') }}</div>
     @endforelse
     @if($notifications->hasPages())
         <div class="p-3">{{ $notifications->links() }}</div>

@@ -16,7 +16,7 @@
 {{-- Styles MERGE with a caller's style attribute: two style attributes on one element
      and the browser keeps only the first, losing the background. --}}
 <span {{ $attributes->merge([
-          'class' => 'aq-avatar',
+          'class' => 'app-avatar',
           'style' => 'inline-size:'.$size.'px;block-size:'.$size.'px;font-size:'.round($size * 0.4, 1).'px;background:linear-gradient(135deg,'.$c1.','.$c2.');',
       ]) }}
       title="{{ $name }}">

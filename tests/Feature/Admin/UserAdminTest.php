@@ -28,12 +28,12 @@ class UserAdminTest extends TestCase
     {
         config([
             'sso.enabled' => true, 'sso.client_id' => 'id', 'sso.client_secret' => 'secret',
-            'sso.allowed_domains' => ['alquds.example'], 'sso.passwords_retired' => false,
+            'sso.allowed_domains' => ['acme.example'], 'sso.passwords_retired' => false,
         ]);
         Http::fake([
             'oauth2.googleapis.com/token' => Http::response(['access_token' => 'at']),
             'openidconnect.googleapis.com/v1/userinfo' => Http::response([
-                'sub' => 'sub-new', 'email' => 'new.hire@alquds.example', 'email_verified' => true, 'name' => 'New Hire',
+                'sub' => 'sub-new', 'email' => 'new.hire@acme.example', 'email_verified' => true, 'name' => 'New Hire',
             ]),
         ]);
     }
@@ -49,61 +49,61 @@ class UserAdminTest extends TestCase
     public function test_user_can_hold_several_roles(): void
     {
         $this->actingAs($this->make(Roles::MANAGER))->post(route('users.store'), [
-            'name' => 'سعيد', 'email' => 'saeed@alquds.example', 'password' => 'password123', 'password_confirmation' => 'password123',
-            'status' => 'active', 'roles' => [Roles::STOREKEEPER, Roles::SHIPPING_OFFICER],
+            'name' => 'سعيد', 'email' => 'saeed@acme.example', 'password' => 'password123', 'password_confirmation' => 'password123',
+            'status' => 'active', 'roles' => [Roles::STAFF, Roles::SUPERVISOR],
         ])->assertRedirect(route('users.index'));
 
-        $saeed = User::where('email', 'saeed@alquds.example')->firstOrFail();
-        $this->assertEqualsCanonicalizing([Roles::STOREKEEPER, Roles::SHIPPING_OFFICER], $saeed->getRoleNames()->all());
+        $saeed = User::where('email', 'saeed@acme.example')->firstOrFail();
+        $this->assertEqualsCanonicalizing([Roles::STAFF, Roles::SUPERVISOR], $saeed->getRoleNames()->all());
     }
 
     public function test_users_index_shows_roles_in_arabic_and_never_for_no_sign_in(): void
     {
-        $this->make(Roles::STOREKEEPER)->forceFill(['email' => 'store@alquds.example'])->save();
+        $this->make(Roles::STAFF)->forceFill(['email' => 'store@acme.example'])->save();
 
         $this->actingAs($this->make(Roles::MANAGER))->get(route('users.index'))->assertOk()
-            ->assertSee('store@alquds.example')
-            ->assertSee(Roles::label(Roles::STOREKEEPER))
+            ->assertSee('store@acme.example')
+            ->assertSee(Roles::label(Roles::STAFF))
             ->assertSee('أبداً');
     }
 
     public function test_index_search_and_status_filter_run_on_the_server(): void
     {
-        $this->make()->forceFill(['email' => 'findme@alquds.example', 'status' => 'inactive'])->save();
-        $this->make()->forceFill(['email' => 'other@alquds.example'])->save();
+        $this->make()->forceFill(['email' => 'findme@acme.example', 'status' => 'inactive'])->save();
+        $this->make()->forceFill(['email' => 'other@acme.example'])->save();
         $manager = $this->make(Roles::MANAGER);
 
-        $this->actingAs($manager)->get(route('users.index', ['search' => 'findme']))->assertSee('findme@alquds.example')->assertDontSee('other@alquds.example');
-        $this->actingAs($manager)->get(route('users.index', ['status' => 'inactive']))->assertSee('findme@alquds.example')->assertDontSee('other@alquds.example');
+        $this->actingAs($manager)->get(route('users.index', ['search' => 'findme']))->assertSee('findme@acme.example')->assertDontSee('other@acme.example');
+        $this->actingAs($manager)->get(route('users.index', ['status' => 'inactive']))->assertSee('findme@acme.example')->assertDontSee('other@acme.example');
     }
 
     public function test_user_screens_need_the_users_permissions(): void
     {
-        $storekeeper = $this->make(Roles::STOREKEEPER);
+        $staff = $this->make(Roles::STAFF);
 
-        $this->actingAs($storekeeper)->get(route('users.index'))->assertForbidden();
-        $this->actingAs($storekeeper)->get(route('users.create'))->assertForbidden();
+        $this->actingAs($staff)->get(route('users.index'))->assertForbidden();
+        $this->actingAs($staff)->get(route('users.create'))->assertForbidden();
     }
 
     public function test_user_create_command_assigns_roles(): void
     {
-        $this->artisan('user:create', ['email' => 'first@alquds.example', 'name' => 'First Manager', '--role' => [Roles::MANAGER], '--generate' => true])
+        $this->artisan('user:create', ['email' => 'first@acme.example', 'name' => 'First Manager', '--role' => [Roles::MANAGER], '--generate' => true])
             ->assertSuccessful();
 
-        $user = User::where('email', 'first@alquds.example')->firstOrFail();
+        $user = User::where('email', 'first@acme.example')->firstOrFail();
         $this->assertTrue($user->hasRole(Roles::MANAGER));
         $this->assertSame('active', $user->status);
 
-        $this->artisan('user:create', ['email' => 'first@alquds.example', 'name' => 'Again', '--generate' => true])->assertFailed();
-        $this->artisan('user:create', ['email' => 'x@alquds.example', 'name' => 'X', '--role' => ['no_such_role'], '--generate' => true])->assertFailed();
-        $this->assertNull(User::where('email', 'x@alquds.example')->first());
+        $this->artisan('user:create', ['email' => 'first@acme.example', 'name' => 'Again', '--generate' => true])->assertFailed();
+        $this->artisan('user:create', ['email' => 'x@acme.example', 'name' => 'X', '--role' => ['no_such_role'], '--generate' => true])->assertFailed();
+        $this->assertNull(User::where('email', 'x@acme.example')->first());
     }
 
     public function test_demo_users_seeder_creates_one_user_per_role_and_refuses_production(): void
     {
         $this->seed(DemoUsersSeeder::class);
         foreach (Roles::ALL as $role) {
-            $this->assertTrue(User::where('email', "{$role}@alquds.test")->firstOrFail()->hasRole($role));
+            $this->assertTrue(User::where('email', "{$role}@example.test")->firstOrFail()->hasRole($role));
         }
 
         // Called directly: in production `db:seed` would first ask for confirmation.
@@ -121,7 +121,7 @@ class UserAdminTest extends TestCase
 
         $this->googleCallback()->assertRedirect(route('sso.pending'));
 
-        $pending = User::where('email', 'new.hire@alquds.example')->firstOrFail();
+        $pending = User::where('email', 'new.hire@acme.example')->firstOrFail();
         $this->assertSame(route('users.edit', $pending), ErpNotification::where('user_id', $manager->id)->latest('id')->value('url'));
     }
 
@@ -130,15 +130,15 @@ class UserAdminTest extends TestCase
         $manager = $this->make(Roles::MANAGER);
         $this->enableGoogle();
         $this->googleCallback();
-        $pending = User::where('email', 'new.hire@alquds.example')->firstOrFail();
+        $pending = User::where('email', 'new.hire@acme.example')->firstOrFail();
 
         $this->actingAs($manager)->put(route('users.update', $pending), [
-            'name' => $pending->name, 'email' => $pending->email, 'status' => 'active', 'roles' => [Roles::STOREKEEPER],
+            'name' => $pending->name, 'email' => $pending->email, 'status' => 'active', 'roles' => [Roles::STAFF],
         ])->assertRedirect(route('users.index'));
 
         $approved = $pending->fresh();
         $this->assertSame('active', $approved->status);
-        $this->assertSame([Roles::STOREKEEPER], $approved->getRoleNames()->all());
+        $this->assertSame([Roles::STAFF], $approved->getRoleNames()->all());
         $this->assertNotNull($approved->approved_at);
         $this->assertSame($manager->id, $approved->approved_by);
         $this->assertSame(1, ErpNotification::where('user_id', $approved->id)->where('category', NotificationType::USER_APPROVED)->count());
@@ -150,10 +150,10 @@ class UserAdminTest extends TestCase
 
     public function test_an_active_account_cannot_be_pushed_back_to_pending(): void
     {
-        $user = $this->make(Roles::STOREKEEPER);
+        $user = $this->make(Roles::STAFF);
 
         $this->actingAs($this->make(Roles::MANAGER))->put(route('users.update', $user), [
-            'name' => $user->name, 'email' => $user->email, 'status' => 'pending', 'roles' => [Roles::STOREKEEPER],
+            'name' => $user->name, 'email' => $user->email, 'status' => 'pending', 'roles' => [Roles::STAFF],
         ])->assertSessionHasErrors('status');
     }
 
@@ -165,7 +165,7 @@ class UserAdminTest extends TestCase
 
         $this->actingAs($manager)->get(route('users.index'))->assertOk()->assertSee('بانتظار تعيين دور');
         $this->actingAs($manager)->get(route('users.index', ['status' => 'pending']))->assertOk()
-            ->assertSee('new.hire@alquds.example')
+            ->assertSee('new.hire@acme.example')
             ->assertSee('بانتظار الموافقة');
     }
 
@@ -174,12 +174,12 @@ class UserAdminTest extends TestCase
         $manager = $this->make(Roles::MANAGER);
         $this->enableGoogle();
         $this->googleCallback();
-        $pending = User::where('email', 'new.hire@alquds.example')->firstOrFail();
+        $pending = User::where('email', 'new.hire@acme.example')->firstOrFail();
 
         $this->actingAs($manager)->get(route('users.edit', $pending))->assertOk()
             ->assertSee('بانتظار الموافقة')
             ->assertSee('عناوين الدخول بحساب Google')
-            ->assertSee('new.hire@alquds.example');
+            ->assertSee('new.hire@acme.example');
         $this->actingAs($manager)->get(route('users.show', $pending))->assertOk()->assertSee('بانتظار الموافقة');
     }
 
@@ -189,23 +189,23 @@ class UserAdminTest extends TestCase
     {
         $this->enableGoogle();
         $manager = $this->make(Roles::MANAGER);
-        $yosef = $this->make(Roles::STOREKEEPER);
+        $yosef = $this->make(Roles::STAFF);
 
-        $this->actingAs($manager)->post(route('users.sso-identities.store', $yosef), ['email' => 'Yosef@Alquds.Example'])
+        $this->actingAs($manager)->post(route('users.sso-identities.store', $yosef), ['email' => 'Yosef@Acme.Example'])
             ->assertRedirect()->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('user_sso_identities', ['user_id' => $yosef->id, 'email' => 'yosef@alquds.example', 'added_by' => $manager->id]);
+        $this->assertDatabaseHas('user_sso_identities', ['user_id' => $yosef->id, 'email' => 'yosef@acme.example', 'added_by' => $manager->id]);
     }
 
     public function test_a_second_address_must_be_on_the_allowed_domains_and_nobody_elses(): void
     {
         $this->enableGoogle();
         $manager = $this->make(Roles::MANAGER);
-        $yosef = $this->make(Roles::STOREKEEPER);
-        User::factory()->create(['email' => 'taken@alquds.example']);
+        $yosef = $this->make(Roles::STAFF);
+        User::factory()->create(['email' => 'taken@acme.example']);
 
         $this->actingAs($manager)->post(route('users.sso-identities.store', $yosef), ['email' => 'yosef@gmail.com'])->assertSessionHasErrors('sso_email');
-        $this->actingAs($manager)->post(route('users.sso-identities.store', $yosef), ['email' => 'taken@alquds.example'])->assertSessionHasErrors('sso_email');
+        $this->actingAs($manager)->post(route('users.sso-identities.store', $yosef), ['email' => 'taken@acme.example'])->assertSessionHasErrors('sso_email');
 
         $this->assertSame(0, UserSsoIdentity::where('user_id', $yosef->id)->count());
     }
@@ -216,6 +216,6 @@ class UserAdminTest extends TestCase
         $sysadmin = $this->make(Roles::SYSTEM_ADMIN);
         $manager = $this->make(Roles::MANAGER);
 
-        $this->actingAs($sysadmin)->post(route('users.sso-identities.store', $manager), ['email' => 'm2@alquds.example'])->assertForbidden();
+        $this->actingAs($sysadmin)->post(route('users.sso-identities.store', $manager), ['email' => 'm2@acme.example'])->assertForbidden();
     }
 }

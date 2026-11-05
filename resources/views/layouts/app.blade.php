@@ -16,24 +16,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', __('Home')) · {{ __('Alquds') }}</title>
+    <title>@yield('title', __('Home')) · {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
 <body>
-<div class="aq-overlay"></div>
+<div class="app-overlay"></div>
 
-<nav id="aq-sidebar" aria-label="{{ __('Main menu') }}">
-    <div class="aq-brand">
-        <span class="aq-brand__logo">@if($setting->logo)<img src="{{ route('settings.logo') }}" alt="">@else<i class="bi bi-book"></i>@endif</span>
-        <span class="aq-brand__name">{{ $setting->company_name_ar }}</span>
+<nav id="app-sidebar" aria-label="{{ __('Main menu') }}">
+    <div class="app-brand">
+        <span class="app-brand__logo">@if($setting->logo)<img src="{{ route('settings.logo') }}" alt="">@else<i class="bi bi-buildings"></i>@endif</span>
+        <span class="app-brand__name">{{ $setting->company_name_ar }}</span>
     </div>
 
-    <div class="aq-nav">
+    <div class="app-nav">
         @foreach($sections as $group => $items)
-            <div class="aq-nav__group">{{ $groupLabels[$group] ?? __(Str::headline($group)) }}</div>
+            <div class="app-nav__group">{{ $groupLabels[$group] ?? __(Str::headline($group)) }}</div>
             @foreach($items as $item)
-                <a href="{{ $link($item) }}" class="aq-nav__link {{ $isActive($item) ? 'active' : '' }}">
+                <a href="{{ $link($item) }}" class="app-nav__link {{ $isActive($item) ? 'active' : '' }}">
                     <i class="bi {{ $item['icon'] }}"></i><span>{{ $item['label'] }}</span>
                 </a>
             @endforeach
@@ -41,19 +41,19 @@
     </div>
 
     @if(Route::has('logout'))
-        <div class="aq-sidebar__foot">
+        <div class="app-sidebar__foot">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="aq-nav__link"><i class="bi bi-box-arrow-left"></i><span>{{ __('Sign out') }}</span></button>
+                <button type="submit" class="app-nav__link"><i class="bi bi-box-arrow-left"></i><span>{{ __('Sign out') }}</span></button>
             </form>
         </div>
     @endif
 </nav>
 
-<div id="aq-main">
-    <header id="aq-topbar">
-        <button type="button" class="aq-iconbtn d-lg-none" data-aq-sidebar-toggle aria-label="{{ __('Menu') }}"><i class="bi bi-list"></i></button>
-        <div class="aq-topbar__title">@yield('title', __('Home'))</div>
+<div id="app-main">
+    <header id="app-topbar">
+        <button type="button" class="app-iconbtn d-lg-none" data-app-sidebar-toggle aria-label="{{ __('Menu') }}"><i class="bi bi-list"></i></button>
+        <div class="app-topbar__title">@yield('title', __('Home'))</div>
 
         <div class="ms-auto d-flex align-items-center gap-2">
             @stack('topbar')
@@ -64,7 +64,7 @@
                     <span class="d-none d-md-inline text-body fw-semibold">{{ $user->name }}</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                    <li class="dropdown-item-text small text-muted"><span class="aq-ltr">{{ $user->email }}</span></li>
+                    <li class="dropdown-item-text small text-muted"><span class="app-ltr">{{ $user->email }}</span></li>
                     @if(Route::has('profile'))
                         <li><a class="dropdown-item" href="{{ route('profile') }}"><i class="bi bi-person me-2"></i>{{ __('My profile') }}</a></li>
                     @endif
@@ -81,7 +81,7 @@
         </div>
     </header>
 
-    <main class="aq-content">
+    <main class="app-content">
         @foreach(['success' => 'success', 'error' => 'danger', 'warning' => 'warning'] as $key => $tone)
             @if(session($key))
                 <div class="alert alert-{{ $tone }} alert-dismissible fade show" role="alert">

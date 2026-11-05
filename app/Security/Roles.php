@@ -3,55 +3,34 @@
 namespace App\Security;
 
 /**
- * The ten roles (spec §10.2). A user may hold several; their permissions are the union.
- * `system_admin` is the software vendor's support staff only: users, roles, settings and the audit log —
- * never business data, never an approval. There is no bypass role.
+ * The starter's roles. A user may hold several; their permissions are the union. `manager`
+ * holds every screen; `supervisor` and `staff` start with nothing and are given their screens
+ * per client (the role editor, or defaultGrants below); each client adds the roles its own
+ * specification names. `system_admin` is the software vendor's support staff only: users,
+ * roles, settings and the audit log — never business data, never an approval. There is no
+ * bypass role.
  */
 final class Roles
 {
     public const MANAGER = 'manager';
 
-    public const ACCOUNTANT = 'accountant';
+    public const SUPERVISOR = 'supervisor';
 
-    public const SALES_OFFICER = 'sales_officer';
-
-    public const COLLECTIONS_OFFICER = 'collections_officer';
-
-    public const SHIPPING_OFFICER = 'shipping_officer';
-
-    public const STOREKEEPER = 'storekeeper';
-
-    public const PURCHASING_OFFICER = 'purchasing_officer';
-
-    public const PRODUCTION_OFFICER = 'production_officer';
-
-    public const EXHIBITIONS_OFFICER = 'exhibitions_officer';
+    public const STAFF = 'staff';
 
     public const SYSTEM_ADMIN = 'system_admin';
 
     public const ALL = [
         self::MANAGER,
-        self::ACCOUNTANT,
-        self::SALES_OFFICER,
-        self::COLLECTIONS_OFFICER,
-        self::SHIPPING_OFFICER,
-        self::STOREKEEPER,
-        self::PURCHASING_OFFICER,
-        self::PRODUCTION_OFFICER,
-        self::EXHIBITIONS_OFFICER,
+        self::SUPERVISOR,
+        self::STAFF,
         self::SYSTEM_ADMIN,
     ];
 
     private const LABELS = [
         self::MANAGER => 'مدير',
-        self::ACCOUNTANT => 'محاسب',
-        self::SALES_OFFICER => 'مسؤول مبيعات',
-        self::COLLECTIONS_OFFICER => 'مسؤول تحصيل',
-        self::SHIPPING_OFFICER => 'مسؤول شحن',
-        self::STOREKEEPER => 'أمين مخزن',
-        self::PURCHASING_OFFICER => 'مسؤول مشتريات',
-        self::PRODUCTION_OFFICER => 'مسؤول إنتاج',
-        self::EXHIBITIONS_OFFICER => 'مسؤول معارض',
+        self::SUPERVISOR => 'مشرف',
+        self::STAFF => 'موظف',
         self::SYSTEM_ADMIN => 'مدير النظام',
     ];
 

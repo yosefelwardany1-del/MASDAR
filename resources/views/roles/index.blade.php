@@ -5,7 +5,7 @@
 @section('content')
 <h1 class="h4 mb-1">{{ __('Roles and permissions') }}</h1>
 <p class="text-muted mb-3">{{ __('Ten fixed roles. A user may hold several; their permissions add up.') }}</p>
-<div class="aq-card">
+<div class="app-card">
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead><tr><th>{{ __('Role') }}</th><th>{{ __('Users') }}</th><th>{{ __('Permissions') }}</th><th></th></tr></thead>

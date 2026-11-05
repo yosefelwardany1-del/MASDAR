@@ -30,13 +30,13 @@
 @endif
 
 @if($resources->isEmpty())
-<div class="aq-card aq-empty mb-3">{{ __('Nothing to import or export yet.') }}</div>
+<div class="app-card app-empty mb-3">{{ __('Nothing to import or export yet.') }}</div>
 @endif
 
 <div class="row g-3">
     @foreach($resources as $schema)
     <div class="col-md-6 col-xl-4">
-        <div class="aq-card h-100 p-3">
+        <div class="app-card h-100 p-3">
             <h2 class="h6 mb-3">{{ $schema->label() }}</h2>
             <div class="mb-2">
                 <div class="small text-muted mb-1">{{ __('Template') }}</div>
@@ -67,7 +67,7 @@
     @endforeach
 </div>
 
-<div class="aq-card mt-4">
+<div class="app-card mt-4">
     <div class="p-3 pb-0"><h2 class="h6">{{ __('My recent imports') }}</h2></div>
     <div class="table-responsive">
         <table class="table align-middle mb-0">
@@ -76,8 +76,8 @@
                 @forelse($history as $run)
                 <tr>
                     <td class="small text-muted">{{ $run->created_at?->diffForHumans() }}</td>
-                    <td><span class="aq-ltr">{{ $run->resource }}</span></td>
-                    <td class="small"><span class="aq-ltr">{{ $run->filename }}</span></td>
+                    <td><span class="app-ltr">{{ $run->resource }}</span></td>
+                    <td class="small"><span class="app-ltr">{{ $run->filename }}</span></td>
                     <td class="text-end">{{ $run->total_rows }}</td>
                     <td class="text-end text-success">{{ $run->created_count }}</td>
                     <td class="text-end">{{ $run->updated_count }}</td>
@@ -85,7 +85,7 @@
                     <td><span class="badge text-bg-{{ $run->status === 'completed' ? 'success' : ($run->inProgress() ? 'secondary' : 'danger') }}">{{ __('import.'.$run->status) }}</span></td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="aq-empty">{{ __('No imports yet.') }}</td></tr>
+                <tr><td colspan="8" class="app-empty">{{ __('No imports yet.') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
