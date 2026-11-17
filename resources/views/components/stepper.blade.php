@@ -1,0 +1,25 @@
+{{-- A sequence of steps (order steps, container statuses), in reading direction.
+     $steps: list of ['label' => string, 'state' => done|current|late|due|todo|skip, 'date' => ?string, 'hint' => ?string]
+     compact: dots only, labels as tooltips (for board rows). --}}
+@props(['steps' => [], 'compact' => false, 'label' => null])
+@php
+    $icon = ['done' => 'check-lg', 'current' => 'circle-fill', 'late' => 'exclamation', 'due' => 'clock', 'skip' => 'dash', 'todo' => ''];
+    $words = ['done' => __('Done'), 'current' => __('Now'), 'late' => __('Late'), 'due' => __('Due soon'), 'skip' => __('Not applicable'), 'todo' => __('Not done yet')];
+@endphp
+<ol {{ $attributes->class(['app-stepper', 'app-stepper--compact' => $compact]) }} @if($label) aria-label="{{ $label }}" @endif>
+    @foreach($steps as $i => $step)
+        @php $state = $step['state'] ?? 'todo'; $tip = trim($step['label'].' — '.$words[$state].(! empty($step['date']) ? ' · '.$step['date'] : '')); @endphp
+        <li class="app-stepper__step is-{{ $state }}" @if($compact) title="{{ $tip }}" @endif>
+            <span class="app-stepper__dot" aria-hidden="true">@if($icon[$state] ?? '')<i class="bi bi-{{ $icon[$state] }}"></i>@else{{ $i + 1 }}@endif</span>
+            @if($compact)
+                <span class="visually-hidden">{{ $tip }}</span>
+            @else
+                <span class="app-stepper__text">
+                    <span class="app-stepper__label">{{ $step['label'] }}</span>
+                    <span class="app-stepper__sub">{{ $words[$state] }}@if(! empty($step['date'])) · <span class="app-num">{{ $step['date'] }}</span>@endif</span>
+                    @if(! empty($step['hint']))<span class="app-stepper__hint">{{ $step['hint'] }}</span>@endif
+                </span>
+            @endif
+        </li>
+    @endforeach
+</ol>
