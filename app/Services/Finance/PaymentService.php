@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\BusinessSetting;
 use App\Models\Container;
 use App\Models\MoneyAccount;
+use App\Models\OrderStepDefinition;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\PaymentApproval;
@@ -14,6 +15,7 @@ use App\Models\SupplierOrder;
 use App\Models\User;
 use App\Services\Attachments\AttachmentService;
 use App\Services\Numbering\NumberingService;
+use App\Services\SupplierOrders\OrderStepService;
 use App\Support\Audit\AuditTrail;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -85,6 +87,7 @@ class PaymentService
             ] + $links);
             AuditTrail::record('created', $payment, [], $this->audited($payment));
             $this->storeEvidence($payment, $evidence, $by);
+            $this->syncOrderPaymentSteps($payment, $by);
 
             return $payment;
         });
@@ -181,6 +184,7 @@ class PaymentService
                 'note' => $this->text($note),
             ]);
             AuditTrail::record('approved', $payment, [], ['number' => $payment->number, 'approval_id' => $approval->id, 'note' => $approval->note]);
+            $this->syncOrderPaymentSteps($payment->fresh(), $by);
 
             return $approval;
         });
@@ -229,11 +233,53 @@ class PaymentService
                 ]));
                 AuditTrail::record('created', $reversal, [], $this->audited($reversal));
                 AuditTrail::record('reversed', $leg, [], ['number' => $leg->number, 'reversal' => $reversal->number, 'reason' => $reason]);
+                $this->syncOrderPaymentSteps($reversal, $by);
                 $reversals[] = $reversal;
             }
 
             return $reversals;
         });
+    }
+
+    /**
+     * A supplier payment moves its order's payment steps (spec S2: "Deposit", "Money transfer
+     * to factory" — every active step of kind `payment`, in board order). Once some of the
+     * order is paid, the first is done; once all of it is paid, every one is. A reversal that
+     * takes the paid figure back down reopens what no longer holds. Only payments that count
+     * (PaymentQueries::isEffective) move a step: one awaiting approval moves it when approved.
+     * A manager turns this off by giving those steps another kind on Lists & options.
+     */
+    private function syncOrderPaymentSteps(Payment $payment, User $by): void
+    {
+        if ($payment->kind !== 'supplier_payment' || $payment->supplier_order_id === null) {
+            return;
+        }
+        $order = SupplierOrder::query()->find($payment->supplier_order_id);
+        $codes = OrderStepDefinition::query()->where('active', true)->where('kind', 'payment')->ordered()->pluck('code')->all();
+        if (! $order || $codes === []) {
+            return;
+        }
+
+        $queries = app(PaymentQueries::class);
+        $paid = $queries->paidToSupplierOrder($order);
+        $total = (string) DB::table('supplier_order_lines')->where('supplier_order_id', $order->id)->sum('amount');
+        $steps = app(OrderStepService::class);
+        // Link the step to this payment only when it is the money that just started to count.
+        $paymentId = $payment->reverses_payment_id === null && $queries->isEffective($payment) ? $payment->id : null;
+        $note = 'Payment '.$payment->number;
+
+        $paidSome = bccomp($paid, '0', 4) > 0;
+        $paidAll = $paidSome && bccomp($paid, $total, 4) >= 0;
+        foreach ($codes as $i => $code) {
+            $isFirst = $i === 0;
+            $shouldBeDone = $paidAll || ($isFirst && $paidSome);
+            if ($shouldBeDone) {
+                $steps->recordAutomatic($order, $code, $by, $note, $paymentId, $payment->paid_on?->toDateString());
+            } elseif ($payment->reverses_payment_id !== null) {
+                // Only a reversal takes a step back; a step a person marked done stays done.
+                $steps->reopenAutomatic($order, $code, $by, $note);
+            }
+        }
     }
 
     /** @return array<string, int|null> the document links $kind may carry, checked */
