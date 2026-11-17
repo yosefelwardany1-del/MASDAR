@@ -59,7 +59,7 @@ final class StepState
             self::SKIPPED => __('Not applicable'),
             self::LATE => __('Late'),
             self::DUE => __('Due soon'),
-            default => __('Open'),
+            default => __('Not done yet'),
         };
     }
 }

@@ -31,6 +31,8 @@ class ScreensRenderTest extends TestCase
         $this->actingAs($manager)->get(route('accounting.journal.show', $posted))->assertOk()->assertSee($posted->number);
         $this->actingAs($manager)->get(route('accounting.journal.index', ['account_id' => $this->account('1401')->id, 'event' => 'manual']))->assertOk()->assertSee($posted->number);
         $this->actingAs($manager)->get(route('accounting.accounts.edit', $this->account('1401')))->assertOk();
+        $this->actingAs($manager)->get(route('accounting.journal.create'))->assertOk()
+            ->assertSee('id="line-template"', false)->assertSee('lines[__INDEX__][account_id]', false);
     }
 
     public function test_the_posting_queue_renders_every_section(): void

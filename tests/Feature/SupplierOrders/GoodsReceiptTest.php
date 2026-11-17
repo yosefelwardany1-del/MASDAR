@@ -131,7 +131,7 @@ class GoodsReceiptTest extends TestCase
 
         $this->actingAs($qc)->get(route('goods-receipts.index'))->assertOk()
             ->assertSee($mine->number)->assertSee($other->number)->assertDontSee($closed->number)
-            ->assertSee(route('goods-receipts.store'), false);
+            ->assertSee('name="supplier_order_line_id"', false);
         $this->actingAs($qc)->get(route('goods-receipts.index', ['order' => $mine->id]))->assertOk()
             ->assertSee($lineInput($mine), false)->assertDontSee($lineInput($other), false);
         $this->actingAs($qc)->get(route('goods-receipts.index', ['supplier' => $other->supplier_id]))->assertOk()
@@ -139,7 +139,7 @@ class GoodsReceiptTest extends TestCase
 
         // Viewing without recording: logistics sees the list but no form.
         $this->actingAs($this->user(Roles::LOGISTICS))->get(route('goods-receipts.index'))->assertOk()
-            ->assertSee($mine->number)->assertDontSee(route('goods-receipts.store'), false);
+            ->assertSee($mine->number)->assertDontSee('name="supplier_order_line_id"', false);
         $this->actingAs($this->user(Roles::LOGISTICS))->post(route('goods-receipts.store'), [])->assertForbidden();
     }
 }

@@ -92,7 +92,7 @@
             <div class="table-responsive">
                 <table class="table table-sm align-middle mb-0">
                     <thead><tr>
-                        <th>{{ __('Order') }}</th><th>{{ __('No.') }}</th><th></th><th>{{ __('Item') }}</th>
+                        <th>{{ __('Add') }}</th><th>{{ __('No.') }}</th><th></th><th>{{ __('Item') }}</th>
                         <th class="text-end">{{ __('Cartons') }}</th><th class="text-end">{{ __('Qty / carton') }}</th><th class="text-end">{{ __('Total qty') }}</th>
                         <th style="min-inline-size:9rem">{{ __("Supplier's unit price") }}</th>
                     </tr></thead>

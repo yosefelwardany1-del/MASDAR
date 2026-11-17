@@ -58,7 +58,7 @@
     <span class="app-pill app-pill--due"><i class="bi bi-clock"></i>{{ __('Due soon') }}</span>
     <span class="app-pill app-pill--late"><i class="bi bi-exclamation-triangle"></i>{{ __('Late') }}</span>
     <span class="app-pill app-pill--skip"><i class="bi bi-dash"></i>{{ __('Not applicable') }}</span>
-    <span class="app-pill">{{ __('Open') }}</span>
+    <span class="app-pill">{{ __('Not done yet') }}</span>
 </div>
 
 <div class="app-card">

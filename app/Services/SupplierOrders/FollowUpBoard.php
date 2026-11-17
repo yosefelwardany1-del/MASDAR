@@ -9,6 +9,7 @@ use App\Support\Access\Visibility;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -141,7 +142,7 @@ class FollowUpBoard
      * The first promised delivery date and the number of changes, for each order whose date moved.
      *
      * @param  Collection<int, SupplierOrder>  $orders
-     * @return array<int, array{date: ?\Illuminate\Support\Carbon, changes: int}>
+     * @return array<int, array{date: ?Carbon, changes: int}>
      */
     private function originalDates(Collection $orders): array
     {

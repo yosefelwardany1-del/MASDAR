@@ -140,7 +140,7 @@ class JournalController extends Controller
 
         try {
             $reversal = $posting->reverse($entry, $request->user(), $data['reverse_on'] ?? null,
-                filled($data['reason'] ?? null) ? __('Reversal of :number', ['number' => $entry->number]).' — '.$data['reason'] : null);
+                filled($data['reason'] ?? null) ? __('Reversal of :number', ['number' => $entry->number], PostingService::STORED_LOCALE).' — '.$data['reason'] : null);
         } catch (AccountingException $e) {
             return back()->with('error', $e->getMessage());
         }

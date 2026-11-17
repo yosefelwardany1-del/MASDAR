@@ -28,8 +28,8 @@ class SupplierEvaluation
 
     /**
      * @return Collection<int, object> one row per supplier with any order, most orders first:
-     *   supplier_id, supplier_name, orders, judged, on_time, on_time_percent (?float),
-     *   avg_slippage_days (?float), date_changes, inspection_failures, sample_reopenings
+     *                                 supplier_id, supplier_name, orders, judged, on_time, on_time_percent (?float),
+     *                                 avg_slippage_days (?float), date_changes, inspection_failures, sample_reopenings
      */
     public function rows(?string $from = null, ?string $to = null): Collection
     {
@@ -59,7 +59,8 @@ class SupplierEvaluation
             ->whereIn('d.code', self::SAMPLE_STEPS)
             ->where('e.status', 'reopened')
             ->groupBy('e.supplier_order_id')
-            ->pluck(DB::raw('COUNT(*)'), 'e.supplier_order_id');
+            ->selectRaw('e.supplier_order_id, COUNT(*) AS n')
+            ->pluck('n', 'supplier_order_id');
 
         $today = CarbonImmutable::today();
         $rows = [];

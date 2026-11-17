@@ -50,7 +50,7 @@
             <thead><tr>
                 <th>{{ __('Order no.') }}</th><th>{{ __('Factory / supplier') }}</th><th>{{ __('Client / PI') }}</th><th></th><th>{{ __('Item') }}</th>
                 <th>{{ __('Delivery date') }}</th>
-                <th class="text-end">{{ __('Ordered') }}</th><th class="text-end">{{ __('Received') }}</th><th class="text-end">{{ __('Awaiting') }}</th>
+                <th class="text-end">{{ __('Ordered') }}</th><th class="text-end">{{ __('Received cartons') }}</th><th class="text-end">{{ __('Awaiting') }}</th>
                 @if($canRecord)<th style="min-inline-size:18rem"></th>@endif
             </tr></thead>
             <tbody>

@@ -29,7 +29,7 @@
 <div class="row g-3">
     <div class="col-lg-8">
         <div class="app-card p-3 h-100">
-            <h2 class="h6 mb-3">{{ __('Order') }}</h2>
+            <h2 class="h6 mb-3">{{ __('Supplier order') }}</h2>
             <dl class="row mb-0">
                 <dt class="col-sm-4 text-muted fw-normal">{{ __('Factory / supplier') }}</dt>
                 <dd class="col-sm-8">
@@ -225,7 +225,7 @@
                 <th>{{ __('PI') }}</th><th>{{ __('Client') }}</th><th></th><th>{{ __('Item') }}</th>
                 <th class="text-end">{{ __('Cartons') }}</th><th class="text-end">{{ __('Total qty') }}</th>
                 @if($seeSuppliers)<th class="text-end">{{ __('Unit price') }}</th><th class="text-end">{{ __('Amount') }}</th>@endif
-                <th class="text-end">{{ __('Received') }}</th><th class="text-end">{{ __('Loaded') }}</th>
+                <th class="text-end">{{ __('Received cartons') }}</th><th class="text-end">{{ __('Loaded cartons') }}</th>
             </tr></thead>
             <tbody>
             @forelse($lines as $line)

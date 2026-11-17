@@ -76,9 +76,15 @@ class PostingService
 
     public function __construct(private NumberingService $numbers, private Ledger $ledger) {}
 
-    public static function eventLabel(?string $event): string
+    /**
+     * Descriptions the posting service writes are stored in English, whoever posts: the books
+     * are a Hong Kong company's, and a stored text must not depend on the poster's language.
+     */
+    public const STORED_LOCALE = 'en';
+
+    public static function eventLabel(?string $event, ?string $locale = null): string
     {
-        return $event === null ? __('Manual entry') : (isset(self::EVENT_LABELS[$event]) ? __(self::EVENT_LABELS[$event]) : $event);
+        return $event === null ? __('Manual entry', [], $locale) : (isset(self::EVENT_LABELS[$event]) ? __(self::EVENT_LABELS[$event], [], $locale) : $event);
     }
 
     // ---------------------------------------------------------------- manual entries
@@ -134,6 +140,9 @@ class PostingService
     {
         $this->authorize($by, 'accounting.edit');
         $this->assertDraft($entry);
+        if ($entry->attachments()->exists()) {
+            throw new AccountingException(__('The draft has attachments: remove them first.'));
+        }
 
         $this->write(function () use ($entry) {
             $entry = JournalEntry::query()->lockForUpdate()->findOrFail($entry->id);
@@ -215,8 +224,8 @@ class PostingService
             'event' => $payment->kind,
             'source_type' => self::SOURCE_PAYMENT,
             'source_id' => $payment->id,
-            'description' => __('Payment :number', ['number' => $payment->number]).' — '.self::eventLabel($payment->kind)
-                .($payment->reverses ? ' — '.__('reverses :original', ['original' => $payment->reverses->number]) : '')
+            'description' => $this->stored('Payment :number', ['number' => $payment->number]).' — '.self::eventLabel($payment->kind, self::STORED_LOCALE)
+                .($payment->reverses ? ' — '.$this->stored('reverses :original', ['original' => $payment->reverses->number]) : '')
                 .($payment->reference ? ' · '.$payment->reference : ''),
         ];
 
@@ -269,7 +278,7 @@ class PostingService
         return $this->postNew([
             'entry_date' => $date, 'event' => 'client_invoice',
             'source_type' => self::SOURCE_PI, 'source_id' => $pi->id,
-            'description' => __('Invoice of :pi to :client', ['pi' => $pi->reference(), 'client' => $pi->client?->name]),
+            'description' => $this->stored('Invoice of :pi to :client', ['pi' => $pi->reference(), 'client' => $pi->client?->name]),
         ], [
             $this->line($this->ruleAccount('client_invoice', 'debit'), 'debit', $book, $pi->currency, $total, $rate, $pi->client_id, $memo),
             $this->line($this->ruleAccount('client_invoice', 'credit'), 'credit', $book, $pi->currency, $total, $rate, null, $memo),
@@ -313,7 +322,7 @@ class PostingService
         return $this->postNew([
             'entry_date' => $date, 'event' => 'supplier_bill',
             'source_type' => self::SOURCE_SUPPLIER_ORDER, 'source_id' => $order->id,
-            'description' => __('Bill of supplier order :number from :supplier', ['number' => $order->number, 'supplier' => $order->supplier?->name]),
+            'description' => $this->stored('Bill of supplier order :number from :supplier', ['number' => $order->number, 'supplier' => $order->supplier?->name]),
         ], [
             $this->line($this->ruleAccount('supplier_bill', 'debit'), 'debit', $book, $order->currency, $total, $rate, null, $order->number),
             $this->line($this->ruleAccount('supplier_bill', 'credit'), 'credit', $book, $order->currency, $total, $rate, $order->supplier_id, $order->number),
@@ -352,7 +361,7 @@ class PostingService
         return $this->postNew([
             'entry_date' => $date, 'event' => 'shipping_bill',
             'source_type' => $container ? self::SOURCE_CONTAINER : null, 'source_id' => $container?->id,
-            'description' => $description ?: __('Shipping bill from :company', ['company' => $company->name]),
+            'description' => $description ?: $this->stored('Shipping bill from :company', ['company' => $company->name]),
         ], [
             $this->line($this->ruleAccount('shipping_bill', 'debit'), 'debit', $book, $currency, $amount, $rate, null, $memo),
             $this->line($this->ruleAccount('shipping_bill', 'credit'), 'credit', $book, $currency, $amount, $rate, $company->id, $memo),
@@ -536,7 +545,7 @@ class PostingService
             'source_type' => $original->source_type,
             'source_id' => $original->source_id,
         ], $header, [
-            'description' => $description ?: __('Reversal of :number', ['number' => $original->number]),
+            'description' => $description ?: $this->stored('Reversal of :number', ['number' => $original->number]),
             'reverses_entry_id' => $original->id,
         ]), $lines, $by);
     }
@@ -577,6 +586,11 @@ class PostingService
         } catch (QueryException $e) {
             throw AccountingException::fromQuery($e);
         }
+    }
+
+    private function stored(string $text, array $replace = []): string
+    {
+        return __($text, $replace, self::STORED_LOCALE);
     }
 
     private function provisionalNumber(): string
