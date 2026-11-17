@@ -53,8 +53,14 @@ class PaymentController extends Controller
             ->paginate(self::PAGE)->withQueryString();
 
         $visibleParties = $this->queries->whereVisibleTo(Payment::query(), $user)->whereNotNull('party_id')->select('party_id');
+        $approvalRequired = $this->queries->approvalRequired();
 
         return view('payments.index', [
+            // Read only, for the page's callout and its paid-against-total bars.
+            'awaitingCount' => $approvalRequired && $user->can('payments.approve')
+                ? $this->queries->whereAwaitingApproval($this->queries->whereVisibleTo(Payment::query(), $user))->count()
+                : 0,
+            'collections' => $this->collections($user, $filters),
             'payments' => $payments,
             'filters' => $filters,
             'totals' => $totals,
@@ -179,6 +185,11 @@ class PaymentController extends Controller
             : collect();
 
         return view('payments.show', [
+            // Read only: the current revision of the payment's PI, with its total and what has been
+            // paid on its number, for the paid-against-total bar (only for whoever may see PIs).
+            'piCurrent' => $payment->proformaInvoice && $user->can('proforma_invoices.view')
+                ? ProformaInvoice::query()->current()->withAmounts()->where('pi_number', $payment->proformaInvoice->pi_number)->first()
+                : null,
             'payment' => $payment,
             'legs' => $legs,
             'effective' => $this->queries->isEffective($payment),
@@ -250,6 +261,24 @@ class PaymentController extends Controller
         }
 
         return array_values(array_filter(self::ALL_KINDS, fn ($kind) => $kind !== 'supplier_payment' || Visibility::canSeeSupplierPrices($user)));
+    }
+
+    /**
+     * The open PIs (current revision, issued to confirmed) of the clients $user may see, with
+     * their total and what has been paid on their number (ProformaInvoice::withAmounts), for
+     * the paid-against-total bars on the list. Read only; nothing when PIs are not $user's.
+     */
+    private function collections(User $user, array $filters): Collection
+    {
+        if (! $user->can('proforma_invoices.view')) {
+            return collect();
+        }
+
+        return ProformaInvoice::query()->current()->withAmounts()->with('client:id,name')
+            ->whereIn('status', ['issued', 'accepted', 'confirmed'])
+            ->whereIn('client_id', Visibility::scopeClients(Party::query()->clients(), $user)->select('id'))
+            ->when($filters['party'], fn ($q, $id) => $q->where('client_id', $id))
+            ->orderByDesc('id')->limit(6)->get();
     }
 
     private function partyOptions(string $kind, User $user, ?int $preset): Collection

@@ -8,6 +8,8 @@ use App\Models\BusinessSetting;
 use App\Models\Lookup;
 use App\Models\MoneyAccount;
 use App\Models\Payment;
+use App\Services\Accounting\Decimal;
+use App\Services\Finance\FxRateService;
 use App\Services\Finance\MoneyAccountService;
 use App\Services\Finance\PaymentQueries;
 use Illuminate\Http\Request;
@@ -23,13 +25,35 @@ class MoneyAccountController extends Controller
 {
     public function __construct(private MoneyAccountService $accounts, private PaymentQueries $queries) {}
 
-    public function index()
+    public function index(FxRateService $rates)
     {
+        $position = $this->queries->cashPosition();
+
         return view('money-accounts.index', [
             'accounts' => MoneyAccount::query()->with('ledgerAccount')->orderByDesc('active')->orderBy('currency')->orderBy('name')->get(),
             'balances' => $this->queries->accountBalances(),
-            'position' => $this->queries->cashPosition(),
+            'position' => $position,
+            'inBook' => self::inBook($position, now()->toDateString(), $rates),
+            'book' => BusinessSetting::current()->book_currency,
         ]);
+    }
+
+    /**
+     * Read only, for the cash bars: each currency's total with the rate of $date and its value
+     * in the book currency at that rate (null when the currency has no rate yet).
+     *
+     * @param  array<string, string>  $position  currency => amount
+     * @return array<string, array{amount: string, rate: ?string, book: ?string}>
+     */
+    public static function inBook(array $position, string $date, FxRateService $rates): array
+    {
+        $rows = [];
+        foreach ($position as $currency => $amount) {
+            $rate = $rates->rateFor($currency, $date);
+            $rows[$currency] = ['amount' => (string) $amount, 'rate' => $rate, 'book' => $rate === null ? null : Decimal::mul((string) $amount, $rate)];
+        }
+
+        return $rows;
     }
 
     public function create()

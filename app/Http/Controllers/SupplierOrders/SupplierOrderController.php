@@ -46,6 +46,8 @@ class SupplierOrderController extends Controller
             ->select('pi.client_id');
 
         return view('supplier-orders.index', $this->board->page($filters, $user) + [
+            // Read-only, for the page header: how many orders under these filters have a late step.
+            'lateCount' => $this->board->query(['late' => 1] + $filters, $user)->count(),
             'filters' => $filters,
             'seeSuppliers' => $seeSuppliers,
             'suppliers' => $seeSuppliers

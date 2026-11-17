@@ -8,6 +8,7 @@ use App\Models\FxRate;
 use App\Models\Lookup;
 use App\Services\Finance\FxRateService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * FX rates (screen `payments`, spec §4): one rate per currency per day, units of the book
@@ -30,6 +31,8 @@ class FxRateController extends Controller
             'currency' => $currency,
             'currencies' => $this->currencies(),
             'book' => BusinessSetting::current()->book_currency,
+            // Read only, for the tiles: the latest rate of each currency.
+            'latest' => collect(DB::select('SELECT DISTINCT ON (currency) currency, rate, rate_date FROM fx_rates ORDER BY currency, rate_date DESC')),
         ]);
     }
 

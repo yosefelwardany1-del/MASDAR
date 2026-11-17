@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Finance\MoneyAccountController;
 use App\Models\Account;
 use App\Models\Party;
 use App\Services\Accounting\Ledger;
 use App\Services\Accounting\LedgerReports;
+use App\Services\Finance\FxRateService;
 use App\Support\IO\CsvSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -174,7 +176,11 @@ class FinanceReportController extends Controller
                 ], $report['rows']));
         }
 
-        return view('finance-reports.cash-position', compact('report', 'asAt') + ['book' => $this->ledger->bookCurrency()]);
+        return view('finance-reports.cash-position', compact('report', 'asAt') + [
+            'book' => $this->ledger->bookCurrency(),
+            // Read only, for the bars: each currency's total at the rate of the day.
+            'inBook' => MoneyAccountController::inBook($report['by_currency'], $asAt, app(FxRateService::class)),
+        ]);
     }
 
     /** @return array{string, string} from, to — the current year to date unless given */

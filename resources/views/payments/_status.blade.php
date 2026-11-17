@@ -8,4 +8,4 @@
         'reversal' => ['app-pill--late', 'bi-arrow-counterclockwise', __('Reversal')],
     ][$status] ?? ['', 'bi-question', $status];
 @endphp
-<span class="app-pill {{ $pill[0] }}"><i class="bi {{ $pill[1] }}"></i>{{ $pill[2] }}</span>
+<span class="app-pill {{ $pill[0] }}"><i class="bi {{ $pill[1] }}" aria-hidden="true"></i>{{ $pill[2] }}</span>
