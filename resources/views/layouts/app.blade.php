@@ -9,6 +9,7 @@
     $sections = collect(Screens::visibleFor($user))->groupBy('group');
     $link = fn (array $item) => Route::has($item['route']) ? route($item['route']) : '#';
     $isActive = fn (array $item) => request()->routeIs($item['route'], Str::beforeLast($item['route'], '.').'.*', ...($item['active'] ?? []));
+    $current = collect(Screens::visibleFor($user))->first(fn ($item) => $isActive($item));
 @endphp
 <!DOCTYPE html>
 @php $rtl = \App\Http\Middleware\SetUserLocale::isRtl(); @endphp
@@ -53,8 +54,14 @@
 
 <div id="app-main">
     <header id="app-topbar">
-        <button type="button" class="app-iconbtn d-lg-none" data-app-sidebar-toggle aria-label="{{ __('Menu') }}"><i class="bi bi-list"></i></button>
-        <div class="app-topbar__title">@yield('title', __('Home'))</div>
+        <button type="button" class="app-iconbtn d-lg-none" data-app-sidebar-toggle aria-label="{{ __('Menu') }}" aria-controls="app-sidebar"><i class="bi bi-list"></i></button>
+        <div class="d-flex align-items-center gap-2 min-w-0">
+            @if($current && $current['group'] !== 'overview')
+                <span class="app-topbar__crumb d-none d-md-inline">{{ $groupLabels[$current['group']] ?? '' }}</span>
+                <i class="bi {{ $rtl ? 'bi-chevron-left' : 'bi-chevron-right' }} d-none d-md-inline" aria-hidden="true"></i>
+            @endif
+            <span class="app-topbar__title text-truncate">@yield('title', __('Home'))</span>
+        </div>
 
         <div class="ms-auto d-flex align-items-center gap-2">
             @stack('topbar')
