@@ -13,9 +13,13 @@ class Setting extends Model
 {
     protected $fillable = ['company_name', 'company_name_ar'];
 
+    /**
+     * MASDAR's legal name as on its Proforma Invoice (spec S1). The Arabic name is OPEN (spec
+     * Q-B1): until MASDAR gives one, the brand on the logo stands in, in Latin letters.
+     */
     protected $attributes = [
-        'company_name' => 'Company',
-        'company_name_ar' => 'الشركة',
+        'company_name' => 'MASDAR FOR TRADING CO., LIMITED',
+        'company_name_ar' => 'MASDAR TRADING',
     ];
 
     public static function current(): self

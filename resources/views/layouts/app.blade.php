@@ -26,7 +26,7 @@
 
 <nav id="app-sidebar" aria-label="{{ __('Main menu') }}">
     <div class="app-brand">
-        <span class="app-brand__logo">@if($setting->logo)<img src="{{ route('settings.logo') }}" alt="">@else<i class="bi bi-buildings"></i>@endif</span>
+        <span class="app-brand__logo" @unless($setting->logo) style="background:#fff;padding:4px" @endunless>@if($setting->logo)<img src="{{ route('settings.logo') }}" alt="">@else<img src="{{ asset('images/masdar-mark.png') }}" alt="MASDAR">@endif</span>
         <span class="app-brand__name">{{ app()->getLocale() === 'ar' ? $setting->company_name_ar : $setting->company_name }}</span>
     </div>
 

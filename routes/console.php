@@ -13,3 +13,7 @@ Artisan::command('inspire', function () {
 // of it. Fails loudly rather than writing to the container's own (ephemeral) disk — see
 // config/backup.php.
 Schedule::command('backup:run')->dailyAt('02:15')->withoutOverlapping();
+
+// Each morning in China time (APP_TIMEZONE): one summary per person of late order steps,
+// containers late or arriving soon, and tasks due (spec §7).
+Schedule::command('masdar:daily-alerts')->dailyAt('08:10')->withoutOverlapping();

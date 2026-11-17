@@ -30,7 +30,8 @@ class SettingsTest extends TestCase
 
     public function test_reading_settings_writes_nothing(): void
     {
-        $this->assertSame('الشركة', Setting::current()->company_name_ar);
+        $this->assertSame('MASDAR TRADING', Setting::current()->company_name_ar);
+        $this->assertSame('MASDAR FOR TRADING CO., LIMITED', Setting::current()->company_name);
         $this->assertSame(0, Setting::count(), 'a read never creates the row');
     }
 
