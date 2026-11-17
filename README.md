@@ -82,6 +82,23 @@ Pushes to `main` deploy themselves once CI passes.
 
 Credentials live in the environment only, never in the database.
 
+### WhatsApp updates to clients
+
+Off until switched on (Lists & options → Business options). When it's on, a container reaching
+one of the chosen statuses (on board and arrived to start with) sends each client with goods
+inside a WhatsApp message.
+
+1. In Meta's WhatsApp Manager, create a **Utility** template named `container_update` (or set
+   `WHATSAPP_CONTAINER_TEMPLATE` to your template's name) in English, with four body parameters,
+   for example: *Hello {{1}}, your container {{2}} is now: {{3}}. Expected arrival: {{4}}.
+   — MASDAR TRADING*. Wait for Meta to approve it.
+2. Set `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN` on the service.
+3. Give each client a contact with a WhatsApp (or phone) number in international form (+971…).
+4. Switch the option on and pick the statuses.
+
+Every attempt, sent or not, is logged in `whatsapp_messages` with the reason when it failed. The
+number is stored only by its last four digits.
+
 **Reaching it from China:** the staff in Yiwu open the site from mainland China. Check early that
 the `onrender.com` address loads there at a usable speed. If it doesn't, a custom domain helps
 (and a domain on a CDN in front of it helps more).

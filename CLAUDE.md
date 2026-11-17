@@ -185,10 +185,30 @@ postable accounts, outside a closed period, and never changes after.
   at once, money out once approved (while the switch is on), and a transfer counts as a whole.
   PI paid figures: `PaymentQueries::paidForPiNumber` (client receipts in the PI currency, all
   revisions).
-- Step completion from other modules: `OrderStepService::recordAutomatic` (`receive_goods`
-  from goods receipt, `booking` and `loading` from shipping).
+- Steps completed from other modules: `OrderStepService::recordAutomatic`, and
+  `reopenAutomatic` when that is undone. It only reopens a step that is done; a step a person
+  marked not applicable stays so. Who completes what:
+  - goods receipt: `receive_goods`;
+  - shipping: `booking` and `loading` (unbooking from the last shipment and unloading reopen them);
+  - supplier payments that count: every step of kind `payment`. Some paid completes the first
+    of them, all paid completes them all, and only a reversal reopens them.
 - Numbers: `Numbering\NumberingService::next($series)`, inside the writer's transaction.
+- Cancelling a supplier order releases its PI lines (`supplier_order_lines.released_at`), so they
+  can be ordered from another factory. "One live order per PI line" counts unreleased lines only.
+- Client WhatsApp updates: `Shipping\ClientContainerUpdates` sends through the queued job
+  `SendContainerUpdates`, after commit, and logs to `whatsapp_messages`, append-only. It is
+  switched by `BusinessSetting::whatsapp_container_updates` and its statuses.
+  `WhatsAppClient::sendTemplate` sends approved templates only.
+- Attention (home page and `masdar:daily-alerts`): `Dashboard\AttentionQueries` covers late and
+  due steps, containers late or arriving soon, PIs booked to ship but not paid in full, and tasks.
 
-`tests/Feature/Integration/OrderToCashTest.php` runs one order through every module. Keep it
-green.
+UI: the design system is `resources/css/theme.css`, built with the UI/UX Pro Max skill
+(Swiss/minimal, dense, in MASDAR's navy and gold). Its shared page components are in
+`resources/views/components/`: `x-page-header`, `x-status`, `x-stepper`, `x-progress`,
+`x-detail-list`, `x-kpi`, `x-section` and `x-empty`. Each area's own styles are in
+`resources/css/screens/*.css`. Build new screens from these; keep colours as tokens, use logical
+properties, and keep text contrast at 4.5:1.
+
+`tests/Feature/Integration/` holds the cross-module tests. `OrderToCashTest` runs one order
+through every module. Keep it green.
 
