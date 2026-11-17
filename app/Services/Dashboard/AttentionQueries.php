@@ -87,6 +87,41 @@ class AttentionQueries
         SQL, [$today, $today, $warn, $accountManagerId, $accountManagerId, $limit]));
     }
 
+    /**
+     * Spec §7 "Unpaid before shipping": current PIs whose goods are booked on a shipment while
+     * the client has not paid them in full (client receipts that count, in the PI's currency,
+     * over all its revisions). Each row: pi_id, pi_number, currency, client, account_manager_id,
+     * total, paid.
+     */
+    public function unpaidBooked(?int $accountManagerId = null, int $limit = 50): Collection
+    {
+        $effective = app(PaymentQueries::class)->effectiveSql('pay');
+
+        return collect(DB::select(<<<SQL
+            SELECT * FROM (
+                SELECT pi.id AS pi_id, pi.pi_number, pi.currency, p.name AS client, p.account_manager_id,
+                       COALESCE((SELECT SUM(amount) FROM pi_lines WHERE proforma_invoice_id = pi.id), 0) AS total,
+                       COALESCE((SELECT SUM(pay.signed_amount) FROM payments pay
+                                 JOIN proforma_invoices r ON r.id = pay.proforma_invoice_id
+                                 WHERE r.pi_number = pi.pi_number AND pay.kind = 'client_receipt'
+                                   AND pay.currency = pi.currency AND {$effective}), 0) AS paid
+                FROM proforma_invoices pi
+                JOIN parties p ON p.id = pi.client_id
+                WHERE pi.is_current AND pi.status IN ('issued', 'accepted', 'confirmed')
+                  AND EXISTS (
+                      SELECT 1 FROM proforma_invoices r
+                      JOIN pi_lines pl ON pl.proforma_invoice_id = r.id
+                      JOIN supplier_order_lines sol ON sol.pi_line_id = pl.id AND sol.released_at IS NULL
+                      JOIN shipment_orders sho ON sho.supplier_order_id = sol.supplier_order_id
+                      WHERE r.pi_number = pi.pi_number)
+                  AND (CAST(? AS bigint) IS NULL OR p.account_manager_id = CAST(? AS bigint))
+            ) unpaid
+            WHERE paid < total
+            ORDER BY pi_number
+            LIMIT ?
+        SQL, [$accountManagerId, $accountManagerId, $limit]));
+    }
+
     /** Open tasks due today or earlier for $userId. */
     public function tasks(int $userId, int $limit = 20): Collection
     {

@@ -1,0 +1,6 @@
+{
+    "A line of this order has since been ordered from another supplier, so the order cannot be reopened. Create a new order instead.": "该订单的某行已改向其他供应商下单，因此无法重新打开此订单。请新建订单。",
+    "{1} One PI is booked to ship but not paid in full.|[2,*] :count PIs are booked to ship but not paid in full.": "{1} 有一张形式发票已订舱但未付清。|[2,*] 有 :count 张形式发票已订舱但未付清。",
+    "audit.lines_released": "已释放订单行",
+    "audit.lines_taken_back": "已收回订单行"
+}

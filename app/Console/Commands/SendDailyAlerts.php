@@ -50,6 +50,16 @@ class SendDailyAlerts extends Command
                 }
             }
 
+            // Unpaid before shipping (spec §7): account managers for their clients; the
+            // accountant and managers for everyone.
+            $everyone = $managers->contains($user) || $user->hasRole(Roles::ACCOUNTANT);
+            if ($user->can('proforma_invoices.view') && ($everyone || $user->hasRole(Roles::SALES))) {
+                $unpaid = $attention->unpaidBooked($everyone ? null : $user->id, 1000)->count();
+                if ($unpaid) {
+                    $lines[] = trans_choice('{1} One PI is booked to ship but not paid in full.|[2,*] :count PIs are booked to ship but not paid in full.', $unpaid, ['count' => $unpaid]);
+                }
+            }
+
             if ($user->can('crm.view') && ($tasks = $attention->tasks($user->id, 1000)->count())) {
                 $lines[] = trans_choice('{1} One task is due.|[2,*] :count tasks are due.', $tasks, ['count' => $tasks]);
             }

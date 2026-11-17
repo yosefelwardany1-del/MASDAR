@@ -1,0 +1,6 @@
+{
+    "A line of this order has since been ordered from another supplier, so the order cannot be reopened. Create a new order instead.": "طُلب أحد بنود هذا الطلب من مورد آخر بعد إلغائه، لذا لا يمكن إعادة فتحه. أنشئ طلباً جديداً بدلاً من ذلك.",
+    "{1} One PI is booked to ship but not paid in full.|[2,*] :count PIs are booked to ship but not paid in full.": "{1} فاتورة مبدئية واحدة محجوزة للشحن ولم تُسدَّد بالكامل.|[2,*] :count فواتير مبدئية محجوزة للشحن ولم تُسدَّد بالكامل.",
+    "audit.lines_released": "حُرّرت البنود",
+    "audit.lines_taken_back": "استُعيدت البنود"
+}
