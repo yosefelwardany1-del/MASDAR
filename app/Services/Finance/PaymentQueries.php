@@ -35,11 +35,25 @@ class PaymentQueries
         return (bool) BusinessSetting::current()->payments_out_require_approval;
     }
 
+    /**
+     * Effective = it counts (in balances, in paid figures, in the ledger). While approval is on:
+     * money in counts at once; money out once approved; and a transfer counts as a whole — its
+     * incoming leg only once its outgoing leg is approved (otherwise the cash position would
+     * count money that has not been allowed to leave yet).
+     */
     public function isEffective(Payment $payment, ?bool $approvalRequired = null): bool
     {
-        return $payment->direction === 'in'
-            || ! ($approvalRequired ?? $this->approvalRequired())
-            || $payment->approval !== null;
+        if (! ($approvalRequired ?? $this->approvalRequired())) {
+            return true;
+        }
+        if ($payment->direction === 'out') {
+            return $payment->approval !== null;
+        }
+        if ($payment->kind === 'transfer_in') {
+            return Payment::query()->whereKey($payment->getKey())->where(fn ($q) => $this->whereEffective($q))->exists();
+        }
+
+        return true;
     }
 
     /** Narrow a query on `payments` (or an alias of it) to the effective rows. */
@@ -49,9 +63,7 @@ class PaymentQueries
             return $query;
         }
 
-        return $query->where(fn ($q) => $q->where("{$table}.direction", 'in')
-            ->orWhereExists(fn ($e) => $e->selectRaw('1')->from('payment_approvals')
-                ->whereColumn('payment_approvals.payment_id', "{$table}.id")));
+        return $query->whereRaw($this->effectiveSql($table));
     }
 
     /** The same rule as a boolean SQL expression over the payments row $alias, for raw SQL. */
@@ -61,7 +73,11 @@ class PaymentQueries
             return 'TRUE';
         }
 
-        return "({$alias}.direction = 'in' OR EXISTS (SELECT 1 FROM payment_approvals pa_eff WHERE pa_eff.payment_id = {$alias}.id))";
+        return "(EXISTS (SELECT 1 FROM payment_approvals pa_eff WHERE pa_eff.payment_id = {$alias}.id)"
+            ." OR ({$alias}.direction = 'in' AND ({$alias}.kind <> 'transfer_in' OR EXISTS ("
+            .'SELECT 1 FROM payments t_eff JOIN payment_approvals pa_t ON pa_t.payment_id = t_eff.id'
+            ." WHERE t_eff.transfer_group = {$alias}.transfer_group AND t_eff.kind = 'transfer_out'"
+            ." AND (t_eff.reverses_payment_id IS NULL) = ({$alias}.reverses_payment_id IS NULL)))))";
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAttachments;
+use App\Support\Access\Visibility;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,6 +35,15 @@ class ProformaInvoice extends Model
     public function attachmentModule(): string
     {
         return 'proforma_invoices';
+    }
+
+    /** A PI's files follow the screen and the own-clients rule (spec §6). */
+    public function attachmentAllows(User $user, string $level): bool
+    {
+        $screen = 'proforma_invoices.'.($level === 'delete' ? 'edit' : $level);
+
+        return $user->can($screen)
+            && Visibility::scopeClients(Party::query()->whereKey($this->client_id), $user)->exists();
     }
 
     public function scopeCurrent(Builder $query): Builder

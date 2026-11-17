@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAttachments;
+use App\Services\Shipping\ShippingQueries;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,14 @@ class Container extends Model
     public function attachmentModule(): string
     {
         return 'containers';
+    }
+
+    /** A container's files follow the screen and which containers the user may open (own clients). */
+    public function attachmentAllows(User $user, string $level): bool
+    {
+        $screen = 'containers.'.($level === 'delete' ? 'edit' : $level);
+
+        return $user->can($screen) && app(ShippingQueries::class)->canSeeContainer($user, $this);
     }
 
     public function shipment(): BelongsTo

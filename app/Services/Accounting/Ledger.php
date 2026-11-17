@@ -9,9 +9,9 @@ use App\Models\JournalEntry;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\Finance\PaymentQueries;
 use App\Support\Access\Visibility;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -65,14 +65,8 @@ class Ledger
      */
     public function effectivePayments(): Builder
     {
-        $query = Payment::query();
-        if (BusinessSetting::current()->payments_out_require_approval) {
-            $query->where(fn (Builder $q) => $q->where('payments.direction', 'in')
-                ->orWhereExists(fn (QueryBuilder $s) => $s->selectRaw('1')->from('payment_approvals')
-                    ->whereColumn('payment_approvals.payment_id', 'payments.id')));
-        }
-
-        return $query;
+        // One rule for the whole system: the payments module's (transfers count as a whole).
+        return app(PaymentQueries::class)->whereEffective(Payment::query());
     }
 
     public function isEffective(Payment $payment): bool

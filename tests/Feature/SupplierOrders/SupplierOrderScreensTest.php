@@ -4,6 +4,8 @@ namespace Tests\Feature\SupplierOrders;
 
 use App\Models\OrderStepDefinition;
 use App\Models\Party;
+use App\Models\PiLine;
+use App\Models\Product;
 use App\Models\SupplierOrderLine;
 use App\Security\Roles;
 use App\Services\SupplierOrders\OrderStepService;
@@ -84,6 +86,11 @@ class SupplierOrderScreensTest extends TestCase
             ->assertSee($calm->number)->assertDontSee($late->number);
         $this->actingAs($merch)->get(route('supplier-orders.index', ['supplier' => $calm->supplier_id]))->assertOk()
             ->assertSee($calm->number)->assertDontSee($late->number);
+        $this->actingAs($merch)->get(route('supplier-orders.index', ['merchandiser' => $merch->id]))->assertOk()
+            ->assertSee($late->number)->assertDontSee($calm->number);
+        $client = $calm->lines()->first()->piLine->proformaInvoice->client;
+        $this->actingAs($merch)->get(route('supplier-orders.index', ['client' => $client->id]))->assertOk()
+            ->assertSee($calm->number)->assertSee($client->name)->assertDontSee($late->number);
     }
 
     public function test_the_board_marks_a_moved_delivery_date(): void
@@ -125,10 +132,15 @@ class SupplierOrderScreensTest extends TestCase
     {
         $merch = $this->user(Roles::MERCHANDISER);
         $order = $this->orderWithLines(2, 10, ['delivery_date' => Carbon::today()->addDays(5)]);
+        $product = Product::factory()->create(['photo' => 'products/mug.jpg', 'photo_disk' => 'local']);
+        SupplierOrderLine::factory()->create(['supplier_order_id' => $order->id, 'pi_line_id' => PiLine::factory()->create(['product_id' => $product->id])->id]);
         app(OrderStepService::class)->skip($order, $this->step('artwork'), $merch, 'Stock goods, no artwork');
 
         $this->actingAs($merch)->get(route('supplier-orders.show', $order))->assertOk()
             ->assertSee($order->number)
+            ->assertSee('src="'.route('products.photo', $product).'"', false)
+            ->assertSee('class="app-thumb"', false)
+            ->assertSee('onerror="this.style.display=\'none\'"', false)
             ->assertSee('Stock goods, no artwork')
             ->assertSee($this->step('contract_stamped')->displayName())
             ->assertSee(route('supplier-orders.steps.done', [$order, $this->step('initial_sample')]), false)

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAttachments;
+use App\Services\SupplierOrders\FollowUpBoard;
+use App\Support\Access\Visibility;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +32,19 @@ class SupplierOrder extends Model
     public function attachmentModule(): string
     {
         return 'supplier_orders';
+    }
+
+    /**
+     * An order's files (the stamped contract names the factory and its prices) follow who may
+     * see suppliers and supplier prices, and which orders the user may open at all.
+     */
+    public function attachmentAllows(User $user, string $level): bool
+    {
+        $screen = 'supplier_orders.'.($level === 'delete' ? 'edit' : $level);
+
+        return $user->can($screen)
+            && Visibility::canSeeSupplierPrices($user)
+            && app(FollowUpBoard::class)->visibleTo($this, $user);
     }
 
     public function supplier(): BelongsTo
