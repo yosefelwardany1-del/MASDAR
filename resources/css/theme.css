@@ -153,6 +153,9 @@ h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: 0; color: var(--app-i
 .app-pill--due { background: var(--app-gold-soft); border-color: #e6d3ad; color: #6f5425; }
 .app-pill--skip { background: #eef0f3; color: #7b8494; }
 .app-board th, .app-board td { white-space: nowrap; font-size: .85rem; }
+/* A wide table scrolls inside its box. In right-to-left pages Chrome otherwise counts the
+   part scrolled out of view as page width, and the whole page gains a sideways scrollbar. */
+.table-responsive { contain: paint; }
 .app-thumb { inline-size: 56px; block-size: 56px; object-fit: cover; border-radius: 8px; border: 1px solid var(--app-line); background: var(--app-surface-2); }
 .app-stat { padding: 1rem 1.25rem; }
 .app-stat__value { font-size: 1.6rem; font-weight: 700; color: var(--app-primary); font-variant-numeric: tabular-nums; }
