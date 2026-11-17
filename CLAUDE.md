@@ -4,13 +4,14 @@ Guidance for Claude Code (claude.ai/code) working in this repository.
 
 ## What this is
 
-A **starter ERP**, not yet any client's: the platform layer only (sign-in, roles and screen
-permissions, audit log, settings, attachments, notifications, AI and WhatsApp clients,
-import/export, backups) behind an Arabic RTL shell, with no business module. Each client's
-ERP starts as a copy of this repository and is built to that client's specification.
+**MASDAR's ERP.** It started as a copy of the starter ERP
+(`yosefelwardany1-del/Empty-ERP` at `88da6fd`): the platform layer only (sign-in, roles and
+screen permissions, audit log, settings, attachments, notifications, AI and WhatsApp clients,
+import/export, backups) behind an Arabic RTL shell, with no business module yet. MASDAR's
+modules are built on it to MASDAR's specification.
 
-**The authority for a client build is its spec, `docs/spec/PROJECT.md`** (a template until a
-client's spec replaces it). Where anything here, in a plan, or in the code disagrees with the
+**The authority for this build is MASDAR's spec, `docs/spec/PROJECT.md`** (still the template
+until MASDAR's spec replaces it). Where anything here, in a plan, or in the code disagrees with the
 spec, the spec wins. Items it marks `OPEN` are built configurable and fail loudly — never
 guessed, never silently defaulted.
 
@@ -22,15 +23,25 @@ Designs and build plans live in `docs/superpowers/specs/` and `docs/superpowers/
 
 ## Starting a client
 
+Where MASDAR stands on each step is marked; every `OPEN` step waits on MASDAR's spec.
+
 1. Put the client's build spec in `docs/spec/PROJECT.md` (keep the template's headings).
+   **OPEN** — the file names MASDAR but the spec itself is not written yet.
 2. Name it: `APP_NAME` (env), the company name, Arabic name and logo (Settings screen), the
    brand colours `--app-primary` / `--app-accent` in `resources/css/app.css`.
+   **Done:** `APP_NAME=MASDAR` (`.env.example`, `render.yaml`). **OPEN:** the Arabic name,
+   the logo and the brand colours (the starter's colours stay until then); the company name
+   and Arabic name are entered on the Settings screen after the first deploy.
 3. Set the regional defaults if they differ: `APP_TIMEZONE` (default `Africa/Cairo`, also the
    time the scheduler runs in), `APP_LOCALE` (`ar`), `WHATSAPP_DEFAULT_COUNTRY_CODE` (`20`).
+   **OPEN** — the starter's Egyptian defaults stay until the spec confirms MASDAR's.
 4. Replace the starter roles in `app/Security/Roles.php` with the spec's, and give each its
-   screens in `Roles::defaultGrants` as the screens are built.
+   screens in `Roles::defaultGrants` as the screens are built. **OPEN.**
 5. Split the spec into sub-projects; each gets its own spec → plan → build cycle, and this
-   file gains a section per sub-project as it lands.
+   file gains a section per sub-project as it lands. **OPEN.**
+
+Starter fixes are pulled in from the `Empty-ERP` repository (add it as a remote named
+`starter` and merge its `main`); MASDAR's own work never goes back to it.
 
 ## Commands
 

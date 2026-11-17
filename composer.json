@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "insharodev/empty-erp",
+    "name": "insharodev/masdar-erp",
     "type": "project",
-    "description": "ERP starter: the platform shell (sign-in, roles, audit, notifications, attachments, Arabic RTL) to build a client's ERP on.",
+    "description": "MASDAR's ERP, built on the ERP starter's platform shell (sign-in, roles, audit, notifications, attachments, Arabic RTL).",
     "license": "proprietary",
     "require": {
         "php": "^8.3",

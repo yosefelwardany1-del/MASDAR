@@ -1,13 +1,13 @@
 services:
   - type: web
-    name: erp
+    name: masdar
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: standard
     healthCheckPath: /up
     envVars:
       - key: APP_NAME
-        value: ERP
+        value: MASDAR
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
@@ -58,7 +58,7 @@ services:
       - key: MAIL_FROM_ADDRESS
         sync: false  # set manually
       - key: MAIL_FROM_NAME
-        value: ERP
+        value: MASDAR
 
       # Private uploads (Cloudflare R2). The container disk is wiped on every deploy.
       - key: PRIVATE_DISK

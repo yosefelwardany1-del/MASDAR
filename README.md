@@ -1,12 +1,13 @@
-# Empty ERP
+# MASDAR ERP
 
-A starter ERP: the platform layer (sign-in, roles and screen permissions, audit log, settings,
-attachments, notifications, AI and WhatsApp clients, import/export, backups) behind an Arabic RTL
-shell, single company, with no business module yet. Each client's ERP starts as a copy of it.
+MASDAR's ERP. It starts as a copy of the starter ERP
+([Empty-ERP](https://github.com/yosefelwardany1-del/Empty-ERP) at `88da6fd`): the platform
+layer (sign-in, roles and screen permissions, audit log, settings, attachments, notifications,
+AI and WhatsApp clients, import/export, backups) behind an Arabic RTL shell, single company.
+MASDAR's business modules are built on it to MASDAR's spec.
 
-- **What to build:** `docs/spec/PROJECT.md` (the client's build spec — the authority; a
-  template until a client's spec replaces it). `CLAUDE.md` § Starting a client lists what to
-  set first.
+- **What to build:** `docs/spec/PROJECT.md` (MASDAR's build spec — the authority; still to be
+  written). `CLAUDE.md` § Starting a client lists what is set and what is still open.
 - **How the code is organised and the rules it follows:** `CLAUDE.md`.
 - **Designs and build plans:** `docs/superpowers/`.
 

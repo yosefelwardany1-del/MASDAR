@@ -1,17 +1,18 @@
-# [Client name] — ERP build specification
+# MASDAR — ERP build specification
 
-> **Template.** Replace this file with the client's build spec, keeping the headings. Once
-> filled in, this file is the authority for the build (`CLAUDE.md`): where anything else
-> disagrees with it, it wins. Mark every decision the client has not made `OPEN` — the code
-> builds it configurable and fails loudly rather than guessing.
+> **Not yet written.** Only the client's name is settled; every other section is still the
+> template. Fill it in keeping the headings. Once filled in, this file is the authority for
+> the build (`CLAUDE.md`): where anything else disagrees with it, it wins. Mark every decision
+> the client has not made `OPEN` — the code builds it configurable and fails loudly rather
+> than guessing.
 
 ## 0. Status
 
 | Item | Value |
 |---|---|
-| Client | |
-| Version / date | |
-| Signed off by | |
+| Client | MASDAR |
+| Version / date | Not yet written — repository started 2026-11-17 from the starter at `88da6fd` |
+| Signed off by | OPEN |
 
 ## 1. Invariants
 
@@ -70,6 +71,13 @@ before the next starts.
 
 Every `OPEN` item above, with who must answer it and by when.
 
+| # | Question | Who answers | By when |
+|---|---|---|---|
+| Q1 | MASDAR's Arabic name, logo and brand colours (`--app-primary` / `--app-accent`) | MASDAR | OPEN |
+| Q2 | Time zone, locale and WhatsApp default country code (the starter's `Africa/Cairo`, `ar`, `20` stay until answered) | MASDAR | OPEN |
+| Q3 | The roles that replace the starter roles (§6) | MASDAR | OPEN |
+| Q4 | Everything in §1–§10 | MASDAR | OPEN |
+
 ## 12. Readings
 
 Decisions settled during the build from this spec (marked `INFERRED`) or with the client
@@ -77,3 +85,4 @@ Decisions settled during the build from this spec (marked `INFERRED`) or with th
 
 | Date | Mark | Reading |
 |---|---|---|
+| 2026-11-17 | DECIDED | The client is MASDAR: `APP_NAME=MASDAR` in `.env.example` and `render.yaml`, Render service `masdar`. |
