@@ -68,11 +68,11 @@ class BusinessSetting extends Model
     }
 
     /** The PI footer for a deposit percentage, e.g. "30% DEPOSIT 70% FINAL PAYMENT BEFORE SHIPPING". */
-    public function piTerms(string|float $depositPercent): string
+    public function piTerms(string|int $depositPercent): string
     {
-        $deposit = rtrim(rtrim(number_format((float) $depositPercent, 2, '.', ''), '0'), '.');
-        $final = rtrim(rtrim(number_format(100 - (float) $depositPercent, 2, '.', ''), '0'), '.');
+        $deposit = bcadd((string) $depositPercent, '0', 2);
+        $trim = fn (string $n) => rtrim(rtrim($n, '0'), '.');
 
-        return strtr($this->pi_terms_template, ['{deposit}' => $deposit, '{final}' => $final]);
+        return strtr($this->pi_terms_template, ['{deposit}' => $trim($deposit), '{final}' => $trim(bcsub('100', $deposit, 2))]);
     }
 }

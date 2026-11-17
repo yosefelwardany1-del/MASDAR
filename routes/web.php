@@ -41,8 +41,11 @@ Route::middleware('auth')->group(function () {
 
         Route::resource($uri, $controller)->only($only(['index']))->middleware("can:{$screen}.view");
         Route::resource($uri, $controller)->only($only(['create', 'store']))->middleware("can:{$screen}.edit");
-        $bind(Route::resource($uri, $controller)->only($only(['show'])))->whereNumber(Str::singular($uri))->middleware("can:{$screen}.view");
-        $bind(Route::resource($uri, $controller)->only($only(['edit', 'update', 'destroy'])))->whereNumber(Str::singular($uri))->middleware("can:{$screen}.edit");
+        // Laravel names a resource's parameter after its singular URI with dashes as underscores
+        // (`shipping-companies` → `shipping_company`); the constraint must use the same name.
+        $name = $param ?? str_replace('-', '_', Str::singular($uri));
+        $bind(Route::resource($uri, $controller)->only($only(['show'])))->whereNumber($name)->middleware("can:{$screen}.view");
+        $bind(Route::resource($uri, $controller)->only($only(['edit', 'update', 'destroy'])))->whereNumber($name)->middleware("can:{$screen}.edit");
     };
 
     // Users are deactivated, never deleted: every row is attributed to one (spec I4).

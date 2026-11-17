@@ -47,4 +47,10 @@ class PiLine extends Model
     {
         return $this->hasOne(SupplierOrderLine::class);
     }
+
+    /** "ITEM NAME & DESCRIPTION" as printed: the line's own text, else its product's name. */
+    public function itemText(): string
+    {
+        return filled($this->description) ? (string) $this->description : (string) $this->product?->name;
+    }
 }
