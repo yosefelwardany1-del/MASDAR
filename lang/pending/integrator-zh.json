@@ -2,5 +2,9 @@
     "A line of this order has since been ordered from another supplier, so the order cannot be reopened. Create a new order instead.": "该订单的某行已改向其他供应商下单，因此无法重新打开此订单。请新建订单。",
     "{1} One PI is booked to ship but not paid in full.|[2,*] :count PIs are booked to ship but not paid in full.": "{1} 有一张形式发票已订舱但未付清。|[2,*] 有 :count 张形式发票已订舱但未付清。",
     "audit.lines_released": "已释放订单行",
-    "audit.lines_taken_back": "已收回订单行"
+    "audit.lines_taken_back": "已收回订单行",
+    "WhatsApp updates to clients": "向客户发送 WhatsApp 更新",
+    "When a container reaches one of these statuses, each client with goods inside gets MASDAR's approved WhatsApp message. Nothing is sent until the WhatsApp keys are set and the template is approved (see the README).": "当集装箱达到以下任一状态时，柜内有货的每位客户都会收到 MASDAR 已审批的 WhatsApp 消息。在设置 WhatsApp 密钥且模板获批之前不会发送任何消息（见 README）。",
+    "Send clients WhatsApp updates on their containers": "向客户发送其集装箱的 WhatsApp 更新",
+    "Send an update when a container is": "集装箱处于以下状态时发送更新"
 }

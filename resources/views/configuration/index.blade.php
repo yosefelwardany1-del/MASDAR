@@ -94,6 +94,29 @@
                 </div>
             </x-section>
 
+            <x-section :title="__('WhatsApp updates to clients')" icon="whatsapp">
+                <p class="form-text mt-0 mb-3">{{ __('When a container reaches one of these statuses, each client with goods inside gets MASDAR\'s approved WhatsApp message. Nothing is sent until the WhatsApp keys are set and the template is approved (see the README).') }}</p>
+                <div class="app-switch mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="whatsapp_container_updates" name="whatsapp_container_updates" value="1" @checked(old('whatsapp_container_updates', $setting->whatsapp_container_updates))>
+                        <label class="form-check-label" for="whatsapp_container_updates">{{ __('Send clients WhatsApp updates on their containers') }}</label>
+                    </div>
+                </div>
+                <fieldset>
+                    <legend class="form-label">{{ __('Send an update when a container is') }}</legend>
+                    <input type="hidden" name="whatsapp_update_statuses[]" value="">
+                    @php $chosen = old('whatsapp_update_statuses', $setting->whatsappUpdateStatuses()); @endphp
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach($containerStatuses as $code => $name)
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wa-status-{{ $code }}" name="whatsapp_update_statuses[]" value="{{ $code }}" @checked(in_array($code, (array) $chosen, true))>
+                                <label class="form-check-label" for="wa-status-{{ $code }}">{{ $name }}</label>
+                            </div>
+                        @endforeach
+                    </div>
+                </fieldset>
+            </x-section>
+
             <x-section :title="__('Number prefixes')" icon="hash">
                 <div class="row g-3">
                     @foreach([

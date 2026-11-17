@@ -41,6 +41,7 @@ class ConfigurationController extends Controller
             'steps' => OrderStepDefinition::query()->ordered()->get(),
             'setting' => BusinessSetting::current(),
             'currencies' => Lookup::options('currency'),
+            'containerStatuses' => Lookup::options('container_status'),
             'editable' => $request->user()->can('configuration.edit'),
         ]);
     }
@@ -66,10 +67,9 @@ class ConfigurationController extends Controller
         }
         // Which container statuses send clients a WhatsApp update (spec Q-C4).
         if ($request->has('whatsapp_update_statuses')) {
-            $statuses = $request->validate([
-                'whatsapp_update_statuses' => 'array',
-                'whatsapp_update_statuses.*' => [Rule::in(array_keys(Lookup::options('container_status')))],
-            ])['whatsapp_update_statuses'] ?? [];
+            // The form sends one empty value so that unticking every status clears them.
+            $statuses = array_values(array_filter((array) $request->input('whatsapp_update_statuses'), 'filled'));
+            validator(['statuses' => $statuses], ['statuses.*' => [Rule::in(array_keys(Lookup::options('container_status')))]])->validate();
             $data['whatsapp_update_statuses'] = implode(',', $statuses);
         }
 

@@ -170,7 +170,7 @@ small, .small { font-size: var(--app-fs-sm); }
 .form-control:focus, .form-select:focus { border-color: var(--app-accent); box-shadow: 0 0 0 3px rgba(var(--app-accent-rgb), .18); outline: none; }
 .form-control:disabled, .form-select:disabled, fieldset:disabled .form-control { background-color: var(--app-surface-2); }
 .form-text { color: var(--app-muted); font-size: var(--app-fs-xs); }
-.form-check-input { border-color: var(--app-line-strong); }
+.form-check-input { border-color: #7f8c9e; }   /* an empty box or switch at 3:1 against white */
 .form-check-input:checked { background-color: var(--app-primary); border-color: var(--app-primary); }
 .form-check-input:focus { box-shadow: 0 0 0 3px rgba(var(--app-accent-rgb), .18); border-color: var(--app-accent); }
 .form-switch .form-check-input { inline-size: 2.25em; }
@@ -190,11 +190,12 @@ small, .small { font-size: var(--app-fs-sm); }
     border-radius: var(--app-radius); box-shadow: var(--app-shadow);
 }
 .app-card > .p-3.border-bottom, .app-card__head {
-    display: flex; align-items: center; gap: var(--app-sp-2);
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--app-sp-2);
     padding: var(--app-sp-3) var(--app-sp-4) !important; font-size: var(--app-fs-lg); font-weight: 600;
     border-color: var(--app-line) !important;
 }
 .app-card > .p-3.border-bottom .bi, .app-card__head .bi { color: var(--app-accent); }
+.app-card > .p-3.border-bottom .btn .bi, .app-card__head .btn .bi { color: inherit; }   /* an icon in a button takes the button's colour */
 .card { border-color: var(--app-line); border-radius: var(--app-radius); box-shadow: var(--app-shadow-sm); }
 
 /* ---------- Tables: dense, scannable ---------- */
