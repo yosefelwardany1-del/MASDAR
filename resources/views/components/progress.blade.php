@@ -1,6 +1,7 @@
 {{-- A labelled bar: <x-progress :value="7" :max="11" :label="__('Steps done')" tone="done" />
+     sr-label names the bar for screen readers without a visible label.
      tone: primary | done | late | due | gold. Over 100% shows full, in the late tone unless told otherwise. --}}
-@props(['value' => 0, 'max' => 100, 'label' => null, 'tone' => 'primary', 'caption' => null, 'thin' => false])
+@props(['value' => 0, 'max' => 100, 'label' => null, 'tone' => 'primary', 'caption' => null, 'thin' => false, 'srLabel' => null])
 @php
     $max = (float) $max > 0 ? (float) $max : 1;
     $pct = (int) round(min(100, max(0, (float) $value / $max * 100)));
@@ -13,7 +14,7 @@
             <span class="app-progress__caption app-num">{{ $caption ?? $pct.'%' }}</span>
         </div>
     @endif
-    <div class="app-progress__track" role="progressbar" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100" @if($label) aria-label="{{ $label }}" @endif>
+    <div class="app-progress__track" role="progressbar" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100" @if($label || $srLabel) aria-label="{{ $srLabel ?? $label }}" @endif>
         <span class="app-progress__bar" style="inline-size: {{ $pct }}%"></span>
     </div>
 </div>

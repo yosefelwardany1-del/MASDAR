@@ -438,9 +438,9 @@ a.app-stat:hover { border-color: var(--app-line-strong); box-shadow: var(--app-s
 .app-stepper--compact .app-stepper__step { min-inline-size: 20px; }
 @media (max-width: 767.98px) {
     /* On a phone a long stepper reads top to bottom. */
-    .app-stepper:not(.app-stepper--compact) { flex-direction: column; gap: .75rem; }
-    .app-stepper:not(.app-stepper--compact) .app-stepper__step { flex-direction: row; text-align: start; align-items: flex-start; }
-    .app-stepper:not(.app-stepper--compact) .app-stepper__step::before { display: none; }
+    .app-stepper:not(.app-stepper--compact):not(.app-stepper--row) { flex-direction: column; gap: .75rem; }
+    .app-stepper:not(.app-stepper--compact):not(.app-stepper--row) .app-stepper__step { flex-direction: row; text-align: start; align-items: flex-start; }
+    .app-stepper:not(.app-stepper--compact):not(.app-stepper--row) .app-stepper__step::before { display: none; }
     .app-stepper__text { max-inline-size: none; }
 }
 
