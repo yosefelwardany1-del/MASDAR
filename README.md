@@ -45,42 +45,46 @@ php artisan user:create someone@example.com "Their Name" --role=manager --genera
 
 `DemoUsersSeeder` refuses to run in production.
 
-## Production: what you provision
+## Production: Render
 
-The app runs on **Render** as one Docker service (`render.yaml`: nginx + php-fpm + a queue
-worker + the scheduler, health check `/up`). It needs three accounts that only you can open.
+Everything runs on **Render** from one Blueprint (`render.yaml`): the web service (one Docker
+container: nginx + php-fpm + a queue worker + the scheduler, health check `/up`), its PostgreSQL 16
+database, and a persistent disk for uploaded files. All three are in Singapore, Render's region
+nearest Yiwu. One account, nothing to copy by hand.
 
-### 1. Neon (PostgreSQL)
+### First deploy
 
-1. Create a project on PostgreSQL 16, region close to Render's (Frankfurt).
-2. Copy the connection details into Render: `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`,
-   `DB_PASSWORD` (`DB_SSLMODE=require` is already set).
-3. Every deploy runs `php artisan migrate --force`, `RolesAndPermissionsSeeder` and
-   `MasdarReferenceSeeder`. They create missing roles, permissions, lists, order steps, accounts
-   and posting rules; they never undo a change made in the role editor, on Lists & options or on
-   the Accounting screen.
-
-### 2. Cloudflare R2 (private files)
-
-The container's disk is wiped on every deploy, so uploads must live in a bucket.
-
-1. Create a bucket (private, no public access) and an API token with read/write on it.
-2. Set in Render: `PRIVATE_DISK=s3`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
-   `AWS_BUCKET`, `AWS_ENDPOINT` (`https://<account>.r2.cloudflarestorage.com`, without the
-   bucket name). `AWS_DEFAULT_REGION=auto` and `AWS_USE_PATH_STYLE_ENDPOINT=true` are set.
-
-### 3. Render
-
-1. New → Blueprint → this repository. Render reads `render.yaml`.
-2. Fill every variable marked `sync: false`: `APP_URL`, the Neon and R2 values above,
-   `MAIL_FROM_ADDRESS`, and optionally the AI and WhatsApp keys.
-3. After the first deploy, create the first manager from the Render shell:
+1. Sign up at render.com with GitHub, and let Render's GitHub app see the `MASDAR` repository.
+2. Choose a payment method: the web service (Standard), the database and the disk are paid plans.
+3. **New → Blueprint**, pick the `MASDAR` repository, branch `main`, then **Apply**. Render
+   creates `masdar-db`, then the `masdar` service, and deploys. Every deploy runs the
+   migrations, `RolesAndPermissionsSeeder` and `MasdarReferenceSeeder`. These create the missing
+   roles, permissions, lists, order steps, accounts and posting rules. They never undo a change
+   made in the role editor, on Lists & options or on the Accounting screen.
+4. When the deploy is live, open the service's **Shell** tab and create the first manager:
    `php artisan user:create you@example.com "Your Name" --role=manager --generate`.
+   It prints a password; sign in at the service's `onrender.com` address and change it.
+5. Sign in as that manager. Set the company names and logo on **Company settings**, the options
+   on **Lists & options**, and the money accounts on **Payments**. Then add users.
 
-Optional, all off until set: Google sign-in (`SSO_GOOGLE_ENABLED`, `GOOGLE_SSO_CLIENT_ID`,
-`GOOGLE_SSO_CLIENT_SECRET`, `SSO_ALLOWED_DOMAINS`), AI (`ANTHROPIC_API_KEY` or
-`OPENROUTER_API_KEY`), WhatsApp (`WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`).
+Pushes to `main` deploy themselves once CI passes.
+
+### Later, when wanted (the service's Environment tab)
+
+- `APP_URL`: MASDAR's own domain, once it points at the service (Settings → Custom Domains).
+- **Backups off Render** (see below): `BACKUP_DISK` with a bucket, or Google Drive. Until then
+  the nightly `backup:run` refuses to write locally and logs a warning, and Render's own daily
+  database backups are the safety net.
+- A real mailer (`MAIL_MAILER`, `MAIL_HOST`, …) and `BACKUP_NOTIFY_EMAILS`.
+- AI (`ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`), WhatsApp (`WHATSAPP_PHONE_NUMBER_ID`,
+  `WHATSAPP_ACCESS_TOKEN`), Google sign-in (`SSO_GOOGLE_ENABLED`, `GOOGLE_SSO_CLIENT_ID`,
+  `GOOGLE_SSO_CLIENT_SECRET`, `SSO_ALLOWED_DOMAINS`).
+
 Credentials live in the environment only, never in the database.
+
+**Reaching it from China:** the staff in Yiwu open the site from mainland China. Check early that
+the `onrender.com` address loads there at a usable speed. If it doesn't, a custom domain helps
+(and a domain on a CDN in front of it helps more).
 
 ## Backups
 
@@ -104,7 +108,8 @@ Run `php artisan backup:run` once by hand after setting it up.
 
 ### Restore
 
-Restoring is deliberately manual. Rehearse it on a scratch database before you need it.
+Restoring is deliberately manual. (Render also keeps its own daily backups of `masdar-db`,
+restorable from the database's Recovery tab.) Rehearse it on a scratch database before you need it.
 
 1. Download the run's folder (`database.sql.gz`, `uploads.zip`) from the bucket or Drive.
 2. Create an empty database (a new Neon branch is ideal) and load the dump:

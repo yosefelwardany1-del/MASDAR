@@ -88,7 +88,8 @@ idioms push the other way, so:
 
 ## Architecture
 
-Laravel 12, PHP 8.3+ (8.4 in Docker), PostgreSQL 16 (Neon in production), Blade + Bootstrap 5.3
+Laravel 12, PHP 8.3+ (8.4 in Docker), PostgreSQL 16 (Render Postgres in production; `render.yaml`
+is the whole deployment: service, database and a disk for uploads, in Singapore), Blade + Bootstrap 5.3
 bundled by Vite (no CDN). IBM Plex Sans Arabic; brand tokens `--app-primary` / `--app-accent`
 in `resources/css/theme.css`, classes prefixed `app-`. Two CSS entries: `app.css` (Bootstrap
 RTL) and `app-ltr.css` (Bootstrap LTR), the same `theme.css` on top; the layouts pick one by

@@ -1,10 +1,38 @@
+# MASDAR on Render, everything in one Blueprint: New → Blueprint → this repository → Apply.
+# Render creates the web service (nginx + php-fpm + queue worker + scheduler, from the
+# Dockerfile), its PostgreSQL database and a persistent disk for uploaded files (logos, product
+# photos, contracts, payment slips), and wires them together. Every deploy runs the migrations
+# and the role and reference seeders (docker/entrypoint.sh).
+#
+# Singapore is Render's region nearest to the Yiwu office. A service's region can't change later.
+
+databases:
+  - name: masdar-db
+    databaseName: masdar
+    user: masdar
+    plan: 0.1c-256mb
+    # Pinned: the image's pg_dump (nightly backup) must be at least the server's version.
+    postgresMajorVersion: "16"
+    region: singapore
+    diskSizeGB: 5
+    ipAllowList: []          # no connections from outside Render
+
 services:
   - type: web
     name: masdar
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: standard
+    region: singapore
+    branch: main
+    autoDeployTrigger: checksPass   # deploy a push to main only after CI passes
     healthCheckPath: /up
+    # Uploaded files live here and survive deploys (PRIVATE_DISK=local). A service with a disk
+    # runs as one instance; that is plenty for MASDAR's team.
+    disk:
+      name: masdar-files
+      mountPath: /var/www/html/storage/app
+      sizeGB: 10
     envVars:
       - key: APP_NAME
         value: MASDAR
@@ -14,28 +42,22 @@ services:
         value: false
       - key: APP_KEY
         generateValue: true
-      - key: APP_URL
-        sync: false  # set manually: the production URL
+      # APP_URL is optional: without it the app uses the address Render gives the service
+      # (RENDER_EXTERNAL_URL). Set it once MASDAR has its own domain.
       - key: APP_TIMEZONE
         value: Asia/Shanghai
       - key: APP_LOCALE
         value: ar
 
-      # PostgreSQL (Neon). The invariants live in the database: triggers and CHECKs.
+      # PostgreSQL (the masdar-db above). The invariants live in the database: triggers and CHECKs.
       - key: DB_CONNECTION
         value: pgsql
-      - key: DB_HOST
-        sync: false  # set manually: Neon host
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_DATABASE
-        sync: false  # set manually: Neon database name
-      - key: DB_USERNAME
-        sync: false  # set manually: Neon username
-      - key: DB_PASSWORD
-        sync: false  # set manually: Neon password
+      - key: DB_URL
+        fromDatabase:
+          name: masdar-db
+          property: connectionString
       - key: DB_SSLMODE
-        value: require
+        value: prefer
 
       - key: SESSION_DRIVER
         value: database
@@ -47,6 +69,8 @@ services:
         value: database
       - key: FILESYSTEM_DISK
         value: local
+      - key: PRIVATE_DISK
+        value: local
 
       - key: LOG_CHANNEL
         value: stderr
@@ -55,51 +79,18 @@ services:
 
       - key: MAIL_MAILER
         value: log
-      - key: MAIL_FROM_ADDRESS
-        sync: false  # set manually
       - key: MAIL_FROM_NAME
         value: MASDAR
 
-      # Private uploads (Cloudflare R2). The container disk is wiped on every deploy.
-      - key: PRIVATE_DISK
-        sync: false  # set to 's3' once the bucket exists
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_DEFAULT_REGION
-        value: auto
-      - key: AWS_BUCKET
-        sync: false
-      - key: AWS_ENDPOINT
-        sync: false  # the R2 endpoint, without the bucket name
-      - key: AWS_USE_PATH_STYLE_ENDPOINT
-        value: "true"
-
-      # Nightly backup (backup:run)
-      - key: BACKUP_DISK
-        sync: false  # leave unset to follow PRIVATE_DISK
+      # Nightly backup (backup:run, 02:15 China time). Production refuses a local destination,
+      # so until Google Drive or an S3-compatible bucket is set (README § Backups) the nightly
+      # run fails and logs a warning; Render's own daily database backups still apply.
       - key: BACKUP_RETENTION_DAYS
         value: "30"
-      - key: BACKUP_NOTIFY_EMAILS
-        sync: false
       - key: BACKUP_GOOGLE_DRIVE
         value: "false"
-      - key: GOOGLE_DRIVE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_DRIVE_CLIENT_SECRET
-        sync: false
-      - key: GOOGLE_DRIVE_REFRESH_TOKEN
-        sync: false
 
-      # AI (drafts only — see CLAUDE.md)
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: OPENROUTER_API_KEY
-        sync: false
-
-      # WhatsApp (Meta Cloud API)
-      - key: WHATSAPP_ACCESS_TOKEN
-        sync: false
-      - key: WHATSAPP_PHONE_NUMBER_ID
-        sync: false
+      # Optional, added later in the service's Environment tab when wanted (no value here so
+      # the Blueprint asks for nothing): APP_URL, MAIL_* (a real mailer), BACKUP_DISK and the
+      # AWS_* bucket values, GOOGLE_DRIVE_*, ANTHROPIC_API_KEY or OPENROUTER_API_KEY,
+      # WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID, SSO_GOOGLE_*.
