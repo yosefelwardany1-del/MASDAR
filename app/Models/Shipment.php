@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -35,5 +36,17 @@ class Shipment extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** The bookings of supplier orders on this shipment (shipment_orders rows). */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(ShipmentOrder::class)->orderBy('id');
+    }
+
+    /** The supplier orders booked on this shipment. */
+    public function orders(): BelongsToMany
+    {
+        return $this->belongsToMany(SupplierOrder::class, 'shipment_orders')->orderBy('supplier_orders.number');
     }
 }

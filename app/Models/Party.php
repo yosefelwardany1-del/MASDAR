@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAttachments;
+use App\Services\Parties\PartyKind;
+use App\Support\Access\Visibility;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -90,5 +92,49 @@ class Party extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class, 'supplier_id');
+    }
+
+    public function isKind(PartyKind $kind): bool
+    {
+        return (bool) $this->{$kind->column()};
+    }
+
+    /** @return list<PartyKind> the kinds this party is, in numbering order */
+    public function kinds(): array
+    {
+        return array_values(array_filter(PartyKind::cases(), fn (PartyKind $kind) => $this->isKind($kind)));
+    }
+
+    /**
+     * Narrow a query on parties to those $user may open through at least one of their kinds'
+     * screens: a client only as Visibility::scopeClients allows, a supplier or a shipping
+     * company with its screen's view permission.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        $kinds = array_filter(PartyKind::cases(), fn (PartyKind $kind) => $user->can($kind->screen().'.view'));
+        if ($kinds === []) {
+            return $query->whereRaw('false');
+        }
+
+        return $query->where(function (Builder $q) use ($kinds, $user) {
+            foreach ($kinds as $kind) {
+                $q->orWhere(fn (Builder $k) => $kind === PartyKind::Client
+                    ? Visibility::scopeClients($k->where('is_client', true), $user)
+                    : $k->where($kind->column(), true));
+            }
+        });
+    }
+
+    /** Whether $user may open this party through one of its kinds' screens. */
+    public function isVisibleTo(User $user): bool
+    {
+        return static::query()->whereKey($this->getKey())->visibleTo($user)->exists();
+    }
+
+    /** The primary contact, else the first, from the loaded contacts. */
+    public function primaryContact(): ?PartyContact
+    {
+        return $this->contacts->first();
     }
 }

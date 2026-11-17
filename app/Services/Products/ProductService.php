@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * The only writer of products (spec §3.2). The Products screen and the PI screen (a product
- * created from a PI line) both come here.
+ * created from a PI line) both come here. Products are deactivated, never deleted.
  */
 class ProductService
 {
@@ -56,6 +56,31 @@ class ProductService
         DB::transaction(function () use ($product) {
             $this->images->delete($product, 'photo');
             AuditTrail::record('updated', $product, ['photo' => 'set'], ['photo' => null]);
+        });
+    }
+
+    /** A product on a PI line is never deleted: it is taken out of the catalog. */
+    public function deactivate(Product $product): Product
+    {
+        return $this->setActive($product, false, 'deactivated');
+    }
+
+    public function reactivate(Product $product): Product
+    {
+        return $this->setActive($product, true, 'reactivated');
+    }
+
+    private function setActive(Product $product, bool $active, string $action): Product
+    {
+        if ($product->active === $active) {
+            return $product;
+        }
+
+        return DB::transaction(function () use ($product, $active, $action) {
+            $product->update(['active' => $active]);
+            AuditTrail::record($action, $product, ['active' => ! $active], ['active' => $active]);
+
+            return $product;
         });
     }
 }

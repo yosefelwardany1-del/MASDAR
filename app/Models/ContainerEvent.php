@@ -29,4 +29,15 @@ class ContainerEvent extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /** The earlier event this one corrects (going back along the path), if any. */
+    public function corrects(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'corrects_event_id');
+    }
+
+    public function isCorrection(): bool
+    {
+        return $this->corrects_event_id !== null;
+    }
 }
