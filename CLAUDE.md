@@ -26,7 +26,8 @@ Designs and build plans live in `docs/superpowers/specs/` and `docs/superpowers/
 Where MASDAR stands on each step is marked; every `OPEN` step waits on MASDAR's spec.
 
 1. Put the client's build spec in `docs/spec/PROJECT.md` (keep the template's headings).
-   **OPEN** — the file names MASDAR but the spec itself is not written yet.
+   **Drafted** (0.1, 2026-11-17) from MASDAR's PI template, order follow-up sheet and phase-1
+   note; not signed off. Its §11 lists the open questions and the sub-project each blocks.
 2. Name it: `APP_NAME` (env), the company name, Arabic name and logo (Settings screen), the
    brand colours `--app-primary` / `--app-accent` in `resources/css/app.css`.
    **Done:** `APP_NAME=MASDAR` (`.env.example`, `render.yaml`). **OPEN:** the Arabic name,
@@ -34,7 +35,8 @@ Where MASDAR stands on each step is marked; every `OPEN` step waits on MASDAR's 
    and Arabic name are entered on the Settings screen after the first deploy.
 3. Set the regional defaults if they differ: `APP_TIMEZONE` (default `Africa/Cairo`, also the
    time the scheduler runs in), `APP_LOCALE` (`ar`), `WHATSAPP_DEFAULT_COUNTRY_CODE` (`20`).
-   **OPEN** — the starter's Egyptian defaults stay until the spec confirms MASDAR's.
+   **OPEN** — the spec infers `Asia/Shanghai` (the office is in Yiwu); it is applied in
+   sub-project 1 with the languages and country code (spec Q-B2, Q-B3).
 4. Replace the starter roles in `app/Security/Roles.php` with the spec's, and give each its
    screens in `Roles::defaultGrants` as the screens are built. **OPEN.**
 5. Split the spec into sub-projects; each gets its own spec → plan → build cycle, and this
