@@ -7,7 +7,10 @@ use App\Models\BusinessSetting;
 use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\PartyContact;
+use App\Models\Payment;
+use App\Models\ProformaInvoice;
 use App\Models\User;
+use App\Services\Finance\PaymentQueries;
 use App\Services\Parties\PartyKind;
 use App\Services\Parties\PartyService;
 use App\Services\WhatsApp\PhoneNumber;
@@ -118,6 +121,7 @@ abstract class PartyController extends Controller
             'openTasks' => $party->tasks()->open()->with('assignee')->orderBy('due_on')->get(),
             'related' => $related,
             'canSeeBank' => Visibility::canSeeSupplierPrices($user),
+            'money' => $user->can('payments.view') ? $this->money($party, $user) : null,
             'channels' => Lookup::options('interaction_channel'),
             'users' => $user->can('crm.edit') ? $this->activeUsers() : collect(),
             'labels' => $this->lookupLabels(),
@@ -175,6 +179,47 @@ abstract class PartyController extends Controller
         $this->parties->deleteContact($this->findContact($model, $contact));
 
         return redirect()->to(route($this->kind()->routePrefix().'.show', $model).'#contacts')->with('success', __('Contact deleted.'));
+    }
+
+    /**
+     * The Money tab, read-only: the payments linked to the party (payments.party_id) that $user
+     * may see (PaymentQueries::whereVisibleTo), what counted per currency (whereEffective), and
+     * for a client what each open PI still owes (ProformaInvoice::withAmounts). Nothing writes.
+     *
+     * @return array<string, mixed>
+     */
+    private function money(Party $party, User $user): array
+    {
+        $queries = app(PaymentQueries::class);
+        $visible = fn () => $queries->whereVisibleTo(Payment::query()->where('payments.party_id', $party->id), $user);
+
+        $totals = $queries->whereEffective($visible()->toBase())
+            ->selectRaw(<<<'SQL'
+                payments.currency,
+                COALESCE(SUM(payments.signed_amount) FILTER (WHERE payments.direction = 'in'), 0)::numeric(18,4) AS money_in,
+                (-COALESCE(SUM(payments.signed_amount) FILTER (WHERE payments.direction = 'out'), 0))::numeric(18,4) AS money_out
+            SQL)
+            ->groupBy('payments.currency')->orderBy('payments.currency')->get();
+
+        $kind = match ($this->kind()) {
+            PartyKind::Client => 'client_receipt',
+            PartyKind::Supplier => 'supplier_payment',
+            PartyKind::Shipping => 'shipping_payment',
+        };
+
+        return [
+            'payments' => $visible()->with(['moneyAccount', 'proformaInvoice', 'supplierOrder', 'container', 'approval', 'reversal', 'reverses.approval'])
+                ->orderByDesc('paid_on')->orderByDesc('id')->limit(50)->get(),
+            'count' => $visible()->count(),
+            'totals' => $totals,
+            'pis' => $party->is_client && $user->can('proforma_invoices.view')
+                ? ProformaInvoice::query()->current()->withAmounts()->where('client_id', $party->id)
+                    ->whereIn('status', ['issued', 'accepted', 'confirmed'])->orderByDesc('id')->get()
+                : collect(),
+            'approvalRequired' => $queries->approvalRequired(),
+            'queries' => $queries,
+            'recordKind' => $user->can('payments.edit') && in_array($kind, $queries->recordableKinds($user), true) ? $kind : null,
+        ];
     }
 
     // ---- lookups -------------------------------------------------------------------

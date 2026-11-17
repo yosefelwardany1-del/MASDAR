@@ -115,5 +115,10 @@ class WhatsAppContainerUpdatesTest extends TestCase
 
         $this->assertTrue(BusinessSetting::current()->whatsapp_container_updates);
         $this->assertSame(['arrived', 'delivered'], BusinessSetting::current()->whatsappUpdateStatuses());
+
+        // The form always sends one empty value: unticking every status clears them.
+        $this->actingAs($this->manager)->put(route('configuration.options.update'), ['whatsapp_update_statuses' => ['']] + $payload)->assertRedirect();
+        $this->assertSame([], BusinessSetting::current()->whatsappUpdateStatuses());
+        $this->actingAs($this->manager)->put(route('configuration.options.update'), ['whatsapp_update_statuses' => ['', 'nonsense']] + $payload)->assertSessionHasErrors();
     }
 }

@@ -3,16 +3,14 @@
 @section('title', __('New journal entry'))
 
 @section('content')
-<h1 class="h4 mb-3">{{ __('New journal entry') }}</h1>
-<p class="text-muted small">{{ __('A manual entry is an adjustment: it is saved as a draft and posted by a manager.') }}</p>
-<div class="app-card p-4">
-    <form method="POST" action="{{ route('accounting.journal.store') }}">
-        @csrf
-        @include('accounting.journal._form', ['entry' => null])
-        <div class="mt-3 d-flex gap-2">
-            <button class="btn btn-primary">{{ __('Save draft') }}</button>
-            <a href="{{ route('accounting.journal.index') }}" class="btn btn-light">{{ __('Cancel') }}</a>
-        </div>
-    </form>
-</div>
+<x-page-header :title="__('New journal entry')" :back="route('accounting.journal.index')" :back-label="__('Journal')"
+               :subtitle="__('A manual entry is an adjustment: it is saved as a draft and posted by a manager.')" />
+<form method="POST" action="{{ route('accounting.journal.store') }}" class="app-form">
+    @csrf
+    @include('accounting.journal._form', ['entry' => null])
+    <div class="app-form__actions">
+        <button class="btn btn-primary"><i class="bi bi-check2" aria-hidden="true"></i>{{ __('Save draft') }}</button>
+        <a href="{{ route('accounting.journal.index') }}" class="btn btn-light">{{ __('Cancel') }}</a>
+    </div>
+</form>
 @endsection

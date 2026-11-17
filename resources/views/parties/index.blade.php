@@ -8,38 +8,53 @@
     $isClient = $kind === PartyKind::Client;
     $isSupplier = $kind === PartyKind::Supplier;
     $isShipping = $kind === PartyKind::Shipping;
+    $filtered = $filters['search'] !== '' || $filters['active'] !== '1' || $filters['country'] !== '' || $filters['stage'] !== '' || $filters['manager'];
+    $initials = function (string $name) {
+        $words = preg_split('/\s+/u', trim($name)) ?: [];
+
+        return mb_strtoupper(mb_substr($words[0] ?? '?', 0, 1).(count($words) > 1 ? mb_substr(end($words), 0, 1) : ''));
+    };
 @endphp
 
 @section('content')
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">{{ __($kind->plural()) }}</h1>
+<x-page-header :title="__($kind->plural())" :subtitle="__('Found: :count', ['count' => $parties->total()])">
     @can($kind->screen().'.edit')
-        <a href="{{ route($prefix.'.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>{{ __($kind->newLabel()) }}</a>
+        <x-slot:actions>
+            <a href="{{ route($prefix.'.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __($kind->newLabel()) }}</a>
+        </x-slot:actions>
     @endcan
-</div>
+</x-page-header>
 
-<form method="GET" class="d-flex flex-wrap gap-2 mb-3">
-    <input type="search" name="search" value="{{ $filters['search'] }}" class="form-control" style="max-inline-size:300px" placeholder="{{ __('Search by code, name or phone') }}">
-    <select name="active" class="form-select" style="max-inline-size:160px" onchange="this.form.submit()">
+<form method="GET" class="d-flex flex-wrap gap-2 mb-3" role="search">
+    <div class="app-doc-search">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <label class="visually-hidden" for="party-search">{{ __('Search by code, name or phone') }}</label>
+        <input type="search" id="party-search" name="search" value="{{ $filters['search'] }}" class="form-control" placeholder="{{ __('Search by code, name or phone') }}">
+    </div>
+    <label class="visually-hidden" for="party-active">{{ __('Status') }}</label>
+    <select id="party-active" name="active" class="form-select app-doc-filter app-doc-filter--sm" onchange="this.form.submit()">
         @foreach(['1' => __('Active'), '0' => __('Inactive'), 'all' => __('All')] as $value => $label)
             <option value="{{ $value }}" @selected($filters['active'] === (string) $value)>{{ $label }}</option>
         @endforeach
     </select>
-    <select name="country" class="form-select" style="max-inline-size:200px" onchange="this.form.submit()">
+    <label class="visually-hidden" for="party-country">{{ __('Country') }}</label>
+    <select id="party-country" name="country" class="form-select app-doc-filter" onchange="this.form.submit()">
         <option value="">{{ __('All countries') }}</option>
         @foreach($countries as $code => $name)
             <option value="{{ $code }}" @selected($filters['country'] === $code)>{{ $name }}</option>
         @endforeach
     </select>
     @if($isClient)
-        <select name="stage" class="form-select" style="max-inline-size:200px" onchange="this.form.submit()">
+        <label class="visually-hidden" for="party-stage">{{ __('Stage') }}</label>
+        <select id="party-stage" name="stage" class="form-select app-doc-filter" onchange="this.form.submit()">
             <option value="">{{ __('All stages') }}</option>
             @foreach($stages as $code => $name)
                 <option value="{{ $code }}" @selected($filters['stage'] === $code)>{{ $name }}</option>
             @endforeach
         </select>
         @if($managers->isNotEmpty())
-            <select name="manager" class="form-select" style="max-inline-size:220px" onchange="this.form.submit()">
+            <label class="visually-hidden" for="party-manager">{{ __('Account manager') }}</label>
+            <select id="party-manager" name="manager" class="form-select app-doc-filter" onchange="this.form.submit()">
                 <option value="">{{ __('All account managers') }}</option>
                 @foreach($managers as $m)
                     <option value="{{ $m->id }}" @selected($filters['manager'] === $m->id)>{{ $m->name }}</option>
@@ -47,63 +62,83 @@
             </select>
         @endif
     @endif
-    <button class="btn btn-light">{{ __('Search') }}</button>
+    <button class="btn btn-light"><i class="bi bi-funnel" aria-hidden="true"></i>{{ __('Search') }}</button>
+    @if($filtered)
+        <a href="{{ route($prefix.'.index') }}" class="btn btn-link"><i class="bi bi-x-lg" aria-hidden="true"></i>{{ __('Clear filters') }}</a>
+    @endif
 </form>
 
 <div class="app-card">
-    <div class="table-responsive">
-        <table class="table align-middle mb-0">
-            <thead><tr>
-                <th>{{ __('Code') }}</th>
-                <th>{{ __('Name') }}</th>
-                <th>{{ __('Country') }}</th>
-                @if($isClient)<th>{{ __('Account manager') }}</th><th>{{ __('Stage') }}</th>@endif
-                @if($isSupplier)<th>{{ __('What they make') }}</th>@endif
-                @if($isShipping)<th>{{ __('Kind') }}</th>@endif
-                <th>{{ __('Primary contact') }}</th>
-                <th>{{ __('Status') }}</th>
-                <th></th>
-            </tr></thead>
-            <tbody>
-            @forelse($parties as $p)
-                @php $contact = $p->primaryContact(); @endphp
-                <tr>
-                    <td class="app-num">{{ $p->code }}</td>
-                    <td>
-                        <a href="{{ route($prefix.'.show', $p) }}" class="fw-semibold text-decoration-none">{{ $p->name }}</a>
-                        @if($p->name_local)<div class="text-muted small">{{ $p->name_local }}</div>@endif
-                        @foreach($p->kinds() as $other)
-                            @continue($other === $kind)
-                            <span class="app-pill ms-1">{{ __($other->label()) }}</span>
-                        @endforeach
-                    </td>
-                    <td>{{ $countries[$p->country] ?? $p->country ?? '—' }}@if($p->city) <span class="text-muted">· {{ $p->city }}</span>@endif</td>
-                    @if($isClient)
-                        <td>{{ $p->accountManager?->name ?? '—' }}</td>
-                        <td>@if($p->stage)<span class="app-pill">{{ $stages[$p->stage] ?? $p->stage }}</span>@else — @endif</td>
-                    @endif
-                    @if($isSupplier)<td class="small">{{ \Illuminate\Support\Str::limit($p->products_note, 60) ?: '—' }}</td>@endif
-                    @if($isShipping)<td>{{ $shippingKinds[$p->shipping_kind] ?? $p->shipping_kind ?? '—' }}</td>@endif
-                    <td>
-                        @if($contact)
-                            {{ $contact->name }}
-                            @if($contact->phone || $contact->whatsapp)<div class="small text-muted"><span class="app-num">{{ $contact->phone ?: $contact->whatsapp }}</span></div>@endif
-                        @else — @endif
-                    </td>
-                    <td>@if($p->active)<span class="app-pill app-pill--done">{{ __('Active') }}</span>@else<span class="app-pill app-pill--skip">{{ __('Inactive') }}</span>@endif</td>
-                    <td class="text-end text-nowrap">
-                        <a href="{{ route($prefix.'.show', $p) }}" class="btn btn-sm btn-light" title="{{ __('View') }}"><i class="bi bi-eye"></i></a>
-                        @can($kind->screen().'.edit')
-                            <a href="{{ route($prefix.'.edit', $p) }}" class="btn btn-sm btn-light" title="{{ __('Edit') }}"><i class="bi bi-pencil"></i></a>
-                        @endcan
-                    </td>
-                </tr>
-            @empty
-                <tr><td colspan="9" class="app-empty"><i class="bi {{ $kind->icon() }}"></i>{{ __('Nothing found.') }}</td></tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-    @if($parties->hasPages())<div class="p-3">{{ $parties->links() }}</div>@endif
+    @if($parties->isEmpty())
+        <x-empty :icon="\Illuminate\Support\Str::after($kind->icon(), 'bi-')" :title="__('Nothing found.')"
+                 :text="$filtered ? __('Nothing matches these filters. Clear them to see everyone.') : null">
+            <x-slot:action>
+                @if($filtered)
+                    <a href="{{ route($prefix.'.index') }}" class="btn btn-light btn-sm">{{ __('Clear filters') }}</a>
+                @else
+                    @can($kind->screen().'.edit')<a href="{{ route($prefix.'.create') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __($kind->newLabel()) }}</a>@endcan
+                @endif
+            </x-slot:action>
+        </x-empty>
+    @else
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 app-party-list">
+                <thead><tr>
+                    <th scope="col">{{ __('Name') }}</th>
+                    <th scope="col">{{ __('Country') }}</th>
+                    @if($isClient)<th scope="col">{{ __('Account manager') }}</th><th scope="col">{{ __('Stage') }}</th>@endif
+                    @if($isSupplier)<th scope="col">{{ __('What they make') }}</th>@endif
+                    @if($isShipping)<th scope="col">{{ __('Kind') }}</th>@endif
+                    <th scope="col">{{ __('Primary contact') }}</th>
+                    <th scope="col">{{ __('Status') }}</th>
+                    <th scope="col"><span class="visually-hidden">{{ __('Actions') }}</span></th>
+                </tr></thead>
+                <tbody>
+                @foreach($parties as $p)
+                    @php $contact = $p->primaryContact(); @endphp
+                    <tr @class(['app-doc-muted' => ! $p->active])>
+                        <td>
+                            <div class="app-party-list__who">
+                                <span class="app-party-list__mark" aria-hidden="true">{{ $initials($p->name) }}</span>
+                                <div class="min-w-0">
+                                    <a href="{{ route($prefix.'.show', $p) }}" class="app-party-list__name"><bdi>{{ $p->name }}</bdi></a>
+                                    <div class="app-party-list__sub">
+                                        <span class="app-doc-code">{{ $p->code }}</span>
+                                        @if($p->name_local)<bdi>{{ $p->name_local }}</bdi>@endif
+                                        @foreach($p->kinds() as $other)
+                                            @continue($other === $kind)
+                                            <span class="app-pill app-pill--info">{{ __($other->label()) }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ $countries[$p->country] ?? $p->country ?? '—' }}@if($p->city)<div class="app-party-list__sub">{{ $p->city }}</div>@endif</td>
+                        @if($isClient)
+                            <td><bdi>{{ $p->accountManager?->name ?? '—' }}</bdi></td>
+                            <td>@if($p->stage)<span class="app-pill"><i class="bi bi-signpost" aria-hidden="true"></i>{{ $stages[$p->stage] ?? $p->stage }}</span>@else — @endif</td>
+                        @endif
+                        @if($isSupplier)<td class="app-party-list__note" dir="auto">{{ \Illuminate\Support\Str::limit($p->products_note, 60) ?: '—' }}</td>@endif
+                        @if($isShipping)<td>{{ $shippingKinds[$p->shipping_kind] ?? $p->shipping_kind ?? '—' }}</td>@endif
+                        <td>
+                            @if($contact)
+                                <bdi>{{ $contact->name }}</bdi>
+                                @if($contact->phone || $contact->whatsapp)<div class="app-party-list__sub"><span class="app-num">{{ $contact->phone ?: $contact->whatsapp }}</span></div>@endif
+                            @else — @endif
+                        </td>
+                        <td>@if($p->active)<span class="app-pill app-pill--done"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('Active') }}</span>@else<span class="app-pill app-pill--skip"><i class="bi bi-slash-circle" aria-hidden="true"></i>{{ __('Inactive') }}</span>@endif</td>
+                        <td class="text-end text-nowrap">
+                            @can($kind->screen().'.edit')
+                                <a href="{{ route($prefix.'.edit', $p) }}" class="btn btn-sm btn-light" title="{{ __('Edit') }}"><i class="bi bi-pencil" aria-hidden="true"></i><span class="visually-hidden">{{ __('Edit') }} {{ $p->name }}</span></a>
+                            @endcan
+                            <a href="{{ route($prefix.'.show', $p) }}" class="btn btn-sm btn-light" title="{{ __('View') }}"><i class="bi bi-chevron-{{ \App\Http\Middleware\SetUserLocale::isRtl() ? 'left' : 'right' }}" aria-hidden="true"></i><span class="visually-hidden">{{ __('View') }} {{ $p->name }}</span></a>
+                        </td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+    @if($parties->hasPages())<div class="p-3 border-top">{{ $parties->links() }}</div>@endif
 </div>
 @endsection

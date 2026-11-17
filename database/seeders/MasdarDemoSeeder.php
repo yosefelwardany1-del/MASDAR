@@ -4,10 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Account;
 use App\Models\MoneyAccount;
+use App\Models\Payment;
 use App\Models\User;
 use App\Security\Roles;
+use App\Services\Accounting\PostingService;
 use App\Services\Finance\FxRateService;
 use App\Services\Finance\MoneyAccountService;
+use App\Services\Finance\PaymentQueries;
 use App\Services\Finance\PaymentService;
 use App\Services\Parties\PartyService;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
@@ -22,7 +25,7 @@ use RuntimeException;
 /**
  * Example data to show MASDAR the system (local and staging only): clients, factories and a
  * forwarder, two PIs, their factory orders part-way through the follow-up, one container at
- * sea, and the payments. Everything goes through the real writers, so it is audited and obeys
+ * sea, the payments, and the journal entries for what is ready to post. Everything goes through the real writers, so it is audited and obeys
  * every rule. Run after DemoUsersSeeder. Refuses to run in production.
  */
 class MasdarDemoSeeder extends Seeder
@@ -81,8 +84,13 @@ class MasdarDemoSeeder extends Seeder
         app(FxRateService::class)->set('CNY', now()->subDays(20)->toDateString(), '0.140000', $manager);
 
         $payments = app(PaymentService::class);
-        $payments->record(['kind' => 'client_receipt', 'paid_on' => now()->subDays(18)->toDateString(), 'money_account_id' => $usd->id, 'amount' => '120.00', 'party_id' => $clients[0]->id, 'proforma_invoice_id' => $pi1->id, 'reference' => 'TT deposit'], $manager);
+        // The client's 30% deposit (of 10,728.00 USD), then RMB for the factories: 1,400 USD → 10,000 CNY at 0.14.
+        $payments->record(['kind' => 'client_receipt', 'paid_on' => now()->subDays(18)->toDateString(), 'money_account_id' => $usd->id, 'amount' => '3218.40', 'party_id' => $clients[0]->id, 'proforma_invoice_id' => $pi1->id, 'reference' => 'TT deposit'], $manager);
         $pis->confirm($pi1->fresh(), $manager);
+        ['out' => $transferOut] = $payments->transfer(['from_account_id' => $usd->id, 'to_account_id' => $rmb->id, 'paid_on' => now()->subDays(18)->toDateString(), 'amount' => '1400.00', 'in_amount' => '10000.00', 'reference' => 'RMB for factory deposits'], $manager);
+        if (! app(PaymentQueries::class)->isEffective($transferOut->fresh())) {
+            $payments->approve($transferOut->fresh(), $manager);
+        }
         $deposit = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->subDays(17)->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '5000.00', 'party_id' => $factories[0]->id, 'supplier_order_id' => $orders[0]->id, 'reference' => 'Deposit'], $manager);
         $payments->approve($deposit, $manager);
 
@@ -99,5 +107,12 @@ class MasdarDemoSeeder extends Seeder
         foreach (['loaded_sealed' => 3, 'gate_in' => 2, 'on_board' => 2] as $status => $daysAgo) {
             app(ContainerTrackingService::class)->recordStatus($container, ['status' => $status, 'happened_at' => now()->subDays($daysAgo)->toDateTimeString(), 'place' => 'Ningbo'], $manager);
         }
+
+        // The accountant's queue, cleared: the confirmed PI invoiced, the received order billed, both payments posted,
+        // so the journal and the reports have something to show.
+        $posting = app(PostingService::class);
+        $posting->postClientInvoice($pi1->fresh(), $manager);
+        $posting->postSupplierBill($orders[0]->fresh(), $manager);
+        Payment::query()->orderBy('id')->get()->each(fn (Payment $payment) => $posting->postPayment($payment, $manager));
     }
 }

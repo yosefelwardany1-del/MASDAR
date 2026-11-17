@@ -141,8 +141,12 @@ Single company: there is no multi-company layer (a guard test fails on a `compan
 | Sign-in | `LoginController`, Google SSO behind `SSO_GOOGLE_ENABLED` (off) | Passwords always work while `SSO_PASSWORDS_RETIRED=false`. |
 
 Guard tests in `tests/Feature/Guards/` fail on a `company_id` column, a float column, a stored
-`balance`, a reference to removed code, a former client's name, or a screen whose route does
-not exist. `tests/Unit/NoProcessLevelMemoTest` fails on a function-level `static` in `app/`.
+`balance`, a reference to removed code, a former client's name, a screen whose route does
+not exist, or a UI string without its Arabic and Chinese translation (`TranslationsTest`, which
+also fails when a translation drops a `:placeholder`; Chinese takes full-width punctuation).
+`tests/Unit/NoProcessLevelMemoTest` fails on a function-level `static` in `app/`. Text the
+system stores in English for a person to read later (a step's automatic note) is translated
+where it is shown (`SupplierOrderStepEvent::displayNote`).
 
 ## MASDAR phase 1
 

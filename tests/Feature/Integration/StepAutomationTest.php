@@ -8,6 +8,7 @@ use App\Models\PiLine;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\SupplierOrderLine;
+use App\Models\SupplierOrderStepEvent;
 use App\Models\User;
 use App\Security\Roles;
 use App\Services\Shipping\ContainerTrackingService;
@@ -95,5 +96,20 @@ class StepAutomationTest extends TestCase
 
         $this->assertNull(app(OrderStepService::class)->reopenAutomatic($order, 'booking', $this->manager));
         $this->assertSame('skipped', $this->state($order, 'booking'));
+    }
+
+    public function test_the_notes_the_system_writes_read_in_the_users_language(): void
+    {
+        $note = fn (?string $text) => (new SupplierOrderStepEvent(['note' => $text]))->displayNote();
+
+        app()->setLocale('ar');
+        $this->assertSame('حُجز على SH-2026-0001', $note('Booked on SH-2026-0001'));
+        $this->assertSame('الدفعة PAY-2026-0002', $note('Payment PAY-2026-0002'));
+        $this->assertSame('استُلمت كل الكراتين', $note('All cartons received'));
+        $this->assertSame('Called the factory: Booked on Monday', $note('Called the factory: Booked on Monday'), 'a person\'s note shows as typed');
+        $this->assertNull($note(null));
+
+        app()->setLocale('en');
+        $this->assertSame('Loaded in MSKU7712345', $note('Loaded in MSKU7712345'));
     }
 }

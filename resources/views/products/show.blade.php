@@ -6,65 +6,88 @@
     use Illuminate\Support\Facades\Gate;
     $n = fn ($value) => $value === null ? '—' : rtrim(rtrim((string) $value, '0'), '.');
     $money = fn ($amount, $currency) => $amount === null ? '—' : $n($amount).' '.($currencies[$currency] ?? $currency);
+    $hasSize = $product->carton_length_cm !== null || $product->carton_width_cm !== null || $product->carton_height_cm !== null;
 @endphp
 
 @section('content')
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-1"><span class="app-num text-muted me-2">{{ $product->code }}</span>{{ $product->name }}</h1>
-        @if($product->name_local)<div class="text-muted">{{ $product->name_local }}</div>@endif
-        @if($product->active)<span class="app-pill app-pill--done">{{ __('Active') }}</span>@else<span class="app-pill app-pill--skip">{{ __('Inactive') }}</span>@endif
-    </div>
+<x-page-header :title="$product->name" :subtitle="$product->name_local" :back="route('products.index')" :back-label="__('Products')">
+    <x-slot:meta>
+        <span class="app-doc-code">{{ $product->code }}</span>
+        @if($product->active)
+            <span class="app-pill app-pill--done"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('Active') }}</span>
+        @else
+            <span class="app-pill app-pill--skip"><i class="bi bi-slash-circle" aria-hidden="true"></i>{{ __('Inactive') }}</span>
+        @endif
+    </x-slot:meta>
     @can('products.edit')
-        <div class="d-flex gap-2">
-            <a href="{{ route('products.edit', $product) }}" class="btn btn-light"><i class="bi bi-pencil me-1"></i>{{ __('Edit') }}</a>
+        <x-slot:actions>
+            <a href="{{ route('products.edit', $product) }}" class="btn btn-light"><i class="bi bi-pencil" aria-hidden="true"></i>{{ __('Edit') }}</a>
             @if($product->active)
                 <form method="POST" action="{{ route('products.deactivate', $product) }}" onsubmit="return confirm(@js(__('Deactivate this product? It stays on every document that refers to it.')));">
-                    @csrf<button class="btn btn-light text-danger"><i class="bi bi-slash-circle me-1"></i>{{ __('Deactivate') }}</button>
+                    @csrf<button class="btn btn-outline-danger"><i class="bi bi-slash-circle" aria-hidden="true"></i>{{ __('Deactivate') }}</button>
                 </form>
             @else
                 <form method="POST" action="{{ route('products.reactivate', $product) }}">
-                    @csrf<button class="btn btn-light"><i class="bi bi-arrow-counterclockwise me-1"></i>{{ __('Reactivate') }}</button>
+                    @csrf<button class="btn btn-light"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>{{ __('Reactivate') }}</button>
                 </form>
             @endif
-        </div>
+        </x-slot:actions>
     @endcan
-</div>
+</x-page-header>
 
-<div class="row g-3">
-    <div class="col-md-4">
-        <div class="app-card p-3 text-center">
-            @if($product->photo)
-                <img src="{{ route('products.photo', $product) }}" alt="{{ $product->name }}" class="img-fluid rounded" style="max-block-size:320px">
-            @else
-                <div class="app-empty"><i class="bi bi-image"></i>{{ __('No photo yet.') }}</div>
-            @endif
-        </div>
-    </div>
-    <div class="col-md-8">
-        <div class="app-card p-4">
-            <dl class="row mb-0">
-                <dt class="col-sm-4 text-muted fw-normal">{{ __('Description') }}</dt><dd class="col-sm-8">{!! $product->description ? nl2br(e($product->description)) : '—' !!}</dd>
-                <dt class="col-sm-4 text-muted fw-normal">{{ __('Unit') }}</dt><dd class="col-sm-8">{{ $units[$product->unit] ?? $product->unit }}</dd>
-                <dt class="col-sm-4 text-muted fw-normal">{{ __('Quantity per carton') }}</dt><dd class="col-sm-8 app-num">{{ $n($product->qty_per_carton) }}</dd>
-                <dt class="col-sm-4 text-muted fw-normal">{{ __('Carton size (cm)') }}</dt>
-                <dd class="col-sm-8"><span class="app-num">{{ $n($product->carton_length_cm) }} × {{ $n($product->carton_width_cm) }} × {{ $n($product->carton_height_cm) }}</span></dd>
-                <dt class="col-sm-4 text-muted fw-normal">{{ __('CBM per carton') }}</dt><dd class="col-sm-8 app-num">{{ $n($product->cbm_per_carton) }}</dd>
-                <dt class="col-sm-4 text-muted fw-normal">{{ __('Gross KG per carton') }}</dt><dd class="col-sm-8 app-num">{{ $n($product->kg_per_carton) }}</dd>
-                <dt class="col-sm-4 text-muted fw-normal">{{ __('HS code') }}</dt><dd class="col-sm-8 app-num">{{ $product->hs_code ?: '—' }}</dd>
-                <dt class="col-sm-4 text-muted fw-normal">{{ __('Sale price') }}</dt><dd class="col-sm-8 app-num">{{ $money($product->sale_price, $product->sale_currency) }}</dd>
-                @if($canSeeSupplier)
-                    <dt class="col-sm-4 text-muted fw-normal">{{ __('Usual supplier') }}</dt>
-                    <dd class="col-sm-8">
-                        @if($product->supplier)
-                            @if(Gate::allows('suppliers.view'))<a href="{{ route('suppliers.show', $product->supplier) }}">{{ $product->supplier->name }}</a>@else{{ $product->supplier->name }}@endif
-                            <span class="app-num text-muted">{{ $product->supplier->code }}</span>
-                        @else — @endif
-                    </dd>
-                    <dt class="col-sm-4 text-muted fw-normal">{{ __('Supplier price') }}</dt><dd class="col-sm-8 app-num" data-test="supplier-price">{{ $money($product->supplier_price, $product->supplier_currency) }}</dd>
-                @endif
+<div class="app-product-page">
+    <figure class="app-card app-product-page__photo">
+        @if($product->photo)
+            <a href="{{ route('products.photo', $product) }}" target="_blank" rel="noopener" title="{{ __('Open the photo') }}">
+                <img src="{{ route('products.photo', $product) }}" alt="{{ $product->name }}" width="480" height="480">
+            </a>
+        @else
+            <x-empty icon="image" :title="__('No photo yet.')" :text="__('A photo shows on every PI line of this product.')">
+                @can('products.edit')
+                    <x-slot:action><a href="{{ route('products.edit', $product) }}" class="btn btn-light btn-sm"><i class="bi bi-upload" aria-hidden="true"></i>{{ __('Add photo') }}</a></x-slot:action>
+                @endcan
+            </x-empty>
+        @endif
+    </figure>
+
+    <div class="app-product-page__info">
+        @if($product->description)
+            <x-section :title="__('Description')" icon="card-text">
+                <div class="app-product-page__desc" dir="auto">{!! nl2br(e($product->description)) !!}</div>
+            </x-section>
+        @endif
+
+        <x-section :title="__('Carton')" icon="box-seam">
+            <dl class="app-product-page__packing">
+                <div><dt>{{ __('Unit') }}</dt><dd>{{ $units[$product->unit] ?? $product->unit }}</dd></div>
+                <div><dt>{{ __('Quantity per carton') }}</dt><dd class="app-num">{{ $n($product->qty_per_carton) }}</dd></div>
+                <div><dt>{{ __('Carton size (cm)') }}</dt><dd>@if($hasSize)<span class="app-num">{{ $n($product->carton_length_cm) }} × {{ $n($product->carton_width_cm) }} × {{ $n($product->carton_height_cm) }}</span>@else — @endif</dd></div>
+                <div><dt>{{ __('CBM per carton') }}</dt><dd class="app-num">{{ $n($product->cbm_per_carton) }}</dd></div>
+                <div><dt>{{ __('Gross KG per carton') }}</dt><dd class="app-num">{{ $n($product->kg_per_carton) }}</dd></div>
+                <div><dt>{{ __('HS code') }}</dt><dd class="app-num">{{ $product->hs_code ?: '—' }}</dd></div>
             </dl>
-        </div>
+        </x-section>
+
+        <x-section :title="__('Prices')" icon="tags">
+            <dl class="app-product-page__packing">
+                <div><dt>{{ __('Sale price') }}</dt><dd class="app-num app-product-page__price">{{ $money($product->sale_price, $product->sale_currency) }}</dd></div>
+            </dl>
+            @if($canSeeSupplier)
+                <div class="app-doc-internal mt-3">
+                    <div class="app-doc-internal__label"><i class="bi bi-lock" aria-hidden="true"></i>{{ __('Supplier') }} · {{ __('Never printed on the PI.') }}</div>
+                    <dl class="app-product-page__packing">
+                        <div><dt>{{ __('Usual supplier') }}</dt>
+                            <dd>
+                                @if($product->supplier)
+                                    @if(Gate::allows('suppliers.view'))<a href="{{ route('suppliers.show', $product->supplier) }}">{{ $product->supplier->name }}</a>@else{{ $product->supplier->name }}@endif
+                                    <span class="app-doc-code">{{ $product->supplier->code }}</span>
+                                @else — @endif
+                            </dd></div>
+                        <div><dt>{{ __('Supplier price') }}</dt><dd class="app-num" data-test="supplier-price">{{ $money($product->supplier_price, $product->supplier_currency) }}</dd></div>
+                    </dl>
+                </div>
+            @endif
+        </x-section>
     </div>
 </div>
 @endsection

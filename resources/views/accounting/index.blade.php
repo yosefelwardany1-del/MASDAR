@@ -3,52 +3,57 @@
 @section('title', __('Chart of accounts'))
 
 @section('content')
-@php $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v); @endphp
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">{{ __('Accounting') }}</h1>
+@php
+    use App\Services\Accounting\Decimal;
+    $fmt = fn ($v) => Decimal::format($v);
+@endphp
+<x-page-header :title="__('Chart of accounts')" :eyebrow="__('Accounting')"
+               :subtitle="__('The chart is a starting point for MASDAR\'s accountant (spec Q-A4). Headings group sub-accounts and are never posted to. Balances are in :book, shown positive when normal for the account\'s type.', ['book' => $book])">
     @can('accounting.edit')
-        <a href="{{ route('accounting.accounts.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>{{ __('New account') }}</a>
+        <x-slot:actions>
+            <a href="{{ route('accounting.accounts.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __('New account') }}</a>
+        </x-slot:actions>
     @endcan
-</div>
+</x-page-header>
 
 @include('accounting._nav', ['active' => 'chart'])
 
-<p class="text-muted small">{{ __('The chart is a starting point for MASDAR\'s accountant (spec Q-A4). Headings group sub-accounts and are never posted to. Balances are in :book, shown positive when normal for the account\'s type.', ['book' => $book]) }}</p>
-
-<div class="app-card">
+<x-section :title="__('Accounts')" icon="diagram-3" flush>
     <div class="table-responsive">
-        <table class="table align-middle mb-0">
+        <table class="table table-hover align-middle mb-0 app-chart">
             <thead><tr>
-                <th>{{ __('Code') }}</th><th>{{ __('Account') }}</th><th>{{ __('Type') }}</th><th>{{ __('Currency') }}</th>
-                <th>{{ __('Takes postings') }}</th><th>{{ __('Status') }}</th><th class="text-end">{{ __('Balance (:book)', ['book' => $book]) }}</th><th></th>
+                <th scope="col">{{ __('Code') }}</th><th scope="col">{{ __('Account') }}</th><th scope="col">{{ __('Type') }}</th><th scope="col">{{ __('Currency') }}</th>
+                <th scope="col">{{ __('Takes postings') }}</th><th scope="col">{{ __('Status') }}</th><th scope="col" class="text-end">{{ __('Balance (:book)', ['book' => $book]) }}</th><th scope="col"><span class="visually-hidden">{{ __('Actions') }}</span></th>
             </tr></thead>
             <tbody>
             @forelse($rows as $row)
-                @php $a = $row['account']; @endphp
-                <tr class="{{ $a->is_postable ? '' : 'fw-semibold table-light' }}">
-                    <td class="app-num">{{ $a->code }}</td>
-                    <td><span style="padding-inline-start: {{ $row['depth'] * 1.5 }}rem">{{ $a->displayName() }}</span></td>
-                    <td>{{ $a->typeLabel() }}</td>
-                    <td>{{ $a->currency ?? __('Any') }}</td>
-                    <td>@if($a->is_postable)<i class="bi bi-check-lg text-success" title="{{ __('Yes') }}"></i>@else<span class="text-muted small">{{ __('Heading') }}</span>@endif</td>
-                    <td>@if($a->active)<span class="app-pill app-pill--done">{{ __('Active') }}</span>@else<span class="app-pill app-pill--skip">{{ __('Inactive') }}</span>@endif</td>
-                    <td class="app-num text-end">{{ $fmt($row['amount']) }}</td>
-                    <td class="text-end text-nowrap">
-                        @if($a->is_postable)
-                            @can('finance_reports.view')
-                                <a href="{{ route('finance-reports.account-ledger', ['account_id' => $a->id]) }}" class="btn btn-sm btn-light" title="{{ __('Account ledger') }}"><i class="bi bi-list-ul"></i></a>
+                @php $a = $row['account']; $negative = Decimal::cmp($row['amount'], '0') < 0; @endphp
+                <tr class="{{ $a->is_postable ? '' : 'app-chart__heading' }}">
+                    <td><span class="app-num {{ $a->is_postable ? 'text-muted' : '' }}">{{ $a->code }}</span></td>
+                    <td class="app-chart__name" style="--depth: {{ $row['depth'] }}">{{ $a->displayName() }}</td>
+                    <td class="small">{{ $a->typeLabel() }}</td>
+                    <td class="small">@if($a->currency)<span class="app-ltr">{{ $a->currency }}</span>@else<span class="text-muted">{{ __('Any') }}</span>@endif</td>
+                    <td>@if($a->is_postable)<i class="bi bi-check-lg text-success" aria-hidden="true"></i><span class="visually-hidden">{{ __('Yes') }}</span>@else<span class="app-chart__tag">{{ __('Heading') }}</span>@endif</td>
+                    <td>@if($a->active)<x-status tone="done">{{ __('Active') }}</x-status>@else<x-status tone="skip">{{ __('Inactive') }}</x-status>@endif</td>
+                    <td class="text-end"><span class="app-num app-fig {{ $negative ? 'app-fig--neg' : '' }} {{ $a->is_postable ? '' : 'fw-semibold' }}">{{ $fmt($row['amount']) }}</span></td>
+                    <td class="text-end">
+                        <span class="app-rowactions">
+                            @if($a->is_postable)
+                                @can('finance_reports.view')
+                                    <a href="{{ route('finance-reports.account-ledger', ['account_id' => $a->id]) }}" class="btn btn-sm btn-light" title="{{ __('Account ledger') }}" aria-label="{{ __('Account ledger') }}: {{ $a->code }}"><i class="bi bi-list-ul" aria-hidden="true"></i></a>
+                                @endcan
+                            @endif
+                            @can('accounting.edit')
+                                <a href="{{ route('accounting.accounts.edit', $a) }}" class="btn btn-sm btn-light" title="{{ __('Edit') }}" aria-label="{{ __('Edit') }}: {{ $a->code }}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
                             @endcan
-                        @endif
-                        @can('accounting.edit')
-                            <a href="{{ route('accounting.accounts.edit', $a) }}" class="btn btn-sm btn-light" title="{{ __('Edit') }}"><i class="bi bi-pencil"></i></a>
-                        @endcan
+                        </span>
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="8" class="app-empty">{{ __('No accounts yet.') }}</td></tr>
+                <tr><td colspan="8" class="p-0"><x-empty icon="diagram-3" :title="__('No accounts yet.')" /></td></tr>
             @endforelse
             </tbody>
         </table>
     </div>
-</div>
+</x-section>
 @endsection

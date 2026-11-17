@@ -3,15 +3,16 @@
 @section('title', __('New product'))
 
 @section('content')
-<h1 class="h4 mb-3">{{ __('New product') }}</h1>
-<div class="app-card p-4">
-    <form method="POST" action="{{ route('products.store') }}" enctype="multipart/form-data">
-        @csrf
-        @include('products._form', ['product' => null])
-        <div class="mt-4 d-flex gap-2">
-            <button class="btn btn-primary">{{ __('Create') }}</button>
-            <a href="{{ route('products.index') }}" class="btn btn-light">{{ __('Cancel') }}</a>
-        </div>
-    </form>
-</div>
+<x-page-header :title="__('New product')" :subtitle="__('A code is given when it is saved. Its photo, carton and prices fill in every PI line made from it.')"
+               :back="route('products.index')" :back-label="__('Products')" />
+
+<form method="POST" action="{{ route('products.store') }}" enctype="multipart/form-data" class="app-card app-docform app-docform--product">
+    @csrf
+    @include('proforma-invoices._error-summary', ['prefix' => 'f-'])
+    @include('products._form', ['product' => null])
+    <div class="app-docform__actions">
+        <button class="btn btn-primary"><i class="bi bi-check2" aria-hidden="true"></i>{{ __('Create') }}</button>
+        <a href="{{ route('products.index') }}" class="btn btn-light">{{ __('Cancel') }}</a>
+    </div>
+</form>
 @endsection

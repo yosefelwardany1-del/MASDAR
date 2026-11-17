@@ -3,94 +3,98 @@
 @section('title', __('Import / Export'))
 
 @section('content')
-<h1 class="h4 mb-1">{{ __('Import / Export') }}</h1>
-<p class="text-muted mb-3">{{ __('Download a template, export existing data, or bulk-import CSV / XLSX.') }}</p>
-
-@if(session('success'))
-<div class="alert alert-success">{{ session('success') }}</div>
-@endif
+<x-page-header :title="__('Import / Export')" :subtitle="__('Download a template, export existing data, or bulk-import CSV / XLSX.')" />
 
 @if(session('import_result'))
 @php $r = session('import_result'); @endphp
-<div class="alert alert-info">
-    <strong>{{ __('Last import') }}:</strong>
-    {{ __(':created created, :updated updated, :failed failed of :total rows.', ['created' => $r['created'], 'updated' => $r['updated'], 'failed' => $r['failed'], 'total' => $r['total_rows']]) }}
-    @if(!empty($r['errors']))
-    <ul class="mb-0 small mt-1">
-        @foreach($r['errors'] as $e)<li>{{ __('Row :row', ['row' => $e['row']]) }}: {{ implode('; ', $e['messages']) }}</li>@endforeach
-    </ul>
-    @endif
-    @if(!empty($r['notices']))
-    <div class="small fw-semibold mt-2">{{ __('Notes') }} ({{ count($r['notices']) }})</div>
-    <ul class="mb-0 small">
-        @foreach($r['notices'] as $n)<li>{{ __('Row :row', ['row' => $n['row']]) }}: {{ implode('; ', $n['messages']) }}</li>@endforeach
-    </ul>
-    @endif
+<div class="alert {{ $r['failed'] ? 'alert-warning' : 'alert-success' }} app-io-result" role="status">
+    <div class="d-flex gap-2 align-items-start">
+        <i class="bi {{ $r['failed'] ? 'bi-exclamation-triangle' : 'bi-check2-circle' }}" aria-hidden="true"></i>
+        <div>
+            <strong>{{ __('Last import') }}:</strong>
+            {{ __(':created created, :updated updated, :failed failed of :total rows.', ['created' => $r['created'], 'updated' => $r['updated'], 'failed' => $r['failed'], 'total' => $r['total_rows']]) }}
+            @if(!empty($r['errors']))
+            <ul class="small">
+                @foreach($r['errors'] as $e)<li>{{ __('Row :row', ['row' => $e['row']]) }}: {{ implode('; ', $e['messages']) }}</li>@endforeach
+            </ul>
+            @endif
+            @if(!empty($r['notices']))
+            <div class="small fw-semibold mt-2">{{ __('Notes') }} ({{ count($r['notices']) }})</div>
+            <ul class="small">
+                @foreach($r['notices'] as $n)<li>{{ __('Row :row', ['row' => $n['row']]) }}: {{ implode('; ', $n['messages']) }}</li>@endforeach
+            </ul>
+            @endif
+        </div>
+    </div>
 </div>
 @endif
 
 @if($resources->isEmpty())
-<div class="app-card app-empty mb-3">{{ __('Nothing to import or export yet.') }}</div>
+<div class="app-card mb-4"><x-empty icon="arrow-down-up" :title="__('Nothing to import or export yet.')" /></div>
 @endif
 
-<div class="row g-3">
+<div class="app-io mb-4">
     @foreach($resources as $schema)
-    <div class="col-md-6 col-xl-4">
-        <div class="app-card h-100 p-3">
-            <h2 class="h6 mb-3">{{ $schema->label() }}</h2>
-            <div class="mb-2">
-                <div class="small text-muted mb-1">{{ __('Template') }}</div>
-                <a class="btn btn-sm btn-light" href="{{ route('io.template', $schema->key()) }}?format=csv"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
-                <a class="btn btn-sm btn-light" href="{{ route('io.template', $schema->key()) }}?format=xlsx"><i class="bi bi-filetype-xlsx me-1"></i>XLSX</a>
+    <section class="app-card app-io__card" aria-labelledby="io-{{ $schema->key() }}">
+        <h2 class="app-io__title" id="io-{{ $schema->key() }}"><i class="bi bi-table" aria-hidden="true"></i>{{ $schema->label() }}</h2>
+        <div class="app-io__row">
+            <div class="app-io__label">{{ __('Template') }}</div>
+            <div class="app-io__btns">
+                <a class="btn btn-sm btn-light" href="{{ route('io.template', $schema->key()) }}?format=csv"><i class="bi bi-filetype-csv" aria-hidden="true"></i>CSV</a>
+                <a class="btn btn-sm btn-light" href="{{ route('io.template', $schema->key()) }}?format=xlsx"><i class="bi bi-filetype-xlsx" aria-hidden="true"></i>XLSX</a>
             </div>
-            <div class="mb-3">
-                <div class="small text-muted mb-1">{{ __('Export') }}</div>
-                <a class="btn btn-sm btn-outline-primary" href="{{ route('io.export', $schema->key()) }}?format=csv"><i class="bi bi-download me-1"></i>CSV</a>
-                <a class="btn btn-sm btn-outline-primary" href="{{ route('io.export', $schema->key()) }}?format=xlsx"><i class="bi bi-download me-1"></i>XLSX</a>
-            </div>
-            @can($schema->permissionFor('edit'))
-            @can('import_export.edit')
-            <form method="POST" action="{{ route('io.import', $schema->key()) }}" enctype="multipart/form-data" class="io-import-form" data-preview="{{ route('io.preview', $schema->key()) }}">
-                @csrf
-                <div class="small text-muted mb-1">{{ __('Import') }} (CSV / XLSX)</div>
-                <input type="file" name="file" class="form-control form-control-sm mb-2" accept="{{ $schema->uploadAccept() }}" required>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-light io-preview-btn">{{ __('Preview') }}</button>
-                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-upload me-1"></i>{{ __('Import') }}</button>
-                </div>
-                <div class="io-preview-result small mt-2"></div>
-            </form>
-            @endcan
-            @endcan
         </div>
-    </div>
+        <div class="app-io__row">
+            <div class="app-io__label">{{ __('Export') }}</div>
+            <div class="app-io__btns">
+                <a class="btn btn-sm btn-outline-primary" href="{{ route('io.export', $schema->key()) }}?format=csv"><i class="bi bi-download" aria-hidden="true"></i>CSV</a>
+                <a class="btn btn-sm btn-outline-primary" href="{{ route('io.export', $schema->key()) }}?format=xlsx"><i class="bi bi-download" aria-hidden="true"></i>XLSX</a>
+            </div>
+        </div>
+        @can($schema->permissionFor('edit'))
+        @can('import_export.edit')
+        <form method="POST" action="{{ route('io.import', $schema->key()) }}" enctype="multipart/form-data" class="io-import-form app-io__row app-io__import" data-preview="{{ route('io.preview', $schema->key()) }}">
+            @csrf
+            <label class="app-io__label" for="io-file-{{ $schema->key() }}">{{ __('Import') }} (CSV / XLSX)<span class="app-req" aria-hidden="true">*</span></label>
+            <input type="file" name="file" id="io-file-{{ $schema->key() }}" class="form-control form-control-sm" accept="{{ $schema->uploadAccept() }}" required>
+            <div class="app-io__btns">
+                <button type="button" class="btn btn-sm btn-light io-preview-btn"><i class="bi bi-eye" aria-hidden="true"></i>{{ __('Preview') }}</button>
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-upload" aria-hidden="true"></i>{{ __('Import') }}</button>
+            </div>
+            <div class="io-preview-result small" aria-live="polite"></div>
+        </form>
+        @endcan
+        @endcan
+    </section>
     @endforeach
 </div>
 
-<div class="app-card mt-4">
-    <div class="p-3 pb-0"><h2 class="h6">{{ __('My recent imports') }}</h2></div>
+<x-section :title="__('My recent imports')" icon="clock-history" flush>
     <div class="table-responsive">
-        <table class="table align-middle mb-0">
-            <thead><tr><th>{{ __('Time') }}</th><th>{{ __('Resource') }}</th><th>{{ __('File') }}</th><th class="text-end">{{ __('Rows') }}</th><th class="text-end">{{ __('Created') }}</th><th class="text-end">{{ __('Updated') }}</th><th class="text-end">{{ __('Failed') }}</th><th>{{ __('Status') }}</th></tr></thead>
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th scope="col">{{ __('Time') }}</th><th scope="col">{{ __('Resource') }}</th><th scope="col">{{ __('File') }}</th><th scope="col" class="text-end">{{ __('Rows') }}</th><th scope="col" class="text-end">{{ __('Created') }}</th><th scope="col" class="text-end">{{ __('Updated') }}</th><th scope="col" class="text-end">{{ __('Failed') }}</th><th scope="col">{{ __('Status') }}</th></tr></thead>
             <tbody>
                 @forelse($history as $run)
                 <tr>
-                    <td class="small text-muted">{{ $run->created_at?->diffForHumans() }}</td>
+                    <td class="small text-muted text-nowrap">{{ $run->created_at?->diffForHumans() }}</td>
                     <td><span class="app-ltr">{{ $run->resource }}</span></td>
                     <td class="small"><span class="app-ltr">{{ $run->filename }}</span></td>
-                    <td class="text-end">{{ $run->total_rows }}</td>
-                    <td class="text-end text-success">{{ $run->created_count }}</td>
-                    <td class="text-end">{{ $run->updated_count }}</td>
-                    <td class="text-end {{ $run->failed_count ? 'text-danger' : '' }}">{{ $run->failed_count }}</td>
-                    <td><span class="badge text-bg-{{ $run->status === 'completed' ? 'success' : ($run->inProgress() ? 'secondary' : 'danger') }}">{{ __('import.'.$run->status) }}</span></td>
+                    <td class="text-end"><span class="app-num">{{ $run->total_rows }}</span></td>
+                    <td class="text-end"><span class="app-num">{{ $run->created_count }}</span></td>
+                    <td class="text-end"><span class="app-num">{{ $run->updated_count }}</span></td>
+                    <td class="text-end"><span class="app-num {{ $run->failed_count ? 'app-fig--neg fw-semibold' : '' }}">{{ $run->failed_count }}</span></td>
+                    <td>
+                        @php [$tone, $icon] = $run->status === 'completed' ? ['done', 'check-circle'] : ($run->inProgress() ? ['info', 'arrow-repeat'] : ['late', 'x-circle']); @endphp
+                        <x-status :tone="$tone" :icon="$icon">{{ __('import.'.$run->status) }}</x-status>
+                    </td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="app-empty">{{ __('No imports yet.') }}</td></tr>
+                <tr><td colspan="8" class="p-0"><x-empty icon="clock-history" :title="__('No imports yet.')" /></td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-</div>
+</x-section>
 @endsection
 
 @push('scripts')

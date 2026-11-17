@@ -1,1 +1,634 @@
 /* Screen layer: the proforma invoice screens and the client, supplier and shipping company pages. Tokens and shared components come from theme.css; only this area's own rules go here. */
+
+/*
+ * Also products and CRM tasks. Everything here is built from the theme's tokens, logical
+ * properties only, so the same rules serve the Arabic (RTL) and the English and Chinese (LTR)
+ * builds. Prefixes: app-doc- (the PI), app-profile- / app-ptabs- (party pages), app-contact-,
+ * app-timeline-, app-task- (CRM), app-product- (products), app-docform- (the forms).
+ */
+
+/* ======================================================================
+   Shared bits
+   ====================================================================== */
+.app-doc-code {
+    display: inline-flex; align-items: center; gap: .25rem; padding: 0 .4rem; border-radius: 4px;
+    background: var(--app-surface-3); color: var(--app-ink-soft); font-size: var(--app-fs-xs); font-weight: 600;
+    line-height: 1.6; text-decoration: none; direction: ltr; unicode-bidi: isolate; white-space: nowrap;
+}
+a.app-doc-code:hover { background: rgba(var(--app-primary-rgb), .1); color: var(--app-primary); }
+.app-doc-muted, .app-doc-muted a { color: var(--app-muted); }
+.app-doc-footnote {
+    display: flex; gap: .4rem; align-items: baseline; margin: 0; padding: var(--app-sp-2) var(--app-sp-4) var(--app-sp-3);
+    color: var(--app-muted); font-size: var(--app-fs-xs); border-block-start: 1px solid var(--app-line);
+}
+.app-doc-actions__sep { inline-size: 1px; block-size: 24px; background: var(--app-line-strong); margin-inline: var(--app-sp-1); }
+
+/* A note under a status: what happens next, or why it stopped. */
+.app-doc-note {
+    display: flex; gap: .6rem; align-items: flex-start; margin-block-start: var(--app-sp-4);
+    padding: .625rem .875rem; border-radius: var(--app-radius-sm);
+    background: var(--app-surface-2); border: 1px solid var(--app-line); color: var(--app-ink-soft); font-size: var(--app-fs-sm);
+}
+.app-doc-note > .bi { color: var(--app-accent); margin-block-start: .1rem; }
+.app-doc-note--late { background: var(--app-danger-bg); border-color: var(--app-danger-line); color: var(--app-danger); }
+.app-doc-note--late > .bi { color: var(--app-danger); }
+.app-doc-note__text { color: var(--app-ink); margin-block-start: .15rem; white-space: pre-line; }
+
+/* What is internal (never printed): a quiet gold-tinted block with a lock. */
+.app-doc-internal {
+    background: var(--app-gold-soft); border: 1px dashed rgba(var(--app-accent-rgb), .45);
+    border-radius: var(--app-radius-sm); padding: var(--app-sp-3) var(--app-sp-4);
+}
+.app-doc-internal__label {
+    display: flex; align-items: center; gap: .4rem; font-size: var(--app-fs-xs); font-weight: 600;
+    color: var(--app-accent-dark); letter-spacing: .02em; margin-block-end: .35rem;
+}
+.app-doc-internal__text { white-space: pre-line; color: var(--app-ink); font-size: var(--app-fs-sm); }
+
+/* ======================================================================
+   The proforma invoice page
+   ====================================================================== */
+.app-doc-cancel { padding: var(--app-sp-4); border-inline-start: 4px solid var(--app-danger); }
+
+/* Row one: where the PI stands, and the money. */
+.app-doc-top { display: grid; gap: var(--app-sp-4); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1200px) { .app-doc-top { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); } }
+/* Narrower, the money comes first: it is what is checked most. */
+@media (max-width: 1199.98px) { .app-doc-top > .app-doc-summary { order: -1; } }
+.app-doc-status .app-stepper { padding-block: var(--app-sp-2) 0; }
+.app-doc-status .app-stepper__sub .app-num { white-space: nowrap; }
+
+.app-doc-summary { display: flex; flex-direction: column; }
+.app-doc-summary__currency {
+    font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-ink-soft); letter-spacing: .04em;
+    padding: .1rem .5rem; border: 1px solid var(--app-line); border-radius: 999px; background: var(--app-surface-2);
+}
+.app-doc-summary__body { padding: var(--app-sp-4); display: grid; gap: var(--app-sp-3); }
+.app-doc-summary__total { display: flex; flex-direction: column; gap: .1rem; }
+.app-doc-summary__label { font-size: var(--app-fs-sm); color: var(--app-ink-soft); font-weight: 500; }
+.app-doc-summary__amount { font-size: var(--app-fs-3xl); font-weight: 700; line-height: 1.15; color: var(--app-ink); direction: ltr; unicode-bidi: isolate; align-self: flex-start; }
+.app-doc-summary__rows { margin: 0; display: grid; border-block-start: 1px solid var(--app-line); }
+.app-doc-summary__row {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem;
+    padding-block: .55rem; border-block-end: 1px solid var(--app-line);
+}
+.app-doc-summary__row dt { font-weight: 500; color: var(--app-ink-soft); font-size: var(--app-fs-md); }
+.app-doc-summary__row dd { margin: 0; font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .35rem .5rem; }
+.app-doc-summary__row--due { border-block-end: 0; padding-block-end: 0; }
+.app-doc-summary__row--due dt { color: var(--app-ink); font-weight: 600; }
+.app-doc-summary__row--due dd { font-size: var(--app-fs-xl); font-weight: 700; color: var(--app-primary); }
+.app-doc-summary__facts {
+    display: flex; flex-wrap: wrap; gap: .35rem 1rem; padding: .5rem .75rem; border-radius: var(--app-radius-sm);
+    background: var(--app-surface-2); font-size: var(--app-fs-sm); font-weight: 600; color: var(--app-ink);
+}
+.app-doc-summary__fact-label { color: var(--app-muted); font-weight: 500; font-size: var(--app-fs-xs); }
+
+/* The document: a sheet with MASDAR's letterhead, in the brand's navy and gold. */
+.app-doc-sheet { overflow: hidden; border-block-start: 3px solid var(--app-accent); }
+.app-doc-sheet__head {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--app-sp-3) var(--app-sp-5);
+    padding: var(--app-sp-4) var(--app-sp-5); border-block-end: 1px solid var(--app-line);
+}
+.app-doc-sheet__brand { display: flex; align-items: center; gap: var(--app-sp-3); min-inline-size: 0; }
+.app-doc-sheet__logo {
+    flex: 0 0 44px; inline-size: 44px; block-size: 44px; border-radius: 10px; border: 1px solid var(--app-line);
+    background: var(--app-surface); display: inline-flex; align-items: center; justify-content: center; overflow: hidden; padding: 3px;
+}
+.app-doc-sheet__logo img { max-inline-size: 100%; max-block-size: 100%; object-fit: contain; }
+.app-doc-sheet__company { font-weight: 700; color: var(--app-primary); letter-spacing: .02em; line-height: 1.3; }
+.app-doc-sheet__address { color: var(--app-muted); font-size: var(--app-fs-xs); line-height: 1.4; }
+.app-doc-sheet__title { text-align: end; }
+.app-doc-sheet__title h2 {
+    margin: 0; font-size: var(--app-fs-xl); font-weight: 700; color: var(--app-ink); letter-spacing: .01em;
+}
+.app-doc-sheet__ref { color: var(--app-ink-soft); font-size: var(--app-fs-sm); font-weight: 500; }
+
+.app-doc-sheet__parties {
+    display: grid; gap: var(--app-sp-3) var(--app-sp-5); grid-template-columns: minmax(0, 1fr);
+    padding: var(--app-sp-4) var(--app-sp-5); background: var(--app-surface-2); border-block-end: 1px solid var(--app-line);
+}
+@media (min-width: 768px) { .app-doc-sheet__parties { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, .8fr); } }
+.app-doc-fields { margin: 0; display: grid; gap: .4rem; }
+.app-doc-fields > div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: .5rem; align-items: baseline; }
+.app-doc-fields dt { font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-muted); letter-spacing: .03em; }
+.app-doc-fields dd { margin: 0; font-weight: 600; color: var(--app-ink); overflow-wrap: anywhere; }
+
+/* The lines: the printed PI's columns, with the photos large enough to recognise the goods. */
+.app-doc-lines .table > thead > tr > th { white-space: normal; line-height: 1.3; min-inline-size: 3.75rem; }
+.app-doc-lines .table > thead > tr > th.app-doc-lines__no { min-inline-size: 0; inline-size: 2.75rem; }
+.app-doc-lines .table > thead > tr > th.app-doc-lines__pic { min-inline-size: 0; inline-size: 5rem; }
+.app-doc-lines .table > tbody > tr > td { border-block-end: 1px solid var(--app-line); }
+.app-doc-lines td.app-doc-lines__no { color: var(--app-muted); font-weight: 600; }
+.app-doc-lines__item { min-inline-size: 13rem; }
+.app-doc-lines__text { white-space: pre-line; color: var(--app-ink); font-weight: 500; line-height: 1.45; text-align: start; }
+/* The description is English (as on the printed PI); on an Arabic page it lines up with its column. */
+[dir="rtl"] .app-doc-lines__text { text-align: end; }
+.app-doc-lines__item .app-doc-code { margin-block-start: .3rem; }
+.app-doc-lines__lineno { display: none; }
+.app-doc-lines__amount { font-weight: 600; color: var(--app-ink); }
+.app-doc-lines td, .app-doc-lines tfoot th { white-space: nowrap; }
+.app-doc-lines td.app-doc-lines__item, .app-doc-lines td.app-doc-lines__internal:not(.app-num) { white-space: normal; }
+.app-doc-lines .app-doc-lines__internal { background: rgba(var(--app-accent-rgb), .055); }
+.app-doc-lines thead .app-doc-lines__internal { color: var(--app-accent-dark); }
+.app-doc-lines__row:hover > .app-doc-lines__internal { background: rgba(var(--app-accent-rgb), .08); }
+.app-doc-lines th.app-doc-lines__internal { min-inline-size: 9rem; }
+.app-doc-lines__subhead { display: block; font-weight: 500; color: var(--app-muted); }
+.app-doc-lines__supplier { font-size: var(--app-fs-sm); font-weight: 500; color: var(--app-ink); line-height: 1.35; }
+.app-doc-lines__sprice { font-size: var(--app-fs-xs); color: var(--app-accent-dark); font-weight: 600; margin-block-start: .15rem; direction: ltr; unicode-bidi: isolate; text-align: start; }
+[dir="rtl"] .app-doc-lines__sprice { text-align: end; }
+.app-doc-lines .table > :not(caption) > * > * { padding-inline: .6rem; }
+.app-doc-lines td.app-doc-lines__actions .btn { padding-inline: .5rem; }
+
+/* The status column: the path, then the revisions. */
+.app-doc-top__main { display: grid; gap: var(--app-sp-4); align-content: start; min-inline-size: 0; }
+
+/* The attachments panel beside the payments, the same height. */
+.app-doc-attach > .app-card.mt-3 { margin-block-start: 0 !important; block-size: 100%; }
+
+.app-doc-thumb {
+    display: block; inline-size: 56px; block-size: 56px; object-fit: cover; border-radius: 8px;
+    border: 1px solid var(--app-line); background: var(--app-surface-2);
+}
+.app-doc-thumb--empty { display: inline-flex; align-items: center; justify-content: center; color: var(--app-line-strong); font-size: 1.35rem; }
+
+.app-doc-lines tfoot .app-doc-lines__total > * {
+    background: rgba(var(--app-primary-rgb), .045); border-block-start: 2px solid var(--app-primary);
+    font-weight: 700; color: var(--app-ink); padding-block: .75rem;
+}
+.app-doc-lines tfoot .app-doc-lines__amount { font-size: var(--app-fs-lg); color: var(--app-primary); }
+.app-doc-lines__empty > td { padding: 0 !important; }
+
+.app-doc-lines__edit > td { background: var(--app-surface-2); padding: 0 !important; border-block-end: 1px solid var(--app-line-strong); }
+.app-doc-lineform { padding: var(--app-sp-4) var(--app-sp-5); border-inline-start: 3px solid var(--app-accent); }
+.app-doc-lineform__title { display: flex; align-items: center; gap: .4rem; font-weight: 600; margin-block-end: var(--app-sp-3); color: var(--app-ink); }
+.app-doc-lineform__title .bi { color: var(--app-accent); }
+
+.app-doc-sheet__terms {
+    padding: var(--app-sp-4) var(--app-sp-5); text-align: center; font-weight: 700; letter-spacing: .03em;
+    color: var(--app-primary); border-block-start: 1px solid var(--app-line); background: var(--app-surface);
+}
+
+/* Field groups inside a line form (and the add-line card). */
+.app-doc-fieldgroup { margin-block-start: var(--app-sp-4); }
+.app-doc-fieldgroup__label {
+    display: flex; align-items: center; gap: .4rem; font-size: var(--app-fs-xs); font-weight: 600;
+    color: var(--app-ink-soft); letter-spacing: .03em; margin-block-end: var(--app-sp-2);
+}
+.app-doc-fieldgroup__label .bi { color: var(--app-accent); }
+.app-doc-fieldgroup.app-doc-internal { padding: var(--app-sp-3) var(--app-sp-4) var(--app-sp-4); }
+
+/* Revisions: newest last, the one on screen marked. */
+.app-doc-revisions .app-list__row.is-here { background: rgba(var(--app-primary-rgb), .045); box-shadow: inset 3px 0 0 var(--app-accent); }
+[dir="rtl"] .app-doc-revisions .app-list__row.is-here { box-shadow: inset -3px 0 0 var(--app-accent); }
+.app-doc-revisions__no {
+    flex: 0 0 28px; inline-size: 28px; block-size: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--app-surface-3); color: var(--app-ink-soft); font-size: var(--app-fs-xs); font-weight: 700;
+}
+.app-doc-revisions .is-here .app-doc-revisions__no { background: var(--app-primary); color: #fff; }
+.app-doc-revisions .app-list__sub { white-space: normal; }
+
+/* On a phone each line becomes a card: picture and description first, the figures below. */
+@media (max-width: 767.98px) {
+    .app-doc-sheet__head, .app-doc-sheet__parties, .app-doc-sheet__terms { padding-inline: var(--app-sp-4); }
+    .app-doc-sheet__title { text-align: start; }
+    .app-doc-fields > div { grid-template-columns: 6.5rem minmax(0, 1fr); }
+    .app-doc-lines { contain: none; }
+    .app-doc-lines .table, .app-doc-lines .table > tbody, .app-doc-lines .table > tfoot { display: block; }
+    .app-doc-lines .table > thead {
+        position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+    .app-doc-lines .table > tbody > tr.app-doc-lines__row, .app-doc-lines .table > tfoot > tr {
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem .75rem;
+        padding: var(--app-sp-3) var(--app-sp-4); border-block-end: 1px solid var(--app-line);
+    }
+    .app-doc-lines .table > tbody > tr > td, .app-doc-lines .table > tfoot > tr > td, .app-doc-lines .table > tfoot > tr > th {
+        display: block; padding: 0; border: 0; text-align: start !important; white-space: normal; min-inline-size: 0; background: none;
+    }
+    .app-doc-lines .table > tbody > tr > td.app-doc-lines__no { display: none; }
+    .app-doc-lines .table > tbody > tr > td.app-doc-lines__pic { grid-column: 1; }
+    .app-doc-lines .table > tbody > tr > td.app-doc-lines__item { grid-column: 2 / -1; min-inline-size: 0; }
+    .app-doc-lines__lineno {
+        display: inline-flex; align-items: center; justify-content: center; min-inline-size: 22px; block-size: 22px; padding-inline: 6px;
+        border-radius: 999px; background: var(--app-surface-3); color: var(--app-ink-soft); font-size: var(--app-fs-xs); font-weight: 700;
+        margin-block-end: .25rem;
+    }
+    .app-doc-lines td[data-label]::before, .app-doc-lines tfoot [data-label]::before {
+        content: attr(data-label); display: block; font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-muted); margin-block-end: .1rem;
+    }
+    .app-doc-lines td.app-doc-lines__internal { background: none; }
+    .app-doc-lines .table > tbody > tr > td.app-doc-lines__actions { grid-column: 1 / -1; display: flex; gap: var(--app-sp-2); justify-content: flex-end; }
+    .app-doc-lines .table > tbody > tr > td.app-doc-lines__actions .btn { min-block-size: 36px; min-inline-size: 44px; }
+    .app-doc-lines .table > tbody > tr.app-doc-lines__edit.show, .app-doc-lines .table > tbody > tr.app-doc-lines__empty { display: block; }
+    .app-doc-lines .table > tbody > tr.app-doc-lines__edit > td, .app-doc-lines .table > tbody > tr.app-doc-lines__empty > td { display: block; }
+    .app-doc-lineform { padding: var(--app-sp-3) var(--app-sp-4); }
+    .app-doc-lines .table > tfoot > tr { background: rgba(var(--app-primary-rgb), .045); border-block-start: 2px solid var(--app-primary); }
+    .app-doc-lines .table > tfoot > tr > th { grid-column: 1 / -1; font-size: var(--app-fs-lg); }
+    .app-doc-lines .table > tfoot > tr > td:empty { display: none; }
+    .app-doc-lines .table > tfoot > tr > * { border: 0; }
+}
+
+/* ======================================================================
+   Lists: status chips, search box, rows
+   ====================================================================== */
+.app-doc-chips { display: flex; flex-wrap: wrap; gap: var(--app-sp-2); margin-block-end: var(--app-sp-3); }
+.app-doc-chip {
+    display: inline-flex; align-items: center; gap: .35rem; min-block-size: 32px; padding: .25rem .8rem;
+    border-radius: 999px; border: 1px solid var(--app-line-strong); background: var(--app-surface);
+    color: var(--app-ink-soft); font-size: var(--app-fs-sm); font-weight: 500; text-decoration: none;
+    transition: background-color var(--app-fast) var(--app-ease), border-color var(--app-fast) var(--app-ease), color var(--app-fast) var(--app-ease);
+}
+.app-doc-chip:hover { background: var(--app-surface-3); color: var(--app-ink); }
+.app-doc-chip.is-active { background: var(--app-primary); border-color: var(--app-primary); color: #fff; font-weight: 600; }
+.app-doc-chip__count { font-size: var(--app-fs-xs); opacity: .8; }
+
+.app-doc-search { position: relative; flex: 1 1 14rem; min-inline-size: 12rem; max-inline-size: 20rem; }
+.app-doc-search > .bi { position: absolute; inset-inline-start: .75rem; inset-block-start: 50%; transform: translateY(-50%); color: var(--app-muted); pointer-events: none; }
+.app-doc-search > .form-control { padding-inline-start: 2.25rem; }
+.app-doc-filter { flex: 0 1 12rem; inline-size: auto; min-inline-size: 8rem; max-inline-size: 15rem; }
+
+.app-doc-list__ref { font-weight: 600; white-space: nowrap; }
+.app-doc-list__client { min-inline-size: 11rem; }
+.app-doc-list__sub { color: var(--app-muted); font-size: var(--app-fs-xs); }
+.app-doc-list__paid { min-inline-size: 8rem; }
+.app-doc-list__bar { margin-block-start: .35rem; }
+.app-doc-list__bar .app-progress__head { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 575.98px) {
+    .app-doc-search, .app-doc-filter { flex: 1 1 100%; max-inline-size: none; }
+}
+
+/* ======================================================================
+   Forms of this area: grouped sections, error summary, an action bar
+   that stays in reach on long forms
+   ====================================================================== */
+.app-docform { max-inline-size: 60rem; }
+.app-docform--wide { max-inline-size: none; }
+.app-docform > .app-docform-errors { margin: var(--app-sp-4) var(--app-sp-5) 0; }
+.app-docform__section { padding: var(--app-sp-5); margin: 0; border: 0; min-inline-size: 0; }
+.app-docform__section + .app-docform__section { border-block-start: 1px solid var(--app-line); }
+/* Floated, a legend is laid out as an ordinary block heading rather than drawn on the border. */
+.app-docform__legend {
+    display: flex; align-items: center; gap: .5rem; float: inline-start; inline-size: 100%; padding: 0;
+    font-size: var(--app-fs-lg); font-weight: 600; line-height: 1.4; color: var(--app-ink); margin-block-end: var(--app-sp-1);
+}
+.app-docform__legend ~ * { clear: both; }
+.app-docform__legend .bi { color: var(--app-accent); }
+.app-docform__hint { color: var(--app-ink-soft); font-size: var(--app-fs-sm); margin-block-end: var(--app-sp-4); max-inline-size: 65ch; }
+.app-docform__legend + .row, .app-docform__legend + .form-control, .app-docform__legend + label + .form-control { margin-block-start: var(--app-sp-3); }
+.app-docform__actions {
+    position: sticky; inset-block-end: 0; z-index: 5;
+    display: flex; flex-wrap: wrap; gap: var(--app-sp-2); align-items: center;
+    padding: var(--app-sp-3) var(--app-sp-5); border-block-start: 1px solid var(--app-line);
+    background: rgba(255, 255, 255, .96); backdrop-filter: blur(6px);
+    border-end-start-radius: var(--app-radius); border-end-end-radius: var(--app-radius);
+}
+.app-docform__actions-note { color: var(--app-muted); font-size: var(--app-fs-xs); margin-inline-start: auto; }
+/* A field reached by keyboard is never hidden behind the action bar. */
+.app-docform :is(input, select, textarea, button) { scroll-margin-block-end: 5rem; }
+.app-docform-errors__title { display: flex; align-items: center; gap: .5rem; font-weight: 600; margin-block-end: .25rem; }
+.app-docform-errors ul { margin: 0; padding-inline-start: 1.25rem; }
+.app-docform-errors a { color: inherit; font-weight: 500; }
+.app-docform-errors:focus-visible { outline: 2px solid var(--app-danger); outline-offset: 2px; }
+@media (max-width: 767.98px) {
+    .app-docform__section { padding: var(--app-sp-4); }
+    .app-docform__actions { padding-inline: var(--app-sp-4); }
+    .app-docform > .app-docform-errors { margin-inline: var(--app-sp-4); }
+}
+
+/* ======================================================================
+   Party pages: the profile, then one section at a time
+   ====================================================================== */
+.app-profile { margin-block-end: var(--app-sp-4); overflow: hidden; }
+.app-profile__top {
+    display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--app-sp-3) var(--app-sp-4);
+    padding: var(--app-sp-5); border-block-end: 1px solid var(--app-line);
+}
+.app-profile__mark {
+    flex: 0 0 56px; inline-size: 56px; block-size: 56px; border-radius: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--app-primary); color: var(--app-accent-bright); font-size: 1.25rem; font-weight: 700; letter-spacing: .02em;
+    box-shadow: inset 0 -3px 0 rgba(var(--app-accent-rgb), .55);
+}
+.app-profile__id { flex: 1 1 18rem; min-inline-size: 0; display: grid; gap: .4rem; }
+.app-profile__titlerow { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
+.app-profile__name { margin: 0; font-size: var(--app-fs-2xl); font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.app-profile__sub { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; color: var(--app-ink-soft); font-size: var(--app-fs-sm); }
+.app-profile__local { font-weight: 500; color: var(--app-ink-soft); }
+.app-profile__stage { display: inline-flex; align-items: center; gap: .3rem; }
+.app-profile__stage .bi { color: var(--app-accent); }
+.app-profile__actions { display: flex; flex-wrap: wrap; gap: var(--app-sp-2); }
+.app-profile__facts { padding: var(--app-sp-4) var(--app-sp-5); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: var(--app-sp-4) var(--app-sp-5); background: var(--app-surface); }
+.app-profile__facts .app-profile__wide { grid-column: span 2; }
+.app-profile__facts dd { font-weight: 500; }
+.app-profile__reach { display: inline-flex; gap: .25rem; margin-inline-start: .35rem; vertical-align: middle; }
+.app-iconlink {
+    display: inline-flex; align-items: center; justify-content: center; inline-size: 28px; block-size: 28px; border-radius: 8px;
+    color: var(--app-primary-2); background: var(--app-surface-3); text-decoration: none;
+    transition: background-color var(--app-fast) var(--app-ease), color var(--app-fast) var(--app-ease);
+}
+.app-iconlink:hover { background: var(--app-primary); color: #fff; }
+@media (max-width: 575.98px) {
+    .app-profile__top, .app-profile__facts { padding: var(--app-sp-4); }
+    .app-profile__mark { flex-basis: 48px; inline-size: 48px; block-size: 48px; font-size: var(--app-fs-lg); }
+    .app-profile__id { flex-basis: 12rem; }
+    .app-profile__name { font-size: var(--app-fs-xl); }
+    .app-profile__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--app-sp-3) var(--app-sp-4); }
+    .app-profile__actions { inline-size: 100%; }
+}
+
+/* The section bar: sticks under the top bar so another section is always one click away. */
+.app-ptabs__nav {
+    position: sticky; inset-block-start: var(--app-topbar-h); z-index: 6;
+    display: flex; gap: var(--app-sp-1); overflow-x: auto; scrollbar-width: none;
+    margin-block-end: var(--app-sp-4); padding-block-start: var(--app-sp-1);
+    background: var(--app-bg); border-block-end: 1px solid var(--app-line-strong);
+}
+.app-ptabs__nav::-webkit-scrollbar { display: none; }
+.app-ptabs__link {
+    display: inline-flex; align-items: center; gap: .45rem; flex: 0 0 auto; min-block-size: 44px;
+    padding: .5rem .9rem; margin-block-end: -1px; border-block-end: 2px solid transparent;
+    color: var(--app-ink-soft); font-weight: 500; text-decoration: none; white-space: nowrap;
+    transition: color var(--app-fast) var(--app-ease), border-color var(--app-fast) var(--app-ease);
+}
+.app-ptabs__link:hover { color: var(--app-ink); border-block-end-color: var(--app-line-strong); }
+.app-ptabs__link .bi { color: var(--app-muted); transition: color var(--app-fast) var(--app-ease); }
+.app-ptabs__count {
+    display: inline-flex; align-items: center; justify-content: center; min-inline-size: 1.4rem; block-size: 1.25rem; padding-inline: .35rem;
+    border-radius: 999px; background: var(--app-surface-3); color: var(--app-ink-soft); font-size: var(--app-fs-xs); font-weight: 600;
+}
+.app-ptabs__link.is-active, .app-ptabs__link[aria-current="true"] { color: var(--app-primary); font-weight: 600; border-block-end-color: var(--app-accent); }
+.app-ptabs__link.is-active .bi { color: var(--app-accent); }
+.app-ptabs__link.is-active .app-ptabs__count { background: var(--app-primary); color: #fff; }
+.app-ptabs__panel { scroll-margin-block-start: calc(var(--app-topbar-h) + 64px); outline: none; }
+.app-ptabs__panel + .app-ptabs__panel { margin-block-start: var(--app-sp-4); }
+.app-ptabs__head { background: none; padding-inline: 0 !important; padding-block-start: 0 !important; }
+.app-ptabs__attach > .app-card.mt-3 { margin-block-start: 0 !important; }
+
+/* Without script: the section named in the address shows; with none named, the first. */
+@supports selector(:has(*)) {
+    .app-ptabs:not(.is-js) .app-ptabs__panel { display: none; }
+    .app-ptabs:not(.is-js) .app-ptabs__panel:target, .app-ptabs:not(.is-js) .app-ptabs__panel:has(:target) { display: block; }
+    .app-ptabs:not(.is-js) .app-ptabs__panels:not(:has(:target)) > .app-ptabs__panel.is-default { display: block; }
+    .app-ptabs:not(.is-js):not(:has(.app-ptabs__panels :target)) .app-ptabs__link.is-default,
+    .app-ptabs:not(.is-js):has(#contacts:target, #contacts :target) .app-ptabs__link[href="#contacts"],
+    .app-ptabs:not(.is-js):has(#history:target, #history :target) .app-ptabs__link[href="#history"],
+    .app-ptabs:not(.is-js):has(#documents:target, #documents :target) .app-ptabs__link[href="#documents"],
+    .app-ptabs:not(.is-js):has(#money:target, #money :target) .app-ptabs__link[href="#money"] {
+        color: var(--app-primary); font-weight: 600; border-block-end-color: var(--app-accent);
+    }
+    .app-ptabs:not(.is-js) .app-ptabs__panel + .app-ptabs__panel { margin-block-start: 0; }
+}
+/* With script: one section, switched in place. */
+.app-ptabs.is-js .app-ptabs__panel { display: none; margin-block-start: 0; }
+.app-ptabs.is-js .app-ptabs__panel.is-active { display: block; }
+
+/* Contacts: one row each, every way to reach them a link. */
+.app-contacts { list-style: none; margin: 0; padding: 0; }
+.app-contact { border-block-end: 1px solid var(--app-line); }
+.app-contact.is-primary { background: linear-gradient(to right, rgba(var(--app-accent-rgb), .06), transparent 40%); }
+[dir="rtl"] .app-contact.is-primary { background: linear-gradient(to left, rgba(var(--app-accent-rgb), .06), transparent 40%); }
+.app-contact__row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--app-sp-3) var(--app-sp-4); padding: var(--app-sp-3) var(--app-sp-4); }
+.app-contact__mark {
+    flex: 0 0 40px; inline-size: 40px; block-size: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--app-surface-3); color: var(--app-primary); font-weight: 700; font-size: var(--app-fs-sm);
+}
+.app-contact.is-primary .app-contact__mark { background: var(--app-primary); color: var(--app-accent-bright); }
+.app-contact__who { flex: 1 1 12rem; min-inline-size: 0; }
+.app-contact__name { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-weight: 600; color: var(--app-ink); }
+.app-contact__role { color: var(--app-ink-soft); font-size: var(--app-fs-sm); }
+.app-contact__notes { color: var(--app-muted); font-size: var(--app-fs-xs); margin-block-start: .2rem; max-inline-size: 48ch; }
+.app-contact__ways { list-style: none; margin: 0; padding: 0; flex: 2 1 22rem; display: flex; flex-wrap: wrap; gap: .4rem; align-content: flex-start; }
+.app-contact__none { color: var(--app-muted); font-size: var(--app-fs-sm); }
+.app-contact__actions { display: flex; gap: var(--app-sp-1); }
+.app-contact__form { padding: var(--app-sp-4); margin: 0 var(--app-sp-4) var(--app-sp-4); background: var(--app-surface-2); border: 1px solid var(--app-line); border-radius: var(--app-radius-sm); }
+.app-contacts__empty { list-style: none; }
+.app-way {
+    display: inline-flex; align-items: center; gap: .4rem; min-block-size: 32px; padding: .2rem .65rem;
+    border: 1px solid var(--app-line); border-radius: 999px; background: var(--app-surface);
+    color: var(--app-ink); font-size: var(--app-fs-sm); font-weight: 500; text-decoration: none;
+    transition: border-color var(--app-fast) var(--app-ease), background-color var(--app-fast) var(--app-ease);
+}
+a.app-way:hover { border-color: var(--app-primary-2); background: rgba(var(--app-primary-rgb), .04); color: var(--app-primary); }
+.app-way .bi { color: var(--app-primary-2); }
+.app-way--whatsapp .bi { color: var(--app-success); }
+.app-way--wechat .bi { color: var(--app-success); }
+
+/* An "add" row that opens into a form: a native <details>, so it works without script. */
+.app-adder { border-block-start: 1px solid var(--app-line); }
+.app-adder__summary {
+    display: flex; align-items: center; gap: .5rem; min-block-size: 44px; padding: .6rem var(--app-sp-4);
+    color: var(--app-primary-2); font-weight: 600; cursor: pointer; list-style: none;
+}
+.app-adder__summary::-webkit-details-marker { display: none; }
+.app-adder__summary::after { content: "\F282"; font-family: bootstrap-icons; margin-inline-start: auto; font-size: .8rem; color: var(--app-muted); transition: transform var(--app-fast) var(--app-ease); }
+.app-adder[open] > .app-adder__summary::after { transform: rotate(180deg); }
+.app-adder__summary:hover { background: var(--app-surface-2); }
+.app-adder__body { padding: 0 var(--app-sp-4) var(--app-sp-4); }
+
+/* The CRM log: a composer, then a timeline, newest first. */
+.app-composer { border-block-end: 1px solid var(--app-line); background: var(--app-surface-2); }
+.app-composer__summary {
+    display: flex; align-items: center; gap: .5rem; min-block-size: 44px; padding: .6rem var(--app-sp-4);
+    color: var(--app-primary-2); font-weight: 600; cursor: pointer; list-style: none;
+}
+.app-composer__summary::-webkit-details-marker { display: none; }
+.app-composer__summary::after { content: "\F282"; font-family: bootstrap-icons; margin-inline-start: auto; font-size: .8rem; color: var(--app-muted); transition: transform var(--app-fast) var(--app-ease); }
+.app-composer[open] > .app-composer__summary::after { transform: rotate(180deg); }
+.app-composer__body { padding: 0 var(--app-sp-4) var(--app-sp-4); }
+
+.app-timeline { list-style: none; margin: 0; padding: var(--app-sp-4); display: grid; gap: 0; }
+.app-timeline__item { position: relative; display: flex; gap: var(--app-sp-3); padding-block-end: var(--app-sp-4); }
+.app-timeline__item:last-child { padding-block-end: 0; }
+.app-timeline__item:not(:last-child)::before {
+    content: ""; position: absolute; inset-block: 36px 4px; inset-inline-start: 15px; inline-size: 2px; background: var(--app-line); border-radius: 2px;
+}
+.app-timeline__icon {
+    flex: 0 0 32px; inline-size: 32px; block-size: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--app-info-bg); color: var(--app-info); border: 1px solid var(--app-info-line); font-size: .95rem;
+}
+.app-timeline__icon--whatsapp, .app-timeline__icon--wechat { background: var(--app-success-bg); color: var(--app-success); border-color: var(--app-success-line); }
+.app-timeline__icon--meeting, .app-timeline__icon--factory_visit { background: var(--app-gold-soft); color: var(--app-accent-dark); border-color: rgba(var(--app-accent-rgb), .35); }
+.app-timeline__body { flex: 1; min-inline-size: 0; }
+.app-timeline__meta { display: flex; flex-wrap: wrap; gap: .25rem .5rem; align-items: baseline; color: var(--app-muted); font-size: var(--app-fs-xs); }
+.app-timeline__channel { font-weight: 600; color: var(--app-ink); font-size: var(--app-fs-sm); }
+.app-timeline__text { margin-block-start: .25rem; color: var(--app-ink); line-height: 1.6; overflow-wrap: anywhere; max-inline-size: 75ch; }
+.app-timeline__next {
+    display: flex; gap: .4rem; margin-block-start: .4rem; padding: .35rem .6rem; border-radius: var(--app-radius-sm);
+    background: var(--app-surface-2); color: var(--app-ink-soft); font-size: var(--app-fs-sm);
+}
+.app-timeline__next .bi { color: var(--app-accent); }
+
+/* Tasks: a round "done" button, the task, then when and who. */
+.app-tasklist { list-style: none; margin: 0; padding: 0; }
+.app-task { display: flex; align-items: flex-start; gap: var(--app-sp-3); padding: var(--app-sp-3) var(--app-sp-4); border-block-end: 1px solid var(--app-line); }
+.app-task:last-child { border-block-end: 0; }
+.app-task.is-overdue { box-shadow: inset 3px 0 0 var(--app-danger); }
+[dir="rtl"] .app-task.is-overdue { box-shadow: inset -3px 0 0 var(--app-danger); }
+.app-task__check { margin: 0; }
+.app-task__done {
+    inline-size: 28px; block-size: 28px; border-radius: 50%; border: 2px solid var(--app-line-strong); background: var(--app-surface);
+    display: inline-flex; align-items: center; justify-content: center; color: transparent; padding: 0; margin-block-start: 1px;
+    transition: border-color var(--app-fast) var(--app-ease), background-color var(--app-fast) var(--app-ease), color var(--app-fast) var(--app-ease);
+}
+.app-task__done:hover, .app-task__done:focus-visible { border-color: var(--app-success); color: var(--app-success); background: var(--app-success-bg); }
+.app-task__done.is-reopen { color: var(--app-success); border-color: var(--app-success-line); background: var(--app-success-bg); }
+.app-task__done.is-reopen:hover { color: var(--app-ink-soft); border-color: var(--app-line-strong); background: var(--app-surface); }
+.app-task__main { flex: 1; min-inline-size: 0; }
+.app-task__title { font-weight: 500; color: var(--app-ink); overflow-wrap: anywhere; }
+.app-task__notes { color: var(--app-ink-soft); font-size: var(--app-fs-sm); margin-block-start: .1rem; }
+.app-task__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; margin-block-start: .35rem; color: var(--app-muted); font-size: var(--app-fs-xs); }
+.app-task__meta a { color: var(--app-ink-soft); font-weight: 500; }
+.app-panel-empty--muted .bi { color: var(--app-line-strong); }
+
+/* Money */
+.app-money-kpis { display: grid; gap: var(--app-sp-3); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); margin-block-end: var(--app-sp-4); }
+.app-money-kpis .app-kpi__value { display: grid; gap: .1rem; }
+.app-money-stack__row { display: block; direction: ltr; unicode-bidi: isolate; text-align: start; }
+[dir="rtl"] .app-money-stack__row { text-align: end; }
+.app-money-kpis .app-money-stack__row + .app-money-stack__row { font-size: var(--app-fs-lg); color: var(--app-ink-soft); }
+.app-money-paid { min-inline-size: 8rem; }
+.app-money-dir { display: inline-flex; inline-size: 18px; block-size: 18px; border-radius: 50%; align-items: center; justify-content: center; font-size: .7rem; vertical-align: middle; margin-inline-end: .25rem; }
+.app-money-dir.is-in { background: var(--app-success-bg); color: var(--app-success); }
+.app-money-dir.is-out { background: var(--app-info-bg); color: var(--app-info); }
+
+/* Party list */
+.app-party-list__who { display: flex; align-items: center; gap: var(--app-sp-3); min-inline-size: 15rem; }
+.app-party-list__mark {
+    flex: 0 0 36px; inline-size: 36px; block-size: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(var(--app-primary-rgb), .08); color: var(--app-primary); font-weight: 700; font-size: var(--app-fs-xs);
+}
+.app-party-list__name { font-weight: 600 !important; color: var(--app-ink); }
+.app-party-list__sub { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; margin-block-start: .15rem; color: var(--app-muted); font-size: var(--app-fs-xs); }
+.app-party-list__note { max-inline-size: 18rem; color: var(--app-ink-soft); font-size: var(--app-fs-sm); }
+.app-party-list .app-doc-muted .app-party-list__mark { background: var(--app-surface-3); color: var(--app-muted); }
+.app-doc-filter--sm { max-inline-size: 10rem; }
+
+/* Choices laid out as one row of boxes. */
+.app-docform__choices { display: flex; flex-wrap: wrap; gap: var(--app-sp-2); }
+.app-docform__choice {
+    margin: 0; padding: .45rem .8rem; border: 1px solid var(--app-line-strong); border-radius: var(--app-radius-sm); background: var(--app-surface);
+    min-block-size: 40px; display: flex; align-items: center; gap: .55rem;
+}
+.app-docform__choice .form-check-input { float: none; margin: 0; flex: 0 0 auto; }
+.app-docform__choice .form-check-label { display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; }
+.app-docform__choice:has(.form-check-input:checked) { border-color: var(--app-primary); background: rgba(var(--app-primary-rgb), .04); }
+.app-docform__choice .bi { color: var(--app-accent); }
+
+/* ======================================================================
+   Products: photos first
+   ====================================================================== */
+.app-viewswitch { display: inline-flex; border: 1px solid var(--app-line-strong); border-radius: var(--app-radius-sm); background: var(--app-surface); padding: 2px; gap: 2px; }
+.app-viewswitch__btn {
+    display: inline-flex; align-items: center; justify-content: center; inline-size: 36px; block-size: 32px; border-radius: 4px;
+    color: var(--app-ink-soft); text-decoration: none; transition: background-color var(--app-fast) var(--app-ease), color var(--app-fast) var(--app-ease);
+}
+.app-viewswitch__btn:hover { background: var(--app-surface-3); color: var(--app-ink); }
+.app-viewswitch__btn.is-active { background: var(--app-primary); color: #fff; }
+
+.app-products { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--app-sp-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 14.5rem), 1fr)); }
+.app-product {
+    position: relative; display: flex; flex-direction: column; overflow: hidden;
+    background: var(--app-surface); border: 1px solid var(--app-line); border-radius: var(--app-radius); box-shadow: var(--app-shadow-sm);
+    transition: box-shadow var(--app-base) var(--app-ease), border-color var(--app-base) var(--app-ease);
+}
+.app-product:hover { border-color: var(--app-line-strong); box-shadow: var(--app-shadow); }
+.app-product:focus-within { border-color: var(--app-accent); }
+.app-product__photo { display: block; aspect-ratio: 1 / 1; background: var(--app-surface-2); border-block-end: 1px solid var(--app-line); overflow: hidden; }
+.app-product__photo img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; transition: transform var(--app-base) var(--app-ease); }
+.app-product:hover .app-product__photo img { transform: scale(1.03); }
+.app-product__nophoto { display: flex; inline-size: 100%; block-size: 100%; align-items: center; justify-content: center; color: var(--app-line-strong); font-size: 2.5rem; aspect-ratio: 1 / 1; }
+.app-product.is-inactive .app-product__photo img { filter: grayscale(1); opacity: .6; }
+.app-product__flag { position: absolute; inset-block-start: var(--app-sp-2); inset-inline-start: var(--app-sp-2); }
+.app-product__edit { position: absolute; inset-block-start: var(--app-sp-2); inset-inline-end: var(--app-sp-2); box-shadow: var(--app-shadow-sm); min-inline-size: 36px; }
+.app-product__body { display: grid; gap: .35rem; padding: var(--app-sp-3) var(--app-sp-4) var(--app-sp-4); flex: 1; align-content: start; }
+.app-product__code { display: flex; align-items: center; justify-content: space-between; gap: .5rem; color: var(--app-muted); font-size: var(--app-fs-xs); }
+.app-product__name { font-weight: 600; color: var(--app-ink); text-decoration: none; line-height: 1.35; }
+.app-product__name:hover { color: var(--app-primary); text-decoration: underline; }
+.app-product__name::after { content: ""; position: absolute; inset: 0; z-index: 0; }
+.app-product__edit, .app-product__flag { z-index: 1; }
+.app-product__local { color: var(--app-ink-soft); font-size: var(--app-fs-sm); }
+.app-product__specs { margin: .25rem 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; padding: .5rem; border-radius: var(--app-radius-sm); background: var(--app-surface-2); }
+.app-product__specs > div { min-inline-size: 0; }
+.app-product__specs dt { font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-muted); line-height: 1.3; }
+.app-product__specs dd { margin: 0; font-weight: 600; color: var(--app-ink); font-size: var(--app-fs-sm); }
+.app-product__prices { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .5rem; margin-block-start: .15rem; }
+.app-product__sale { font-weight: 700; color: var(--app-primary); }
+.app-product__supplier { display: block; inline-size: 100%; font-size: var(--app-fs-xs); color: var(--app-accent-dark); font-weight: 500; line-height: 1.45; }
+.app-product__supplier .bi { margin-inline-end: .2rem; }
+@media (prefers-reduced-motion: reduce) { .app-product:hover .app-product__photo img { transform: none; } }
+
+/* A product's page: the photo large beside its facts. */
+.app-product-page { display: grid; gap: var(--app-sp-4); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 992px) { .app-product-page { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+.app-product-page__photo { margin: 0; overflow: hidden; }
+.app-product-page__photo img { display: block; inline-size: 100%; block-size: auto; aspect-ratio: 1 / 1; object-fit: contain; background: var(--app-surface-2); }
+.app-product-page__info { display: grid; gap: var(--app-sp-4); }
+.app-product-page__desc { color: var(--app-ink); line-height: 1.65; max-inline-size: 70ch; }
+.app-product-page__packing { margin: 0; display: grid; gap: var(--app-sp-3) var(--app-sp-5); grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); }
+.app-product-page__packing dt { font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-muted); margin-block-end: .15rem; }
+.app-product-page__packing dd { margin: 0; font-weight: 600; color: var(--app-ink); }
+.app-product-page__price { font-size: var(--app-fs-xl); color: var(--app-primary) !important; }
+
+/* The product form: the fields, and the photo beside them. */
+.app-docform--product { max-inline-size: 76rem; }
+.app-productform { display: grid; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 992px) {
+    .app-productform { grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); }
+    .app-productform__aside { border-inline-start: 1px solid var(--app-line); }
+}
+@media (max-width: 991.98px) { .app-productform__aside { border-block-start: 1px solid var(--app-line); } }
+.app-productform__main > .app-docform__section + .app-docform__section,
+.app-productform__aside > .app-docform__section + .app-docform__section { border-block-start: 1px solid var(--app-line); }
+.app-productform__preview {
+    margin-block-start: var(--app-sp-3); aspect-ratio: 1 / 1; border-radius: var(--app-radius); overflow: hidden;
+    background: var(--app-surface-2); border: 1px dashed var(--app-line-strong); display: flex; align-items: center; justify-content: center;
+}
+.app-productform__preview img { inline-size: 100%; block-size: 100%; object-fit: contain; display: block; }
+.app-productform__size { display: flex; align-items: flex-start; gap: var(--app-sp-2); }
+.app-productform__size > div { flex: 1; min-inline-size: 0; }
+.app-productform__times { color: var(--app-muted); line-height: 36px; }
+
+/* ======================================================================
+   Follow-up tasks
+   ====================================================================== */
+.app-tasks { display: grid; gap: var(--app-sp-4); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 992px) { .app-tasks:has(.app-tasks__aside) { grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem); } }
+.app-tasks__main { min-inline-size: 0; display: grid; gap: var(--app-sp-3); align-content: start; }
+.app-tasks__main > .app-doc-chips { margin-block-end: 0; }
+.app-tasks__aside { position: sticky; inset-block-start: calc(var(--app-topbar-h) + var(--app-sp-4)); }
+@media (max-width: 991.98px) { .app-tasks__aside { position: static; } }
+.app-tasks__head { margin: 0; }
+.app-tasks__group--late .app-tasks__head .bi { color: var(--app-danger); }
+.app-tasks__group--today .app-tasks__head .bi { color: var(--app-warning); }
+.app-task__party { display: inline-flex; align-items: center; gap: .3rem; }
+.app-task.is-done .app-task__title { color: var(--app-ink-soft); }
+
+/* ======================================================================
+   Phone widths
+   ====================================================================== */
+.app-ptabs__nav { contain: paint; }
+@media (max-width: 575.98px) {
+    .app-ptabs__nav { gap: 0; }
+    .app-ptabs__link { padding-inline: .5rem; gap: .3rem; font-size: var(--app-fs-sm); }
+    .app-ptabs__link > .bi { display: none; }
+    .app-contact__row { padding-inline: var(--app-sp-3); }
+    .app-contact__ways { flex-basis: 100%; }
+    .app-contact__actions { margin-inline-start: auto; }
+    .app-contact__form { margin-inline: var(--app-sp-3); }
+    .app-doc-top { gap: var(--app-sp-3); }
+    .app-doc-actions__sep { display: none; }
+    /* Four short steps fit across a phone: keep the PI's path horizontal. */
+    .app-doc-status .app-stepper:not(.app-stepper--compact) { flex-direction: row; gap: 0; }
+    .app-doc-status .app-stepper:not(.app-stepper--compact) .app-stepper__step { flex-direction: column; align-items: center; text-align: center; }
+    .app-doc-status .app-stepper:not(.app-stepper--compact) .app-stepper__step + .app-stepper__step::before { display: block; }
+    .app-doc-status .app-stepper__label { font-size: var(--app-fs-xs); }
+    .app-doc-status .app-stepper__sub, .app-doc-status .app-stepper__hint { font-size: var(--app-fs-xs); }
+    .app-doc-summary__amount { font-size: var(--app-fs-2xl); }
+    .app-pagehead__actions { inline-size: 100%; }
+    .app-docform__actions .btn { flex: 1 1 auto; }
+    .app-products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--app-sp-3); }
+    .app-product__body { padding: var(--app-sp-2) var(--app-sp-3) var(--app-sp-3); }
+    .app-product__specs { grid-template-columns: minmax(0, 1fr); gap: .15rem; }
+    .app-product__specs > div { display: flex; justify-content: space-between; gap: .5rem; }
+    .app-productform__size { flex-wrap: wrap; }
+    .app-productform__size > div { flex: 1 1 5rem; }
+}

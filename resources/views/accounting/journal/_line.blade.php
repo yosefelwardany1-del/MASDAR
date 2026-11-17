@@ -25,9 +25,9 @@
             @endforeach
         </select>
     </td>
-    <td style="min-inline-size: 110px"><input name="lines[{{ $i }}][debit]" aria-label="{{ __('Debit') }}" class="form-control form-control-sm app-num" dir="ltr" inputmode="decimal" value="{{ $line['debit'] ?? '' }}" data-debit></td>
-    <td style="min-inline-size: 110px"><input name="lines[{{ $i }}][credit]" aria-label="{{ __('Credit') }}" class="form-control form-control-sm app-num" dir="ltr" inputmode="decimal" value="{{ $line['credit'] ?? '' }}" data-credit></td>
-    <td style="min-inline-size: 100px"><input name="lines[{{ $i }}][rate]" aria-label="{{ __('Rate') }}" class="form-control form-control-sm app-num" dir="ltr" inputmode="decimal" value="{{ $currency === $book ? '1' : ($line['rate'] ?? '') }}" @readonly($currency === $book) data-rate></td>
-    <td class="app-num text-end text-nowrap" data-book>—</td>
-    <td><button type="button" class="btn btn-sm btn-light text-danger" data-remove title="{{ __('Remove line') }}"><i class="bi bi-x-lg"></i></button></td>
+    <td style="min-inline-size: 110px"><input name="lines[{{ $i }}][debit]" aria-label="{{ __('Debit') }}" class="form-control form-control-sm app-num text-end" dir="ltr" inputmode="decimal" value="{{ $line['debit'] ?? '' }}" data-debit></td>
+    <td style="min-inline-size: 110px"><input name="lines[{{ $i }}][credit]" aria-label="{{ __('Credit') }}" class="form-control form-control-sm app-num text-end" dir="ltr" inputmode="decimal" value="{{ $line['credit'] ?? '' }}" data-credit></td>
+    <td style="min-inline-size: 100px"><input name="lines[{{ $i }}][rate]" aria-label="{{ __('Rate') }}" class="form-control form-control-sm app-num text-end" dir="ltr" inputmode="decimal" value="{{ $currency === $book ? '1' : ($line['rate'] ?? '') }}" @readonly($currency === $book) data-rate></td>
+    <td class="app-num text-end text-nowrap" dir="ltr" data-book>—</td>
+    <td><button type="button" class="btn btn-sm btn-light text-danger" data-remove title="{{ __('Remove line') }}" aria-label="{{ __('Remove line') }}"><i class="bi bi-x-lg" aria-hidden="true"></i></button></td>
 </tr>

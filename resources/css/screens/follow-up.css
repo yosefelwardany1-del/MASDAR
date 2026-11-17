@@ -1,1 +1,382 @@
 /* Screen layer: the order follow-up board, the container board, container and shipment pages. Tokens and shared components come from theme.css; only this area's own rules go here. */
+
+/*
+ * Everything here is prefixed app-fu- (follow-up) and uses logical properties only, so the
+ * right-to-left (Arabic) and left-to-right (English, Chinese) builds share it unchanged. Colours
+ * are the theme's tokens; every state also carries an icon or a word.
+ */
+
+:root {
+    --app-fu-late-tint: color-mix(in srgb, var(--app-danger-bg) 62%, var(--app-surface));
+    --app-fu-late-tint-hover: color-mix(in srgb, var(--app-danger-bg) 92%, var(--app-surface));
+    --app-fu-now-tint: color-mix(in srgb, var(--app-info-bg) 55%, var(--app-surface));
+    --app-fu-due-ring: color-mix(in srgb, var(--app-warning) 45%, var(--app-warning-line));
+}
+
+/* ---------- Small shared pieces ---------- */
+.app-fu-sub { color: var(--app-ink-soft); font-size: var(--app-fs-xs); line-height: 1.45; }
+.app-fu-sub a { color: inherit; }
+.app-fu-sub a:hover { color: var(--app-primary); }
+.app-fu-strong { font-weight: 600; color: var(--app-ink); }
+.app-fu-nowrap { white-space: nowrap; }
+.app-fu-wrap { white-space: normal !important; }
+.app-fu-sep { color: var(--app-line-strong); margin-inline: .25rem; }
+
+/* A count beside a section title. */
+.app-fu-count {
+    display: inline-flex; align-items: center; justify-content: center; min-inline-size: 1.4rem; block-size: 1.25rem;
+    padding-inline: .375rem; border-radius: 999px; background: var(--app-surface-3); color: var(--app-ink-soft);
+    font-size: var(--app-fs-xs); font-weight: 600; font-variant-numeric: tabular-nums;
+}
+
+/* The error summary at the top of a form page (focusable; each field keeps its own message too). */
+.app-fu-errors { display: flex; gap: .75rem; align-items: flex-start; }
+.app-fu-errors > .bi { font-size: 1.1rem; line-height: 1.3; }
+.app-fu-errors__title { font-weight: 600; margin-block-end: .15rem; }
+.app-fu-errors ul { margin: 0; padding-inline-start: 1.1rem; }
+
+/* The filter strip: a search box with its icon. */
+.app-fu-search { position: relative; flex: 1 1 11rem; max-inline-size: 16rem; min-inline-size: 9rem; }
+.app-fu-search > .bi { position: absolute; inset-inline-start: .7rem; inset-block-start: 50%; transform: translateY(-50%); color: var(--app-muted); pointer-events: none; }
+.app-fu-search > .form-control { padding-inline-start: 2.1rem; }
+.app-fu-filters .form-select { flex: 1 1 9rem; max-inline-size: 13rem; min-inline-size: 8rem; }
+.app-fu-filters .form-check { margin-block-end: 0; }
+@media (max-width: 575.98px) {
+    .app-fu-filters > * { flex: 1 1 100% !important; max-inline-size: none !important; }
+    .app-fu-filters > .form-select { flex: 1 1 calc(50% - .25rem) !important; min-inline-size: 0; }
+    .app-fu-filters .form-check { flex: 1 1 auto !important; }
+}
+/* A section head whose tools may need a second line on a phone. */
+.app-fu-wraphead > .app-card__head { flex-wrap: wrap; }
+.app-fu-wraphead > .app-card__head > .app-section__actions { flex-wrap: wrap; }
+
+/* ---------- The step dot: one step's state, icon only (the word is for screen readers and the tooltip) ---------- */
+.app-pill.app-fu-dot {
+    position: relative; z-index: 1; inline-size: 24px; block-size: 24px; padding: 0; gap: 0;
+    justify-content: center; border-radius: 50%; border-width: 1.5px; font-size: .8rem; line-height: 1;
+    background: var(--app-surface); border-color: var(--app-line-strong); color: var(--app-muted);
+    transition: transform var(--app-fast) var(--app-ease), box-shadow var(--app-fast) var(--app-ease);
+}
+.app-pill.app-fu-dot .bi { line-height: 1; }
+.app-pill.app-fu-dot.app-pill--done { background: var(--app-success); border-color: var(--app-success); color: var(--app-surface); }
+.app-pill.app-fu-dot.app-pill--late { background: var(--app-danger); border-color: var(--app-danger); color: var(--app-surface); }
+.app-pill.app-fu-dot.app-pill--due { background: var(--app-warning-bg); border-color: var(--app-fu-due-ring); color: var(--app-warning); }
+.app-pill.app-fu-dot.app-pill--skip { background: var(--app-surface-2); border-style: dashed; color: var(--app-muted); }
+.app-pill.app-fu-dot.is-next { box-shadow: 0 0 0 3px rgba(var(--app-primary-rgb), .18); }
+.app-pill.app-fu-dot.is-next:not(.app-pill--done, .app-pill--late, .app-pill--due, .app-pill--skip) { border-color: var(--app-primary); }
+.app-pill.app-fu-dot.is-next:not(.app-pill--done, .app-pill--late, .app-pill--due, .app-pill--skip)::after {
+    content: ""; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--app-primary);
+}
+.app-pill.app-fu-dot:hover { transform: scale(1.12); }
+
+/* The key above a board. */
+.app-fu-legend {
+    list-style: none; margin: 0 0 var(--app-sp-3); padding: 0; display: flex; flex-wrap: wrap; align-items: center;
+    gap: var(--app-sp-1) var(--app-sp-4); font-size: var(--app-fs-xs); color: var(--app-ink-soft);
+}
+.app-fu-legend > li { display: inline-flex; align-items: center; gap: .4rem; }
+.app-fu-legend .app-pill.app-fu-dot { inline-size: 18px; block-size: 18px; font-size: .62rem; }
+.app-fu-legend .app-pill.app-fu-dot.is-next::after { inline-size: 6px; block-size: 6px; }
+.app-fu-legend .app-pill.app-fu-dot:hover { transform: none; }
+.app-fu-legend__title { font-weight: 600; color: var(--app-ink-soft); }
+.app-fu-legend__row { display: inline-flex; align-items: center; gap: .4rem; }
+.app-fu-legend__row::before { content: ""; inline-size: 20px; block-size: 14px; border-radius: 2px; background: var(--app-fu-late-tint); box-shadow: inset 3px 0 0 var(--app-danger); }
+[dir="rtl"] .app-fu-legend__row::before { box-shadow: inset -3px 0 0 var(--app-danger); }
+
+/* ---------- The order board (desktop and tablet): one row per order, one column per step ---------- */
+.app-fu-board > .table > tbody > tr > td { vertical-align: middle; }
+.app-fu-board > .table > :is(thead, tbody) > tr > .app-fu-ordercell { min-inline-size: 14rem; max-inline-size: 16rem; white-space: normal; }
+.app-fu-board > .table > :is(thead, tbody) > tr > .app-fu-progresscell { min-inline-size: 11rem; max-inline-size: 12.5rem; white-space: normal; }
+.app-fu-delivery { display: flex; flex-wrap: wrap; align-items: center; gap: .15rem .4rem; margin-block-end: .4rem; }
+
+.app-fu-order { display: grid; gap: 2px; min-inline-size: 0; }
+.app-fu-order__top { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; }
+.app-fu-order__no { font-weight: 600 !important; font-size: var(--app-fs-md); color: var(--app-primary); }
+.app-fu-order__line { color: var(--app-ink-soft); font-size: var(--app-fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-fu-order__line a { color: inherit; font-weight: 500; }
+.app-fu-order__line a:hover { color: var(--app-primary); }
+.app-fu-order__line .bi { color: var(--app-muted); margin-inline-end: .2rem; }
+/* A line of names: each name shortens itself. A <bdi> takes the direction of its own text, so a
+   Latin name in an Arabic row loses its end ("Acme Trad…"), not its start ("…ome Trading"). */
+.app-fu-order__line--names { display: flex; align-items: baseline; gap: .25rem; }
+.app-fu-order__line--names > * { flex: none; }
+.app-fu-order__line--names > bdi, .app-fu-order__line--names > a:has(> bdi) { flex: 0 1 auto; min-inline-size: 0; }
+.app-fu-order__line--names bdi { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-fu-order__line--names .bi { margin-inline-end: 0; }
+
+/* The step columns: a narrow header (number + name, at most three lines) and a dot on a line. */
+.app-fu-board > .table > thead > tr > th.app-fu-stephead {
+    min-inline-size: 4.25rem; inline-size: 4.25rem; max-inline-size: 4.75rem; padding-inline: .25rem !important;
+    text-align: center; vertical-align: top; white-space: normal;
+}
+.app-fu-stephead__no {
+    display: flex; margin-inline: auto; align-items: center; justify-content: center; inline-size: 20px; block-size: 20px;
+    border-radius: 50%; background: var(--app-surface-3); color: var(--app-ink-soft); font-size: var(--app-fs-xs); font-weight: 700;
+    margin-block-end: .3rem; font-variant-numeric: tabular-nums;
+}
+.app-fu-stephead__name {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+    line-height: 1.25; font-weight: 600; letter-spacing: 0; overflow-wrap: break-word; hyphens: auto;
+}
+
+.app-fu-board > .table > tbody > tr > td.app-fu-trk { position: relative; padding-inline: 0; text-align: center; }
+.app-fu-trk::before, .app-fu-trk::after {
+    content: ""; position: absolute; inset-block-start: 50%; margin-block-start: -1px; block-size: 2px; inline-size: 50%;
+    background: var(--app-line); pointer-events: none;
+}
+.app-fu-trk::before { inset-inline-start: 0; }
+.app-fu-trk::after { inset-inline-end: 0; }
+.app-fu-trk.is-first::before, .app-fu-trk.is-last::after { display: none; }
+.app-fu-trk.from-settled::before, .app-fu-trk.is-settled::after { background: var(--app-success-line); }
+
+/* Progress and what comes next. */
+.app-fu-progress .app-progress__head { font-size: var(--app-fs-xs); }
+.app-fu-next { margin-block-start: .35rem; font-size: var(--app-fs-xs); line-height: 1.35; color: var(--app-ink-soft); }
+.app-fu-next__label { font-weight: 600; color: var(--app-muted); }
+.app-fu-next__name { color: var(--app-ink); font-weight: 500; }
+.app-fu-next__due { display: inline-flex; align-items: center; gap: .2rem; font-weight: 600; white-space: nowrap; }
+.app-fu-next__due.is-late { color: var(--app-danger); }
+.app-fu-next__due.is-due { color: var(--app-warning); }
+.app-fu-next__due.is-open { color: var(--app-ink-soft); font-weight: 500; }
+.app-fu-next.is-finished { color: var(--app-success); font-weight: 600; }
+
+/* A row with something late: a tinted row and a red bar on its inline-start edge (the "Late" pill says it in words). */
+.app-fu-board > .table > tbody > tr.app-fu-row--late > * { background-color: var(--app-fu-late-tint); }
+.app-fu-board > .table > tbody > tr.app-fu-row--late > :first-child {
+    background: var(--app-fu-late-tint);
+    box-shadow: inset 3px 0 0 var(--app-danger), inset -1px 0 0 var(--app-line);
+}
+[dir="rtl"] .app-fu-board > .table > tbody > tr.app-fu-row--late > :first-child { box-shadow: inset -3px 0 0 var(--app-danger), inset 1px 0 0 var(--app-line); }
+.app-fu-board > .table-hover > tbody > tr.app-fu-row--late:hover > :first-child { background: var(--app-fu-late-tint-hover); }
+
+/* ---------- Boards on a phone: one card per row ---------- */
+.app-fu-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--app-sp-2); }
+.app-fu-card {
+    position: relative; display: grid; gap: .5rem; padding: .75rem .875rem; background: var(--app-surface);
+    border: 1px solid var(--app-line); border-radius: var(--app-radius); box-shadow: var(--app-shadow-sm);
+}
+.app-fu-card.is-late { background: var(--app-fu-late-tint); border-color: var(--app-danger-line); box-shadow: inset 3px 0 0 var(--app-danger); }
+[dir="rtl"] .app-fu-card.is-late { box-shadow: inset -3px 0 0 var(--app-danger); }
+.app-fu-card__top { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; }
+.app-fu-card__aside { margin-inline-start: auto; text-align: end; }
+.app-fu-card .app-stepper--compact { padding-block: .15rem; }
+.app-fu-card > .app-pill { justify-self: start; }
+.app-fu-card .app-fu-phases { max-inline-size: none; }
+.app-fu-card__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; }
+
+/* ---------- The order page: summary and the steps as a vertical stepper ---------- */
+.app-fu-summary {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; overflow: hidden;
+    background: var(--app-line); /* the 1px gaps draw the dividers, whatever the layout */
+}
+.app-fu-summary__item { padding: var(--app-sp-4); min-inline-size: 0; display: grid; align-content: start; gap: .35rem; background: var(--app-surface); }
+.app-fu-summary__label { font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-muted); letter-spacing: .02em; }
+.app-fu-summary__value { font-size: var(--app-fs-xl); font-weight: 600; color: var(--app-ink); line-height: 1.25; }
+.app-fu-summary__value.is-text { font-size: var(--app-fs-md); }
+@media (max-width: 991.98px) {
+    .app-fu-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 575.98px) {
+    .app-fu-summary { grid-auto-flow: row dense; }
+    .app-fu-summary__item { padding: var(--app-sp-3); }
+    .app-fu-summary__item.is-wide { grid-column: 1 / -1; }
+}
+
+.app-fu-tl { list-style: none; margin: 0; padding: var(--app-sp-2) 0; }
+.app-fu-tl__item {
+    position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: var(--app-sp-3);
+    padding: .625rem var(--app-sp-4); scroll-margin-block-start: calc(var(--app-topbar-h) + 1rem);
+}
+/* The line down to the next step: green once this step is settled. */
+.app-fu-tl__item:not(:last-child)::before {
+    content: ""; position: absolute; inset-inline-start: calc(var(--app-sp-4) + 13px); inset-block: calc(.625rem + 32px) -.375rem;
+    inline-size: 2px; border-radius: 2px; background: var(--app-line-strong);
+}
+.app-fu-tl__item.is-done:not(:last-child)::before, .app-fu-tl__item.is-skip:not(:last-child)::before { background: var(--app-success-line); }
+.app-fu-tl__item.is-late { background: var(--app-fu-late-tint); }
+.app-fu-tl__item.is-current { background: var(--app-fu-now-tint); }
+.app-fu-tl__item:target { outline: 2px solid var(--app-accent); outline-offset: -2px; }
+.app-fu-tl__body { min-inline-size: 0; }
+.app-fu-tl__head { display: grid; grid-template-columns: minmax(0, 1fr); gap: .4rem var(--app-sp-3); align-items: center; min-block-size: 28px; }
+@media (min-width: 768px) {
+    .app-fu-tl__head { grid-template-columns: minmax(0, 1fr) 12.5rem minmax(0, auto); }
+    .app-fu-tl__actions { justify-content: flex-end; }
+}
+.app-fu-tl__name { font-weight: 600; color: var(--app-ink); }
+.app-fu-tl__name .bi { color: var(--app-muted); margin-inline-start: .25rem; font-size: .85em; }
+.app-fu-tl__flag {
+    display: inline-flex; align-items: center; gap: .25rem; margin-inline-start: .4rem; padding: 0 .4rem; border-radius: 999px;
+    background: var(--app-primary); color: var(--app-surface); font-size: 10px; font-weight: 700; letter-spacing: .03em; vertical-align: 1px;
+}
+.app-fu-tl__kind { font-size: var(--app-fs-xs); color: var(--app-muted); }
+.app-fu-tl__kind .bi { margin-inline-end: .2rem; }
+.app-fu-tl__actions { display: flex; flex-wrap: wrap; gap: .375rem; }
+.app-fu-tl__meta { margin-block-start: .3rem; font-size: var(--app-fs-sm); color: var(--app-ink-soft); }
+.app-fu-tl__meta .app-fu-note { color: var(--app-ink); }
+.app-fu-tl__panel > form, .app-fu-formrow__inner {
+    margin-block-start: .625rem; padding: var(--app-sp-3); background: var(--app-surface); border: 1px solid var(--app-line-strong);
+    border-radius: var(--app-radius-sm); box-shadow: var(--app-shadow-sm);
+}
+.app-fu-tl__panel .form-label { margin-block-end: .2rem; }
+.app-fu-formactions { display: flex; flex-wrap: wrap; gap: var(--app-sp-2); align-items: center; }
+.app-fu-panel-title { font-weight: 600; font-size: var(--app-fs-sm); margin-block-end: .5rem; color: var(--app-ink); }
+.btn[aria-expanded="true"].btn-light { background: var(--app-surface-3); border-color: var(--app-line-strong); }
+.btn[aria-expanded="true"].btn-outline-primary { background: rgba(var(--app-primary-rgb), .08); color: var(--app-primary); }
+
+/* Side cards on the order page. */
+.app-fu-bigdate { font-size: var(--app-fs-2xl); font-weight: 600; color: var(--app-ink); line-height: 1.2; }
+.app-fu-history { list-style: none; margin: 0; padding: 0; }
+.app-fu-history > li { padding-block: .5rem; border-block-start: 1px solid var(--app-line); font-size: var(--app-fs-sm); }
+.app-fu-history__main { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; color: var(--app-ink); font-weight: 500; }
+.app-fu-history__meta { color: var(--app-muted); font-size: var(--app-fs-xs); }
+.app-fu-history__note { color: var(--app-ink-soft); white-space: pre-line; }
+.app-fu-status-actions { display: flex; flex-wrap: wrap; gap: var(--app-sp-2); align-items: flex-start; }
+.app-fu-status-actions details { flex: 1 1 100%; }
+.app-fu-status-actions details > summary { list-style: none; display: inline-flex; }
+.app-fu-status-actions details > summary::-webkit-details-marker { display: none; }
+.app-fu-inlineform { display: flex; gap: var(--app-sp-2); align-items: flex-end; }
+.app-fu-inlineform > :first-child { flex: 1 1 auto; min-inline-size: 0; }
+.app-fu-inlineform > .btn { flex: 0 0 auto; white-space: nowrap; }
+details.app-fu-disclosure > summary { list-style: none; display: inline-flex; cursor: pointer; }
+details.app-fu-disclosure > summary::-webkit-details-marker { display: none; }
+
+/* ---------- A full-width form under a table row (receive, correct, unload) ---------- */
+.table > tbody > tr.app-fu-formrow > td { background: var(--app-surface-2); padding-block: 0 var(--app-sp-3); white-space: normal; }
+.table > tbody > tr.app-fu-formrow.collapsing { transition: none; }
+/* In a table wider than the screen, the form stays in view while the row scrolls. */
+.app-fu-formrow__inner { position: sticky; inset-inline-start: var(--app-sp-3); max-inline-size: min(56rem, calc(100vw - 3rem)); margin-block-start: 0; }
+.table > tbody > tr.app-fu-hasform.is-open > td { border-block-end-color: transparent; }
+
+/* ---------- Containers: the phase stepper, the fill gauge and the route ---------- */
+.app-fu-phases { min-inline-size: 12rem; max-inline-size: 15rem; }
+
+/* A small stepper with its labels under the dots (the container phases in a row or a card): the
+   shared stepper, smaller, kept horizontal at every width; the state words stay for screen readers. */
+.app-fu-mini .app-stepper { flex-direction: row; gap: 0; }
+.app-fu-mini .app-stepper > .app-stepper__step { flex-direction: column; align-items: center; text-align: center; gap: .2rem; min-inline-size: 0; }
+.app-fu-mini .app-stepper > .app-stepper__step + .app-stepper__step::before {
+    display: block; inset-block-start: 8px; inset-inline-end: calc(50% + 10px); inline-size: calc(100% - 20px);
+}
+.app-fu-mini .app-stepper__dot { inline-size: 18px; block-size: 18px; font-size: .6rem; border-width: 1.5px; }
+.app-fu-mini .is-current > .app-stepper__dot { box-shadow: 0 0 0 3px rgba(var(--app-primary-rgb), .14); }
+.app-fu-mini .app-stepper__text { max-inline-size: none; }
+.app-fu-mini .app-stepper__label { font-size: var(--app-fs-xs); font-weight: 500; color: var(--app-ink-soft); white-space: nowrap; }
+.app-fu-mini .is-current .app-stepper__label, .app-fu-mini .is-late .app-stepper__label { color: var(--app-ink); font-weight: 600; }
+.app-fu-mini .app-stepper__sub, .app-fu-mini .app-stepper__hint {
+    position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.app-fu-statusline { margin-block-start: .35rem; }
+
+.app-fu-fill { min-inline-size: 10rem; }
+.app-fu-fill .app-progress__head { font-size: var(--app-fs-xs); }
+.app-fu-fill__kg { margin-block-start: .25rem; font-size: var(--app-fs-xs); color: var(--app-ink-soft); }
+.app-fu-fill__flag { display: inline-flex; align-items: center; gap: .2rem; font-weight: 600; }
+.app-fu-fill__flag.is-over { color: var(--app-danger); }
+.app-fu-fill__flag.is-near { color: var(--app-warning); }
+
+.app-fu-gauges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--app-sp-4); }
+.app-fu-gauge { display: grid; justify-items: center; text-align: center; gap: .15rem; min-inline-size: 0; }
+.app-fu-gauge__dial { position: relative; inline-size: 100%; max-inline-size: 11rem; }
+.app-fu-gauge__svg { display: block; inline-size: 100%; block-size: auto; overflow: visible; }
+[dir="rtl"] .app-fu-gauge__svg { transform: scaleX(-1); }
+.app-fu-gauge__track, .app-fu-gauge__bar { fill: none; stroke-width: 11; stroke-linecap: round; }
+.app-fu-gauge__track { stroke: var(--app-surface-3); }
+.app-fu-gauge__bar { stroke: var(--app-primary); }
+.app-fu-gauge.is-near .app-fu-gauge__bar { stroke: var(--app-accent); }
+.app-fu-gauge.is-over .app-fu-gauge__bar { stroke: var(--app-danger); }
+.app-fu-gauge__tick { stroke: var(--app-ink-soft); stroke-width: 1.5; }
+.app-fu-gauge__value {
+    position: absolute; inset-inline: 0; inset-block-end: 0; font-size: var(--app-fs-2xl); font-weight: 700; line-height: 1;
+    color: var(--app-ink); font-variant-numeric: tabular-nums;
+}
+.app-fu-gauge.is-over .app-fu-gauge__value { color: var(--app-danger); }
+.app-fu-gauge.is-empty .app-fu-gauge__value { font-size: var(--app-fs-lg); color: var(--app-muted); }
+.app-fu-gauge__unit { font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-muted); letter-spacing: .04em; margin-block-start: .35rem; }
+.app-fu-gauge__figures { font-size: var(--app-fs-sm); color: var(--app-ink-soft); }
+.app-fu-gauge__figures strong { color: var(--app-ink); font-weight: 600; }
+.app-fu-gauge__note { font-size: var(--app-fs-xs); }
+
+.app-fu-route { display: grid; grid-template-columns: minmax(0, auto) minmax(4rem, 1fr) minmax(0, auto); align-items: center; gap: var(--app-sp-3); }
+.app-fu-route__end { min-inline-size: 0; }
+.app-fu-route__end:last-child { text-align: end; }
+.app-fu-route__port { font-weight: 600; color: var(--app-ink); font-size: var(--app-fs-lg); line-height: 1.25; }
+.app-fu-route__label { font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-muted); letter-spacing: .02em; }
+.app-fu-route__date { font-size: var(--app-fs-sm); color: var(--app-ink-soft); }
+.app-fu-route__line { position: relative; display: flex; align-items: center; justify-content: center; block-size: 28px; }
+.app-fu-route__line::before {
+    content: ""; position: absolute; inset-inline: 0; inset-block-start: 50%; border-block-start: 2px dashed var(--app-line-strong);
+}
+.app-fu-route__line > span {
+    position: relative; display: inline-flex; align-items: center; gap: .35rem; padding-inline: .6rem; background: var(--app-surface);
+    color: var(--app-ink-soft); font-size: var(--app-fs-xs); font-weight: 500; white-space: nowrap; max-inline-size: 100%;
+    overflow: hidden; text-overflow: ellipsis;
+}
+.app-fu-route__line .bi { color: var(--app-accent); font-size: 1rem; }
+[dir="rtl"] .app-fu-route__line .bi-truck, [dir="rtl"] .app-fu-route__line .bi-airplane { transform: scaleX(-1); }
+@media (max-width: 575.98px) {
+    .app-fu-route { grid-template-columns: 1fr; gap: var(--app-sp-2); }
+    .app-fu-route__end:last-child { text-align: start; }
+    .app-fu-route__line { justify-content: flex-start; block-size: auto; }
+    .app-fu-route__line::before { display: none; }
+    .app-fu-route__line > span { padding-inline: 0; }
+}
+
+.app-fu-journey .app-stepper { margin-block: .25rem var(--app-sp-4); }
+.app-fu-journey .app-stepper__sub .app-num, .app-fu-journey .app-stepper__hint .app-num { white-space: nowrap; }
+.app-fu-journey__now { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; padding-block-start: var(--app-sp-3); border-block-start: 1px solid var(--app-line); font-size: var(--app-fs-sm); color: var(--app-ink-soft); }
+
+/* The container's status events, newest first. */
+.app-fu-events { list-style: none; margin: 0; padding: var(--app-sp-2) 0; }
+.app-fu-events__item { position: relative; display: grid; grid-template-columns: 14px minmax(0, 1fr); column-gap: var(--app-sp-3); padding: .5rem var(--app-sp-4); }
+.app-fu-events__item:not(:last-child)::before {
+    content: ""; position: absolute; inset-inline-start: calc(var(--app-sp-4) + 6px); inset-block: calc(.5rem + 18px) -.25rem; inline-size: 2px;
+    background: var(--app-line); border-radius: 2px;
+}
+.app-fu-events__dot { margin-block-start: .3rem; inline-size: 14px; block-size: 14px; border-radius: 50%; background: var(--app-surface); border: 2px solid var(--app-line-strong); }
+.app-fu-events__item.is-latest .app-fu-events__dot { background: var(--app-primary); border-color: var(--app-primary); box-shadow: 0 0 0 3px rgba(var(--app-primary-rgb), .16); }
+.app-fu-events__item.is-correction .app-fu-events__dot { border-color: var(--app-warning); border-style: dashed; }
+.app-fu-events__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; }
+.app-fu-events__status { font-weight: 600; color: var(--app-ink); }
+.app-fu-events__when { font-size: var(--app-fs-sm); color: var(--app-ink-soft); }
+.app-fu-events__meta { font-size: var(--app-fs-xs); color: var(--app-muted); }
+.app-fu-events__note { font-size: var(--app-fs-sm); color: var(--app-ink); }
+
+/* A form at the foot of a section (record status, load cartons, add a container, book an order). */
+.app-fu-foot { padding: var(--app-sp-4); border-block-start: 1px solid var(--app-line); background: var(--app-surface-2); border-end-start-radius: var(--app-radius); border-end-end-radius: var(--app-radius); }
+.app-fu-foot__title { font-weight: 600; margin-block-end: .5rem; display: flex; align-items: center; gap: .4rem; }
+.app-fu-foot__title .bi { color: var(--app-accent); }
+
+/* A line released from a cancelled order: shown, but quieter. */
+.table > tbody > tr.app-fu-row--released > td { color: var(--app-ink-soft); }
+
+/* Received / ordered cartons as a small bar in a table cell. */
+.app-fu-qty { min-inline-size: 8rem; }
+
+/* Evaluation: the on-time bar. */
+.app-fu-ontime { display: grid; gap: .25rem; min-inline-size: 9rem; }
+.app-fu-explain { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--app-sp-3); }
+@media (min-width: 992px) { .app-fu-explain { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.app-fu-explain__term { font-weight: 600; color: var(--app-ink); font-size: var(--app-fs-sm); }
+.app-fu-explain__text { font-size: var(--app-fs-sm); color: var(--app-ink-soft); margin: 0; }
+
+/* Forms split into titled sections. */
+.app-fu-form .app-section + .app-section { margin-block-start: var(--app-sp-3); }
+.app-fu-form__actions { display: flex; flex-wrap: wrap; gap: var(--app-sp-2); margin-block-start: var(--app-sp-4); }
+.app-fu-req { color: var(--app-danger); }
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .app-pill.app-fu-dot:hover { transform: none; }
+}
+@media print {
+    .app-fu-tl__actions, .app-fu-tl__panel, .app-fu-foot { display: none !important; }
+}
+
+/* Four phases fit across a phone: the journey stepper stays horizontal there (the shared stepper turns vertical below 768px). */
+@media (max-width: 767.98px) {
+    .app-fu-journey .app-stepper:not(.app-stepper--compact) { flex-direction: row; gap: 0; }
+    .app-fu-journey .app-stepper:not(.app-stepper--compact) .app-stepper__step { flex-direction: column; align-items: center; text-align: center; }
+    .app-fu-journey .app-stepper:not(.app-stepper--compact) .app-stepper__step + .app-stepper__step::before { display: block; }
+    .app-fu-journey .app-stepper__text { max-inline-size: 100%; padding-inline: 2px; }
+    .app-fu-journey .app-stepper__label { font-size: var(--app-fs-xs); }
+}

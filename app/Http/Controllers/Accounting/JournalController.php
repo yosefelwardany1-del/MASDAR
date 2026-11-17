@@ -66,6 +66,7 @@ class JournalController extends Controller
             'canSee' => fn (?Party $party) => $ledger->canSeeParty($request->user(), $party),
             'debit' => $entry->lines->reduce(fn ($sum, $l) => Decimal::add($sum, (string) $l->debit), '0'),
             'credit' => $entry->lines->reduce(fn ($sum, $l) => Decimal::add($sum, (string) $l->credit), '0'),
+            'book' => $ledger->bookCurrency(),
         ]);
     }
 

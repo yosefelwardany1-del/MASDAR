@@ -2,28 +2,47 @@
 
 @section('title', __('Profit and loss'))
 
-@section('content')
-@php $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v); @endphp
-@include('finance-reports._header', ['title' => __('Profit and loss')])
+@php
+    use App\Services\Accounting\Decimal;
+    use Illuminate\Support\HtmlString;
 
-<form method="GET" class="row g-2 mb-3 align-items-end">
-    <div class="col-6 col-md-3"><label class="form-label small" for="from">{{ __('From') }}</label><input id="from" type="date" name="from" value="{{ $from }}" class="form-control"></div>
-    <div class="col-6 col-md-3"><label class="form-label small" for="to">{{ __('To') }}</label><input id="to" type="date" name="to" value="{{ $to }}" class="form-control"></div>
-    <div class="col-6 col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="all" value="1" id="all" @checked($all)><label class="form-check-label" for="all">{{ __('Show accounts without postings') }}</label></div></div>
-    <div class="col-6 col-md-3"><button class="btn btn-primary w-100">{{ __('Show') }}</button></div>
+    $fig = fn ($v) => new HtmlString('<span class="app-num app-fig'.(Decimal::cmp((string) $v, '0') < 0 ? ' app-fig--neg' : '').'">'.e(Decimal::format($v)).'</span>');
+    $loss = str_starts_with($report['net'], '-');
+@endphp
+
+@section('content')
+@include('finance-reports._header', ['title' => __('Profit and loss'), 'subtitle' => __('Income and expenses for a period, grouped by heading, and the net result.')])
+
+<form method="GET" class="app-filterbar" aria-label="{{ __('Period') }}">
+    <div class="app-filterbar__field app-filterbar__field--narrow"><label class="form-label" for="from">{{ __('From') }}</label><input id="from" type="date" name="from" value="{{ $from }}" class="form-control form-control-sm"></div>
+    <div class="app-filterbar__field app-filterbar__field--narrow"><label class="form-label" for="to">{{ __('To') }}</label><input id="to" type="date" name="to" value="{{ $to }}" class="form-control form-control-sm"></div>
+    <div class="app-filterbar__check"><div class="form-check"><input class="form-check-input" type="checkbox" name="all" value="1" id="all" @checked($all)><label class="form-check-label small" for="all">{{ __('Show accounts without postings') }}</label></div></div>
+    <div class="app-filterbar__actions"><button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>{{ __('Show') }}</button></div>
 </form>
 
-<div class="app-card">
+<div class="row g-3 mb-4 app-kpis">
+    <div class="col-sm-4"><x-kpi :label="__('Income').' ('.$book.')'" :value="$fig($report['income']['total'])" icon="graph-up-arrow" tone="done" /></div>
+    <div class="col-sm-4"><x-kpi :label="__('Expenses').' ('.$book.')'" :value="$fig($report['expense']['total'])" icon="receipt-cutoff" /></div>
+    <div class="col-sm-4"><x-kpi :label="($loss ? __('Net loss') : __('Net profit')).' ('.$book.')'" :value="$fig($report['net'])" :icon="$loss ? 'graph-down-arrow' : 'trophy'" :tone="$loss ? 'late' : 'gold'" /></div>
+</div>
+
+<div class="app-card app-stmt-card">
+    @include('finance-reports._stmt-head', ['title' => __('Profit and loss'), 'from' => $from, 'to' => $to, 'book' => $book])
     <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-            <thead><tr><th>{{ __('Code') }}</th><th>{{ __('Account') }}</th><th class="text-end">{{ __('Amount (:book)', ['book' => $book]) }}</th></tr></thead>
+        <table class="table table-hover app-stmt mb-0">
+            <thead><tr>
+                <th scope="col" class="app-stmt__code">{{ __('Code') }}</th><th scope="col">{{ __('Account') }}</th><th scope="col" class="app-stmt__amt">{{ __('Amount (:book)', ['book' => $book]) }}</th>
+            </tr></thead>
             <tbody>
-                @include('finance-reports._section', ['title' => __('Income'), 'section' => $report['income']])
-                @include('finance-reports._section', ['title' => __('Expenses'), 'section' => $report['expense']])
+                @include('finance-reports._section', ['title' => __('Income'), 'section' => $report['income'], 'ledgerFrom' => $from, 'ledgerTo' => $to])
+                <tr class="app-stmt__spacer"><td colspan="3"></td></tr>
+                @include('finance-reports._section', ['title' => __('Expenses'), 'section' => $report['expense'], 'ledgerFrom' => $from, 'ledgerTo' => $to])
             </tbody>
             <tfoot>
-                <tr class="fw-bold fs-6 {{ str_starts_with($report['net'], '-') ? 'text-danger' : '' }}">
-                    <td></td><td>{{ str_starts_with($report['net'], '-') ? __('Net loss') : __('Net profit') }}</td><td class="app-num text-end">{{ $fmt($report['net']) }}</td>
+                <tr class="app-stmt__grand">
+                    <td class="app-stmt__code"></td>
+                    <th scope="row">{{ $loss ? __('Net loss') : __('Net profit') }}</th>
+                    <td class="app-stmt__amt">{{ $fig($report['net']) }}</td>
                 </tr>
             </tfoot>
         </table>

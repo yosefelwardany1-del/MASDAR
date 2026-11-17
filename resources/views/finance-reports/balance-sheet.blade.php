@@ -2,43 +2,63 @@
 
 @section('title', __('Balance sheet'))
 
-@section('content')
-@php $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v); @endphp
-@include('finance-reports._header', ['title' => __('Balance sheet')])
+@php
+    use App\Services\Accounting\Decimal;
+    use Illuminate\Support\HtmlString;
 
-<form method="GET" class="row g-2 mb-3 align-items-end">
-    <div class="col-6 col-md-3"><label class="form-label small" for="as_at">{{ __('As at') }}</label><input id="as_at" type="date" name="as_at" value="{{ $asAt }}" class="form-control"></div>
-    <div class="col-6 col-md-3">
-        <label class="form-label small" for="year_start">{{ __('Financial year starts on') }}</label>
-        <input id="year_start" type="date" name="year_start" value="{{ $yearStart }}" class="form-control">
+    $fig = fn ($v) => new HtmlString('<span class="app-num app-fig'.(Decimal::cmp((string) $v, '0') < 0 ? ' app-fig--neg' : '').'">'.e(Decimal::format($v)).'</span>');
+@endphp
+
+@section('content')
+@include('finance-reports._header', ['title' => __('Balance sheet'), 'subtitle' => __('Assets, liabilities and equity as at a date, with the year\'s result.')])
+
+<form method="GET" class="app-filterbar" aria-label="{{ __('As at') }}">
+    <div class="app-filterbar__field app-filterbar__field--narrow"><label class="form-label" for="as_at">{{ __('As at') }}</label><input id="as_at" type="date" name="as_at" value="{{ $asAt }}" class="form-control form-control-sm"></div>
+    <div class="app-filterbar__field app-filterbar__field--narrow">
+        <label class="form-label" for="year_start">{{ __('Financial year starts on') }}</label>
+        <input id="year_start" type="date" name="year_start" value="{{ $yearStart }}" class="form-control form-control-sm" aria-describedby="year-start-help">
     </div>
-    <div class="col-6 col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="all" value="1" id="all" @checked($all)><label class="form-check-label" for="all">{{ __('Show accounts without postings') }}</label></div></div>
-    <div class="col-6 col-md-3"><button class="btn btn-primary w-100">{{ __('Show') }}</button></div>
-    <div class="col-12 form-text">{{ __('MASDAR\'s financial year end is still open (spec Q-A4): set the start of the year here. It only splits the result between this year and earlier years; the totals are the same.') }}</div>
+    <div class="app-filterbar__check"><div class="form-check"><input class="form-check-input" type="checkbox" name="all" value="1" id="all" @checked($all)><label class="form-check-label small" for="all">{{ __('Show accounts without postings') }}</label></div></div>
+    <div class="app-filterbar__actions"><button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>{{ __('Show') }}</button></div>
+    <div class="form-text w-100 m-0" id="year-start-help">{{ __('MASDAR\'s financial year end is still open (spec Q-A4): set the start of the year here. It only splits the result between this year and earlier years; the totals are the same.') }}</div>
 </form>
 
-<div class="app-card">
+<div class="row g-3 mb-4 app-kpis">
+    <div class="col-sm-4"><x-kpi :label="__('Total assets').' ('.$book.')'" :value="$fig($report['assets']['total'])" icon="bank" /></div>
+    <div class="col-sm-4"><x-kpi :label="__('Liabilities').' ('.$book.')'" :value="$fig($report['liabilities']['total'])" icon="credit-card-2-back" /></div>
+    <div class="col-sm-4"><x-kpi :label="__('Equity').' ('.$book.')'" :value="$fig($report['equity_total'])" icon="pie-chart" tone="gold" /></div>
+</div>
+
+<div class="app-card app-stmt-card">
+    @include('finance-reports._stmt-head', ['title' => __('Balance sheet'), 'asAt' => $asAt, 'book' => $book])
     <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-            <thead><tr><th>{{ __('Code') }}</th><th>{{ __('Account') }}</th><th class="text-end">{{ __('Amount (:book)', ['book' => $book]) }}</th></tr></thead>
+        <table class="table table-hover app-stmt mb-0">
+            <thead><tr>
+                <th scope="col" class="app-stmt__code">{{ __('Code') }}</th><th scope="col">{{ __('Account') }}</th><th scope="col" class="app-stmt__amt">{{ __('Amount (:book)', ['book' => $book]) }}</th>
+            </tr></thead>
             <tbody>
-                @include('finance-reports._section', ['title' => __('Assets'), 'section' => $report['assets']])
-                @include('finance-reports._section', ['title' => __('Liabilities'), 'section' => $report['liabilities']])
-                @include('finance-reports._section', ['title' => __('Equity'), 'section' => $report['equity'], 'hideTotal' => true])
-                <tr><td></td><td>{{ __('Result of earlier years not yet carried to equity') }}</td><td class="app-num text-end">{{ $fmt($report['earlier_years']) }}</td></tr>
-                <tr><td></td><td>{{ __('Current-year result') }}</td><td class="app-num text-end">{{ $fmt($report['current_year']) }}</td></tr>
-                <tr class="fw-bold"><td></td><td>{{ __('Total :section', ['section' => __('Equity')]) }}</td><td class="app-num text-end">{{ $fmt($report['equity_total']) }}</td></tr>
+                @include('finance-reports._section', ['title' => __('Assets'), 'section' => $report['assets'], 'hideTotal' => true, 'ledgerTo' => $asAt, 'ledgerFrom' => $yearStart])
+                <tr class="app-stmt__grand"><td class="app-stmt__code"></td><th scope="row">{{ __('Total assets') }}</th><td class="app-stmt__amt">{{ $fig($report['assets']['total']) }}</td></tr>
+                <tr class="app-stmt__spacer"><td colspan="3"></td></tr>
+
+                @include('finance-reports._section', ['title' => __('Liabilities'), 'section' => $report['liabilities'], 'ledgerTo' => $asAt, 'ledgerFrom' => $yearStart])
+                @include('finance-reports._section', ['title' => __('Equity'), 'section' => $report['equity'], 'hideTotal' => true, 'ledgerTo' => $asAt, 'ledgerFrom' => $yearStart])
+                <tr class="app-stmt__row"><td class="app-stmt__code"></td><td class="app-stmt__name">{{ __('Result of earlier years not yet carried to equity') }}</td><td class="app-stmt__amt">{{ $fig($report['earlier_years']) }}</td></tr>
+                <tr class="app-stmt__row"><td class="app-stmt__code"></td><td class="app-stmt__name">{{ __('Current-year result') }}</td><td class="app-stmt__amt">{{ $fig($report['current_year']) }}</td></tr>
+                <tr class="app-stmt__total"><td class="app-stmt__code"></td><th scope="row">{{ __('Total :section', ['section' => __('Equity')]) }}</th><td class="app-stmt__amt">{{ $fig($report['equity_total']) }}</td></tr>
             </tbody>
             <tfoot>
-                <tr class="fw-bold"><td></td><td>{{ __('Total assets') }}</td><td class="app-num text-end">{{ $fmt($report['assets']['total']) }}</td></tr>
-                <tr class="fw-bold"><td></td><td>{{ __('Liabilities and equity') }}</td><td class="app-num text-end">{{ $fmt($report['liabilities_and_equity']) }}</td></tr>
+                <tr class="app-stmt__grand"><td class="app-stmt__code"></td><th scope="row">{{ __('Liabilities and equity') }}</th><td class="app-stmt__amt">{{ $fig($report['liabilities_and_equity']) }}</td></tr>
             </tfoot>
         </table>
     </div>
 </div>
-@if($report['balanced'])
-    <div class="alert alert-success mt-3 py-2"><i class="bi bi-check2-circle me-1"></i>{{ __('The balance sheet balances.') }}</div>
-@else
-    <div class="alert alert-danger mt-3">{{ __('The balance sheet does not balance. Tell the system administrator.') }}</div>
-@endif
+<div class="app-verdict">
+    @if($report['balanced'])
+        <x-status tone="done" icon="check2-circle">{{ __('The balance sheet balances.') }}</x-status>
+        <span>{{ __('Total assets equal liabilities and equity.') }}</span>
+    @else
+        <div class="alert alert-danger w-100 mb-0" role="alert"><i class="bi bi-exclamation-octagon me-1" aria-hidden="true"></i>{{ __('The balance sheet does not balance. Tell the system administrator.') }}</div>
+    @endif
+</div>
 @endsection

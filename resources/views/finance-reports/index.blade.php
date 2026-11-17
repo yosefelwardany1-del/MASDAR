@@ -3,23 +3,36 @@
 @section('title', __('Financial reports'))
 
 @section('content')
-<h1 class="h4 mb-3">{{ __('Financial reports') }}</h1>
-<p class="text-muted small">{{ __('Every figure is computed from posted journal entries, in the book currency. Drafts never count.') }}</p>
-<div class="row g-3">
-    @foreach([
-        ['finance-reports.trial-balance', 'bi-list-columns', __('Trial balance'), __('Opening, debits, credits and closing balance of every account for a date range.')],
-        ['finance-reports.profit-and-loss', 'bi-graph-up-arrow', __('Profit and loss'), __('Income and expenses for a period, grouped by heading, and the net result.')],
-        ['finance-reports.balance-sheet', 'bi-bank', __('Balance sheet'), __('Assets, liabilities and equity as at a date, with the year\'s result.')],
-        ['finance-reports.account-ledger', 'bi-journal-text', __('Account ledger'), __('One account\'s postings for a range, with a running balance.')],
-        ['finance-reports.party-statement', 'bi-person-lines-fill', __('Party statement'), __('A client\'s, supplier\'s or shipping company\'s postings, with opening and running balance.')],
-        ['finance-reports.cash-position', 'bi-wallet2', __('Cash position'), __('Each money account: its ledger balance and the balance of its payments, per currency.')],
-    ] as [$route, $icon, $label, $text])
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ route($route) }}" class="app-card p-3 d-block text-decoration-none h-100">
-                <div class="fw-semibold mb-1"><i class="bi {{ $icon }} me-2"></i>{{ $label }}</div>
-                <div class="text-muted small">{{ $text }}</div>
-            </a>
+<x-page-header :title="__('Financial reports')" :subtitle="__('Every figure is computed from posted journal entries, in the book currency. Drafts never count.')" />
+
+@foreach([
+    __('Statements') => [
+        ['finance-reports.profit-and-loss', 'graph-up-arrow', __('Profit and loss'), __('Income and expenses for a period, grouped by heading, and the net result.'), ''],
+        ['finance-reports.balance-sheet', 'bank', __('Balance sheet'), __('Assets, liabilities and equity as at a date, with the year\'s result.'), ''],
+        ['finance-reports.trial-balance', 'list-columns', __('Trial balance'), __('Opening, debits, credits and closing balance of every account for a date range.'), ''],
+    ],
+    __('Ledgers') => [
+        ['finance-reports.account-ledger', 'journal-text', __('Account ledger'), __('One account\'s postings for a range, with a running balance.'), ''],
+        ['finance-reports.party-statement', 'person-lines-fill', __('Party statement'), __('A client\'s, supplier\'s or shipping company\'s postings, with opening and running balance.'), ''],
+    ],
+    __('Cash') => [
+        ['finance-reports.cash-position', 'wallet2', __('Cash position'), __('Each money account: its ledger balance and the balance of its payments, per currency.'), 'gold'],
+    ],
+] as $group => $reports)
+    <section class="app-report-group" aria-labelledby="reports-{{ $loop->index }}">
+        <h2 class="app-report-group__title" id="reports-{{ $loop->index }}">{{ $group }}</h2>
+        <div class="app-reports">
+            @foreach($reports as [$route, $icon, $label, $text, $tone])
+                <a href="{{ route($route) }}" class="app-card app-report-tile {{ $tone ? 'app-report-tile--'.$tone : '' }}">
+                    <span class="app-report-tile__icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span>
+                    <span>
+                        <span class="app-report-tile__title">{{ $label }}</span>
+                        <span class="app-report-tile__text d-block">{{ $text }}</span>
+                    </span>
+                    <i class="bi bi-arrow-right app-report-tile__go" aria-hidden="true"></i>
+                </a>
+            @endforeach
         </div>
-    @endforeach
-</div>
+    </section>
+@endforeach
 @endsection

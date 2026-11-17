@@ -170,7 +170,10 @@ small, .small { font-size: var(--app-fs-sm); }
 .form-control:focus, .form-select:focus { border-color: var(--app-accent); box-shadow: 0 0 0 3px rgba(var(--app-accent-rgb), .18); outline: none; }
 .form-control:disabled, .form-select:disabled, fieldset:disabled .form-control { background-color: var(--app-surface-2); }
 .form-text { color: var(--app-muted); font-size: var(--app-fs-xs); }
-.form-check-input { border-color: var(--app-line-strong); }
+.form-check-input { border-color: #7f8c9e; }   /* an empty box or switch at 3:1 against white */
+/* Bootstrap floats a legend and clears only its next sibling; a flex row placed after a hidden
+   input would then sit beside the float with no width. Everything after a legend clears it. */
+fieldset > legend ~ * { clear: both; }
 .form-check-input:checked { background-color: var(--app-primary); border-color: var(--app-primary); }
 .form-check-input:focus { box-shadow: 0 0 0 3px rgba(var(--app-accent-rgb), .18); border-color: var(--app-accent); }
 .form-switch .form-check-input { inline-size: 2.25em; }
@@ -190,11 +193,12 @@ small, .small { font-size: var(--app-fs-sm); }
     border-radius: var(--app-radius); box-shadow: var(--app-shadow);
 }
 .app-card > .p-3.border-bottom, .app-card__head {
-    display: flex; align-items: center; gap: var(--app-sp-2);
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--app-sp-2);
     padding: var(--app-sp-3) var(--app-sp-4) !important; font-size: var(--app-fs-lg); font-weight: 600;
     border-color: var(--app-line) !important;
 }
 .app-card > .p-3.border-bottom .bi, .app-card__head .bi { color: var(--app-accent); }
+.app-card > .p-3.border-bottom .btn .bi, .app-card__head .btn .bi { color: inherit; }   /* an icon in a button takes the button's colour */
 .card { border-color: var(--app-line); border-radius: var(--app-radius); box-shadow: var(--app-shadow-sm); }
 
 /* ---------- Tables: dense, scannable ---------- */
@@ -314,6 +318,8 @@ small, .small { font-size: var(--app-fs-sm); }
     border-block-end: 1px solid var(--app-line);
 }
 .app-topbar__title { font-weight: 600; font-size: var(--app-fs-lg); color: var(--app-ink); }
+.min-w-0 { min-inline-size: 0; }   /* a flex child that may shrink (a long title truncates instead of widening the page) */
+#app-topbar > .d-flex:first-of-type { flex: 1 1 auto; }
 .app-topbar__crumb { color: var(--app-muted); font-size: var(--app-fs-sm); font-weight: 500; }
 .app-topbar__crumb + .bi { color: var(--app-line-strong); font-size: .7rem; }
 .app-iconbtn {
@@ -437,9 +443,9 @@ a.app-stat:hover { border-color: var(--app-line-strong); box-shadow: var(--app-s
 .app-stepper--compact .app-stepper__step { min-inline-size: 20px; }
 @media (max-width: 767.98px) {
     /* On a phone a long stepper reads top to bottom. */
-    .app-stepper:not(.app-stepper--compact) { flex-direction: column; gap: .75rem; }
-    .app-stepper:not(.app-stepper--compact) .app-stepper__step { flex-direction: row; text-align: start; align-items: flex-start; }
-    .app-stepper:not(.app-stepper--compact) .app-stepper__step::before { display: none; }
+    .app-stepper:not(.app-stepper--compact):not(.app-stepper--row) { flex-direction: column; gap: .75rem; }
+    .app-stepper:not(.app-stepper--compact):not(.app-stepper--row) .app-stepper__step { flex-direction: row; text-align: start; align-items: flex-start; }
+    .app-stepper:not(.app-stepper--compact):not(.app-stepper--row) .app-stepper__step::before { display: none; }
     .app-stepper__text { max-inline-size: none; }
 }
 
