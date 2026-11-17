@@ -17,7 +17,7 @@ services:
       - key: APP_URL
         sync: false  # set manually: the production URL
       - key: APP_TIMEZONE
-        value: Africa/Cairo
+        value: Asia/Shanghai
       - key: APP_LOCALE
         value: ar
 

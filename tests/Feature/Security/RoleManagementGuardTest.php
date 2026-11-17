@@ -73,11 +73,11 @@ class RoleManagementGuardTest extends TestCase
 
     public function test_a_role_carrying_permissions_the_actor_lacks_cannot_be_assigned(): void
     {
-        Role::findByName(Roles::SUPERVISOR)->givePermissionTo(Screens::grantsFor('import_export', 'view'));
+        Role::findByName(Roles::SALES)->givePermissionTo(Screens::grantsFor('import_export', 'view'));
         $sysadmin = $this->make(Roles::SYSTEM_ADMIN);
 
-        $this->assertFalse($this->guard()->canAssignRole($sysadmin, Roles::SUPERVISOR));
-        $this->actingAs($sysadmin)->post(route('users.store'), $this->newUser([Roles::SUPERVISOR]))->assertForbidden();
+        $this->assertFalse($this->guard()->canAssignRole($sysadmin, Roles::SALES));
+        $this->actingAs($sysadmin)->post(route('users.store'), $this->newUser([Roles::SALES]))->assertForbidden();
         $this->assertTrue($this->guard()->canAssignRole($sysadmin, Roles::STAFF), 'a role with nothing the actor lacks is fine');
     }
 

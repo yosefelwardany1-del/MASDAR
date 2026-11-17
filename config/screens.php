@@ -6,21 +6,136 @@
 | approve includes edit) — see App\Security\Screens. A screen marked `signed_in` needs only a
 | signed-in user and has no permissions (a user with no roles still lands somewhere).
 |
-| Each later sub-project adds its own screens here; RolesAndPermissionsSeeder creates their
-| permissions on the next deploy and gives them to the roles whose defaults include them.
+| Labels are English and shown through __(), so each user sees them in their own language.
+| RolesAndPermissionsSeeder creates new permissions on the next deploy and gives them to the
+| roles whose defaults include them.
 */
 
 return [
     'home' => [
-        'label' => 'الرئيسية',
+        'label' => 'Home',
         'route' => 'dashboard',
         'group' => 'overview',
         'icon' => 'bi-house-door',
         'levels' => [],
         'signed_in' => true,
     ],
+
+    // CRM: the three interaction points (spec §5.1) and the follow-up log.
+    'clients' => [
+        'label' => 'Clients',
+        'route' => 'clients.index',
+        'group' => 'crm',
+        'icon' => 'bi-person-badge',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
+    'suppliers' => [
+        'label' => 'Suppliers',
+        'route' => 'suppliers.index',
+        'group' => 'crm',
+        'icon' => 'bi-shop',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
+    'shipping_companies' => [
+        'label' => 'Shipping companies',
+        'route' => 'shipping-companies.index',
+        'group' => 'crm',
+        'icon' => 'bi-truck',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
+    'crm' => [
+        'label' => 'Follow-up tasks',
+        'route' => 'crm.tasks.index',
+        'group' => 'crm',
+        'icon' => 'bi-check2-square',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
+
+    // Sales: products and the Proforma Invoice (spec §5.2).
+    'products' => [
+        'label' => 'Products',
+        'route' => 'products.index',
+        'group' => 'sales',
+        'icon' => 'bi-box-seam',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
+    'proforma_invoices' => [
+        'label' => 'Proforma invoices',
+        'route' => 'proforma-invoices.index',
+        'group' => 'sales',
+        'icon' => 'bi-receipt',
+        'levels' => ['view', 'edit', 'approve'],
+        'signed_in' => false,
+    ],
+
+    // Operations: the two follow-ups (spec §5.3–§5.5).
+    'supplier_orders' => [
+        'label' => 'Order follow-up',
+        'route' => 'supplier-orders.index',
+        'group' => 'operations',
+        'icon' => 'bi-kanban',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
+    'goods_receipts' => [
+        'label' => 'Goods receipt & inspection',
+        'route' => 'goods-receipts.index',
+        'group' => 'operations',
+        'icon' => 'bi-clipboard-check',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
+    'containers' => [
+        'label' => 'Container follow-up',
+        'route' => 'containers.index',
+        'group' => 'operations',
+        'icon' => 'bi-boxes',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
+
+    // Finance (spec §5.6).
+    'payments' => [
+        'label' => 'Payments',
+        'route' => 'payments.index',
+        'group' => 'finance',
+        'icon' => 'bi-cash-coin',
+        'levels' => ['view', 'edit', 'approve'],
+        'signed_in' => false,
+    ],
+    'accounting' => [
+        'label' => 'Accounting',
+        'route' => 'accounting.index',
+        'group' => 'finance',
+        'icon' => 'bi-journal-bookmark',
+        'levels' => ['view', 'edit', 'approve'],
+        'signed_in' => false,
+    ],
+    'finance_reports' => [
+        'label' => 'Financial reports',
+        'route' => 'finance-reports.index',
+        'group' => 'finance',
+        'icon' => 'bi-graph-up',
+        'levels' => ['view'],
+        'signed_in' => false,
+    ],
+
+    // Administration.
+    'configuration' => [
+        'label' => 'Lists & options',
+        'route' => 'configuration.index',
+        'group' => 'admin',
+        'icon' => 'bi-sliders',
+        'levels' => ['view', 'edit'],
+        'signed_in' => false,
+    ],
     'users' => [
-        'label' => 'المستخدمون',
+        'label' => 'Users',
         'route' => 'users.index',
         'group' => 'admin',
         'icon' => 'bi-people',
@@ -28,7 +143,7 @@ return [
         'signed_in' => false,
     ],
     'roles' => [
-        'label' => 'الأدوار والصلاحيات',
+        'label' => 'Roles & permissions',
         'route' => 'roles.index',
         'group' => 'admin',
         'icon' => 'bi-shield-lock',
@@ -36,7 +151,7 @@ return [
         'signed_in' => false,
     ],
     'settings' => [
-        'label' => 'إعدادات الشركة',
+        'label' => 'Company settings',
         'route' => 'settings.edit',
         'group' => 'admin',
         'icon' => 'bi-gear',
@@ -44,7 +159,7 @@ return [
         'signed_in' => false,
     ],
     'audit_log' => [
-        'label' => 'سجل التدقيق',
+        'label' => 'Audit log',
         'route' => 'audit-logs.index',
         'group' => 'admin',
         'icon' => 'bi-journal-text',
@@ -52,7 +167,7 @@ return [
         'signed_in' => false,
     ],
     'import_export' => [
-        'label' => 'الاستيراد والتصدير',
+        'label' => 'Import & export',
         'route' => 'import-export.index',
         'group' => 'admin',
         'icon' => 'bi-arrow-down-up',

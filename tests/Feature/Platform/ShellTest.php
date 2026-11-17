@@ -14,7 +14,7 @@ class ShellTest extends TestCase
 
     private function label(string $screen): string
     {
-        return config("screens.{$screen}.label");
+        return __(config("screens.{$screen}.label"));
     }
 
     public function test_home_renders_rtl_arabic(): void

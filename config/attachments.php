@@ -1,5 +1,12 @@
 <?php
 
+use App\Models\Container;
+use App\Models\JournalEntry;
+use App\Models\Party;
+use App\Models\Payment;
+use App\Models\ProformaInvoice;
+use App\Models\SupplierOrder;
+
 return [
 
     /*
@@ -15,12 +22,19 @@ return [
     'max_files_per_request' => (int) env('ATTACHMENTS_MAX_FILES', 20),
 
     // Whitelist, fail-closed: documents and images only.
-    'allowed_mimes' => ['pdf', 'jpg', 'jpeg', 'png', 'docx', 'xlsx'],
+    'allowed_mimes' => ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx', 'xlsx', 'ai', 'psd', 'zip'],
 
     /*
     | Attachable types (url segment => model class). A model becomes attachable by using
     | HasAttachments AND being listed here. Each sub-project registers its own.
     */
-    'attachables' => [],
+    'attachables' => [
+        'parties' => Party::class,
+        'proforma-invoices' => ProformaInvoice::class,
+        'supplier-orders' => SupplierOrder::class,
+        'containers' => Container::class,
+        'payments' => Payment::class,
+        'journal-entries' => JournalEntry::class,
+    ],
 
 ];

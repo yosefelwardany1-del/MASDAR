@@ -22,6 +22,7 @@ php artisan migrate --force || echo "WARNING: migrate failed (non-fatal — cont
 # never revokes a grant changed in the role editor. Non-fatal so a database hiccup cannot
 # stop the container booting.
 php artisan db:seed --class=RolesAndPermissionsSeeder --force || echo "WARNING: role seeding failed (non-fatal)"
+php artisan db:seed --class=MasdarReferenceSeeder --force || echo "WARNING: reference seeding failed (non-fatal)"
 
 # Public storage symlink (public/storage -> storage/app/public) so Storage::url() and
 # asset('storage/...') resolve. The ephemeral filesystem drops it on every redeploy, so

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAccountCanSignIn;
 use App\Http\Middleware\ProfileRequest;
+use App\Http\Middleware\SetUserLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // remembered sign-in outlives the session, so a sign-in-time check is not enough.
         $middleware->web(append: [
             EnsureAccountCanSignIn::class,
+            SetUserLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

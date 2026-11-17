@@ -97,8 +97,8 @@ class AttachmentSystemTest extends TestCase
         $this->upload([UploadedFile::fake()->create('a.pdf', 10, 'application/pdf')]);
         $att = $this->doc->attachments()->first();
 
-        Role::findByName(Roles::SUPERVISOR)->givePermissionTo(Screens::grantsFor('settings', 'view'));
-        $this->actingAs($this->make(Roles::SUPERVISOR));
+        Role::findByName(Roles::STAFF)->givePermissionTo(Screens::grantsFor('settings', 'view'));
+        $this->actingAs($this->make(Roles::STAFF));
 
         $this->get(route('attachments.download', $att))->assertOk();
         $this->upload([UploadedFile::fake()->create('b.pdf', 10, 'application/pdf')])->assertForbidden();

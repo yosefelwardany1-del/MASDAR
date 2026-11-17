@@ -174,7 +174,7 @@ class GoogleSsoSignInTest extends TestCase
 
     public function test_an_existing_account_signs_in_and_nothing_about_it_changes(): void
     {
-        $user = $this->staff('omar.hassan@acme.example', Roles::SUPERVISOR);
+        $user = $this->staff('omar.hassan@acme.example', Roles::SALES);
         $rolesBefore = $user->getRoleNames()->all();
         $passwordBefore = $user->password;
         $this->google();

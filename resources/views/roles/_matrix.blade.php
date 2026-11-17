@@ -6,12 +6,12 @@
         <tbody>
         @foreach($screens as $key => $screen)
             <tr data-screen="{{ $key }}" data-level="{{ $levels[$key] }}">
-                <td><i class="bi {{ $screen['icon'] }} me-2 text-muted"></i>{{ $screen['label'] }}</td>
+                <td><i class="bi {{ $screen['icon'] }} me-2 text-muted"></i>{{ __($screen['label']) }}</td>
                 @foreach(array_keys($levelNames) as $level)
                     <td class="text-center">
                         @if($level === 'none' || in_array($level, $screen['levels'], true))
                             @if($editable)
-                                <input class="form-check-input" type="radio" name="levels[{{ $key }}]" value="{{ $level }}" @checked($levels[$key] === $level) aria-label="{{ $screen['label'] }}: {{ $levelNames[$level] }}">
+                                <input class="form-check-input" type="radio" name="levels[{{ $key }}]" value="{{ $level }}" @checked($levels[$key] === $level) aria-label="{{ __($screen['label']) }}: {{ $levelNames[$level] }}">
                             @elseif($levels[$key] === $level)
                                 <i class="bi bi-check-circle-fill text-success"></i>
                             @else

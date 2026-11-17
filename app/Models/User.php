@@ -33,6 +33,7 @@ class User extends Authenticatable
         'last_login',
         'approved_at',
         'approved_by',
+        'locale',
     ];
 
     protected $hidden = [

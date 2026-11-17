@@ -78,6 +78,12 @@ Route::middleware('auth')->group(function () {
     Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->whereNumber('attachment')->name('attachments.download');
     Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->whereNumber('attachment')->name('attachments.destroy');
 
+    // MASDAR's modules: one route file each (routes/modules/*.php), each gated by its own
+    // screen. They are required here so $pres is in scope.
+    foreach (glob(__DIR__.'/modules/*.php') as $moduleRoutes) {
+        require $moduleRoutes;
+    }
+
     // Sign-in only: the home page is where a user with no roles lands.
     Route::get('/', DashboardController::class)->name('dashboard');
 
@@ -86,6 +92,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::put('/profile/locale', [ProfileController::class, 'updateLocale'])->name('profile.locale');
     Route::post('/profile/photo', [ProfilePhotoController::class, 'store'])->name('profile.photo.store');
     Route::delete('/profile/photo', [ProfilePhotoController::class, 'destroy'])->name('profile.photo.destroy');
     Route::get('/users/{user}/photo', [ProfilePhotoController::class, 'show'])->whereNumber('user')->name('profile.photo');

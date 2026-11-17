@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\SetUserLocale;
 use App\Support\Audit\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -51,5 +52,20 @@ class ProfileController extends Controller
         });
 
         return redirect()->route('profile')->with('success', __('Password updated.'));
+    }
+
+    /** The signed-in user's screen language. */
+    public function updateLocale(Request $request)
+    {
+        $data = $request->validate(['locale' => ['required', 'in:'.implode(',', array_keys(SetUserLocale::LOCALES))]]);
+        $user = $request->user();
+
+        DB::transaction(function () use ($user, $data) {
+            $old = $user->only(['locale']);
+            $user->update(['locale' => $data['locale']]);
+            AuditTrail::record('updated', $user, $old, $user->only(['locale']));
+        });
+
+        return back();
     }
 }

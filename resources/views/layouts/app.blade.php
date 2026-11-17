@@ -5,19 +5,20 @@
 
     $user = auth()->user();
     $setting = \App\Models\Setting::current();
-    $groupLabels = ['overview' => __('Overview'), 'admin' => __('Administration')];
+    $groupLabels = ['overview' => __('Overview'), 'crm' => __('Clients & partners'), 'sales' => __('Sales'), 'operations' => __('Operations'), 'finance' => __('Finance'), 'admin' => __('Administration')];
     $sections = collect(Screens::visibleFor($user))->groupBy('group');
     $link = fn (array $item) => Route::has($item['route']) ? route($item['route']) : '#';
     $isActive = fn (array $item) => request()->routeIs($item['route'], Str::beforeLast($item['route'], '.').'.*');
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="rtl">
+@php $rtl = \App\Http\Middleware\SetUserLocale::isRtl(); @endphp
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', __('Home')) · {{ config('app.name') }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite([$rtl ? 'resources/css/app.css' : 'resources/css/app-ltr.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
 <body>
@@ -26,7 +27,7 @@
 <nav id="app-sidebar" aria-label="{{ __('Main menu') }}">
     <div class="app-brand">
         <span class="app-brand__logo">@if($setting->logo)<img src="{{ route('settings.logo') }}" alt="">@else<i class="bi bi-buildings"></i>@endif</span>
-        <span class="app-brand__name">{{ $setting->company_name_ar }}</span>
+        <span class="app-brand__name">{{ app()->getLocale() === 'ar' ? $setting->company_name_ar : $setting->company_name }}</span>
     </div>
 
     <div class="app-nav">
@@ -34,7 +35,7 @@
             <div class="app-nav__group">{{ $groupLabels[$group] ?? __(Str::headline($group)) }}</div>
             @foreach($items as $item)
                 <a href="{{ $link($item) }}" class="app-nav__link {{ $isActive($item) ? 'active' : '' }}">
-                    <i class="bi {{ $item['icon'] }}"></i><span>{{ $item['label'] }}</span>
+                    <i class="bi {{ $item['icon'] }}"></i><span>{{ __($item['label']) }}</span>
                 </a>
             @endforeach
         @endforeach
@@ -68,6 +69,16 @@
                     @if(Route::has('profile'))
                         <li><a class="dropdown-item" href="{{ route('profile') }}"><i class="bi bi-person me-2"></i>{{ __('My profile') }}</a></li>
                     @endif
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="dropdown-item-text small text-muted"><i class="bi bi-translate me-2"></i>{{ __('Language') }}</li>
+                    @foreach(\App\Http\Middleware\SetUserLocale::LOCALES as $code => $name)
+                        <li>
+                            <form method="POST" action="{{ route('profile.locale') }}">@csrf @method('PUT')
+                                <input type="hidden" name="locale" value="{{ $code }}">
+                                <button type="submit" class="dropdown-item {{ app()->getLocale() === $code ? 'active' : '' }}" lang="{{ str_replace('_', '-', $code) }}">{{ $name }}</button>
+                            </form>
+                        </li>
+                    @endforeach
                     @if(Route::has('logout'))
                         <li><hr class="dropdown-divider"></li>
                         <li>

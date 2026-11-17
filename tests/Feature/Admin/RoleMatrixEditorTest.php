@@ -35,7 +35,7 @@ class RoleMatrixEditorTest extends TestCase
     public function test_matrix_save_grants_cumulative_permissions(): void
     {
         $manager = $this->make(Roles::MANAGER);
-        $supervisor = $this->role(Roles::SUPERVISOR);
+        $supervisor = $this->role(Roles::STAFF);
 
         $this->actingAs($manager)->put(route('roles.update', $supervisor), [
             'levels' => ['users' => 'edit', 'audit_log' => 'view', 'roles' => 'none'],
@@ -65,10 +65,10 @@ class RoleMatrixEditorTest extends TestCase
 
     public function test_role_matrix_of_a_held_role_is_read_only(): void
     {
-        $person = $this->make(Roles::MANAGER, Roles::SUPERVISOR);
+        $person = $this->make(Roles::MANAGER, Roles::SALES);
 
-        $this->actingAs($person)->get(route('roles.edit', $this->role(Roles::SUPERVISOR)))->assertForbidden();
-        $this->actingAs($person)->get(route('roles.show', $this->role(Roles::SUPERVISOR)))->assertOk();
+        $this->actingAs($person)->get(route('roles.edit', $this->role(Roles::SALES)))->assertForbidden();
+        $this->actingAs($person)->get(route('roles.show', $this->role(Roles::SALES)))->assertOk();
     }
 
     public function test_nobody_grants_a_permission_they_do_not_hold(): void
@@ -87,7 +87,7 @@ class RoleMatrixEditorTest extends TestCase
     public function test_a_level_the_screen_does_not_declare_is_refused(): void
     {
         $this->actingAs($this->make(Roles::MANAGER))
-            ->put(route('roles.update', $this->role(Roles::SUPERVISOR)), ['levels' => ['audit_log' => 'edit']])
+            ->put(route('roles.update', $this->role(Roles::SALES)), ['levels' => ['audit_log' => 'edit']])
             ->assertSessionHasErrors('levels.audit_log');
     }
 
@@ -96,7 +96,7 @@ class RoleMatrixEditorTest extends TestCase
         $manager = $this->make(Roles::MANAGER);
 
         $this->actingAs($manager)->post('/roles', ['name' => 'combo'])->assertMethodNotAllowed();
-        $this->actingAs($manager)->delete('/roles/'.$this->role(Roles::SUPERVISOR)->id)->assertMethodNotAllowed();
+        $this->actingAs($manager)->delete('/roles/'.$this->role(Roles::SALES)->id)->assertMethodNotAllowed();
         $this->assertSame(count(Roles::ALL), Role::count());
     }
 
@@ -105,7 +105,7 @@ class RoleMatrixEditorTest extends TestCase
         $this->actingAs($this->make(Roles::STAFF, Roles::SYSTEM_ADMIN))
             ->get(route('roles.show', $this->role(Roles::SYSTEM_ADMIN)))
             ->assertOk()
-            ->assertSee(config('screens.users.label'))
+            ->assertSee(__(config('screens.users.label')))
             ->assertSee('data-level="edit"', false);
     }
 }

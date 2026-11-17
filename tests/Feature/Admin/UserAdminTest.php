@@ -50,11 +50,11 @@ class UserAdminTest extends TestCase
     {
         $this->actingAs($this->make(Roles::MANAGER))->post(route('users.store'), [
             'name' => 'سعيد', 'email' => 'saeed@acme.example', 'password' => 'password123', 'password_confirmation' => 'password123',
-            'status' => 'active', 'roles' => [Roles::STAFF, Roles::SUPERVISOR],
+            'status' => 'active', 'roles' => [Roles::STAFF, Roles::SALES],
         ])->assertRedirect(route('users.index'));
 
         $saeed = User::where('email', 'saeed@acme.example')->firstOrFail();
-        $this->assertEqualsCanonicalizing([Roles::STAFF, Roles::SUPERVISOR], $saeed->getRoleNames()->all());
+        $this->assertEqualsCanonicalizing([Roles::STAFF, Roles::SALES], $saeed->getRoleNames()->all());
     }
 
     public function test_users_index_shows_roles_in_arabic_and_never_for_no_sign_in(): void

@@ -3,18 +3,25 @@
 namespace App\Security;
 
 /**
- * The starter's roles. A user may hold several; their permissions are the union. `manager`
- * holds every screen; `supervisor` and `staff` start with nothing and are given their screens
- * per client (the role editor, or defaultGrants below); each client adds the roles its own
- * specification names. `system_admin` is the software vendor's support staff only: users,
- * roles, settings and the audit log — never business data, never an approval. There is no
- * bypass role.
+ * MASDAR's roles (spec §6, proposed and editable in the role editor). A user may hold several;
+ * their permissions are the union. `manager` holds every screen; `staff` starts with nothing
+ * and is given screens in the role editor. `system_admin` is the software vendor's support
+ * staff only: users, roles, settings and the audit log — never business data, never an
+ * approval. There is no bypass role.
  */
 final class Roles
 {
     public const MANAGER = 'manager';
 
-    public const SUPERVISOR = 'supervisor';
+    public const SALES = 'sales';
+
+    public const MERCHANDISER = 'merchandiser';
+
+    public const WAREHOUSE_QC = 'warehouse_qc';
+
+    public const LOGISTICS = 'logistics';
+
+    public const ACCOUNTANT = 'accountant';
 
     public const STAFF = 'staff';
 
@@ -22,22 +29,31 @@ final class Roles
 
     public const ALL = [
         self::MANAGER,
-        self::SUPERVISOR,
+        self::SALES,
+        self::MERCHANDISER,
+        self::WAREHOUSE_QC,
+        self::LOGISTICS,
+        self::ACCOUNTANT,
         self::STAFF,
         self::SYSTEM_ADMIN,
     ];
 
+    /** English names; shown through __() so each language gets its own. */
     private const LABELS = [
-        self::MANAGER => 'مدير',
-        self::SUPERVISOR => 'مشرف',
-        self::STAFF => 'موظف',
-        self::SYSTEM_ADMIN => 'مدير النظام',
+        self::MANAGER => 'Manager',
+        self::SALES => 'Sales',
+        self::MERCHANDISER => 'Merchandiser (order follow-up)',
+        self::WAREHOUSE_QC => 'Warehouse & inspection',
+        self::LOGISTICS => 'Logistics',
+        self::ACCOUNTANT => 'Accountant',
+        self::STAFF => 'Staff',
+        self::SYSTEM_ADMIN => 'System administrator',
     ];
 
-    /** Arabic name of a role; an unknown (custom) role shows its own name. */
+    /** The role's name in the user's language; an unknown (custom) role shows its own name. */
     public static function label(string $role): string
     {
-        return self::LABELS[$role] ?? $role;
+        return isset(self::LABELS[$role]) ? __(self::LABELS[$role]) : $role;
     }
 
     /**
@@ -49,14 +65,41 @@ final class Roles
      */
     public static function defaultGrants(string $role): array
     {
+        $grants = fn (array $levels) => array_merge(...array_map(
+            fn ($screen, $level) => Screens::grantsFor($screen, $level),
+            array_keys($levels),
+            $levels,
+        ));
+
         return match ($role) {
             self::MANAGER => Screens::allPermissions(),
-            self::SYSTEM_ADMIN => array_merge(
-                Screens::grantsFor('users', 'edit'),
-                Screens::grantsFor('roles', 'edit'),
-                Screens::grantsFor('settings', 'edit'),
-                Screens::grantsFor('audit_log', 'view'),
-            ),
+            self::SALES => $grants([
+                'clients' => 'edit', 'crm' => 'edit', 'products' => 'edit',
+                'proforma_invoices' => 'edit', 'supplier_orders' => 'view', 'containers' => 'view',
+                'payments' => 'view',
+            ]),
+            self::MERCHANDISER => $grants([
+                'clients' => 'view', 'suppliers' => 'edit', 'shipping_companies' => 'view', 'crm' => 'edit',
+                'products' => 'edit', 'proforma_invoices' => 'view', 'supplier_orders' => 'edit',
+                'goods_receipts' => 'view', 'containers' => 'view',
+            ]),
+            self::WAREHOUSE_QC => $grants([
+                'suppliers' => 'view', 'products' => 'view', 'supplier_orders' => 'view',
+                'goods_receipts' => 'edit', 'containers' => 'edit',
+            ]),
+            self::LOGISTICS => $grants([
+                'clients' => 'view', 'shipping_companies' => 'edit', 'crm' => 'edit', 'products' => 'view',
+                'proforma_invoices' => 'view', 'supplier_orders' => 'view', 'goods_receipts' => 'view',
+                'containers' => 'edit',
+            ]),
+            self::ACCOUNTANT => $grants([
+                'clients' => 'view', 'suppliers' => 'view', 'shipping_companies' => 'view', 'products' => 'view',
+                'proforma_invoices' => 'view', 'supplier_orders' => 'view', 'goods_receipts' => 'view',
+                'containers' => 'view', 'payments' => 'edit', 'accounting' => 'edit', 'finance_reports' => 'view',
+            ]),
+            self::SYSTEM_ADMIN => $grants([
+                'users' => 'edit', 'roles' => 'edit', 'settings' => 'edit', 'audit_log' => 'view',
+            ]),
             default => [],
         };
     }

@@ -31,7 +31,7 @@ class AuditLogTest extends TestCase
 
         $this->actingAs($manager)->put(route('users.update', $target), [
             'name' => 'New Name', 'email' => $target->email, 'status' => 'active',
-            'roles' => [Roles::STAFF, Roles::SUPERVISOR], 'password' => 'secret-password', 'password_confirmation' => 'secret-password',
+            'roles' => [Roles::STAFF, Roles::SALES], 'password' => 'secret-password', 'password_confirmation' => 'secret-password',
         ])->assertRedirect();
 
         $log = AuditLog::where('model_type', User::class)->where('model_id', $target->id)->where('action', 'updated')->latest('id')->firstOrFail();
@@ -39,7 +39,7 @@ class AuditLogTest extends TestCase
         $this->assertSame('Old Name', $log->old_values['name']);
         $this->assertSame('New Name', $log->new_values['name']);
         $this->assertEqualsCanonicalizing([Roles::STAFF], $log->old_values['roles']);
-        $this->assertEqualsCanonicalizing([Roles::STAFF, Roles::SUPERVISOR], $log->new_values['roles']);
+        $this->assertEqualsCanonicalizing([Roles::STAFF, Roles::SALES], $log->new_values['roles']);
         $this->assertArrayNotHasKey('password', $log->new_values, 'a password never enters the audit trail');
     }
 
@@ -56,7 +56,7 @@ class AuditLogTest extends TestCase
 
     public function test_a_role_matrix_change_is_audited(): void
     {
-        $supervisor = Role::findByName(Roles::SUPERVISOR);
+        $supervisor = Role::findByName(Roles::STAFF);
 
         $this->actingAs($this->make(Roles::MANAGER))->put(route('roles.update', $supervisor), ['levels' => ['users' => 'view']]);
 

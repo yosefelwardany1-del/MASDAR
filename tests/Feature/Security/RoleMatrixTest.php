@@ -15,9 +15,9 @@ class RoleMatrixTest extends TestCase
 {
     use RefreshDatabase, SeedsRoles;
 
-    public function test_the_starter_roles_exist(): void
+    public function test_the_masdar_roles_exist(): void
     {
-        $this->assertSame(['manager', 'supervisor', 'staff', 'system_admin'], Roles::ALL);
+        $this->assertSame(['manager', 'sales', 'merchandiser', 'warehouse_qc', 'logistics', 'accountant', 'staff', 'system_admin'], Roles::ALL);
         $this->assertEqualsCanonicalizing(Roles::ALL, Role::pluck('name')->all());
     }
 
@@ -44,10 +44,22 @@ class RoleMatrixTest extends TestCase
         $this->assertNotContains('import_export.view', $held);
     }
 
-    public function test_the_business_roles_hold_nothing_yet(): void
+    public function test_staff_starts_with_nothing_and_business_roles_hold_their_defaults(): void
     {
-        foreach (array_diff(Roles::ALL, [Roles::MANAGER, Roles::SYSTEM_ADMIN]) as $role) {
-            $this->assertCount(0, Role::findByName($role)->permissions, $role);
+        $this->assertCount(0, Role::findByName(Roles::STAFF)->permissions);
+
+        foreach ([Roles::SALES, Roles::MERCHANDISER, Roles::WAREHOUSE_QC, Roles::LOGISTICS, Roles::ACCOUNTANT] as $role) {
+            $this->assertEqualsCanonicalizing(Roles::defaultGrants($role), Role::findByName($role)->permissions->pluck('name')->all(), $role);
+        }
+    }
+
+    public function test_no_business_role_manages_users_roles_or_settings(): void
+    {
+        foreach ([Roles::SALES, Roles::MERCHANDISER, Roles::WAREHOUSE_QC, Roles::LOGISTICS, Roles::ACCOUNTANT, Roles::STAFF] as $role) {
+            $held = Role::findByName($role)->permissions->pluck('name')->all();
+            foreach (['users.view', 'roles.view', 'settings.view', 'audit_log.view'] as $admin) {
+                $this->assertNotContains($admin, $held, "{$role} must not hold {$admin}");
+            }
         }
     }
 
