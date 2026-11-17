@@ -21,7 +21,9 @@ class AttachmentController extends Controller
     public function store(Request $request, string $type, int $id)
     {
         $attachable = $this->resolveAttachable($type, $id);
-        abort_unless($request->user()->can($attachable->attachmentModule().'.edit'), 403);
+        abort_unless(method_exists($attachable, 'attachmentAllows')
+            ? $attachable->attachmentAllows($request->user(), 'edit')
+            : $request->user()->can($attachable->attachmentModule().'.edit'), 403);
 
         $maxKb = (int) config('attachments.max_size_kb', 10240);
         $maxFiles = (int) config('attachments.max_files_per_request', 20);

@@ -127,6 +127,21 @@ class Party extends Model
     }
 
     /** Whether $user may open this party through one of its kinds' screens. */
+    /**
+     * Attachments of a party: the user holds $level on the screen of one of its kinds, and may
+     * open the party at all (a sales user limited to their own clients may not open another's).
+     */
+    public function attachmentAllows(User $user, string $level): bool
+    {
+        foreach ($this->kinds() as $kind) {
+            if ($user->can($kind->screen().'.'.$level)) {
+                return $this->isVisibleTo($user);
+            }
+        }
+
+        return false;
+    }
+
     public function isVisibleTo(User $user): bool
     {
         return static::query()->whereKey($this->getKey())->visibleTo($user)->exists();

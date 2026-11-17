@@ -45,7 +45,15 @@ class ProductService
                 $this->images->store($product, $photo, 'product-photos', 'photo');
                 $data['photo_replaced'] = true;
             }
-            AuditTrail::record('updated', $product, $old, $product->only(array_keys($old)) + array_intersect_key($data, ['photo_replaced' => 1]));
+            $new = $product->only(array_keys($old)) + array_intersect_key($data, ['photo_replaced' => 1]);
+            // The audit log is readable by the vendor's support role: record that a supplier
+            // price changed, never the price itself (spec §6, who sees supplier prices).
+            if (array_key_exists('supplier_price', $old)) {
+                $changed = (string) $old['supplier_price'] !== (string) $new['supplier_price'];
+                $old['supplier_price'] = $changed ? 'hidden' : 'unchanged';
+                $new['supplier_price'] = $changed ? 'changed' : 'unchanged';
+            }
+            AuditTrail::record('updated', $product, $old, $new);
 
             return $product;
         });

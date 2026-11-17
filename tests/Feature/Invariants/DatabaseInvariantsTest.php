@@ -11,6 +11,7 @@ use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\PiLine;
+use App\Models\Product;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrderLine;
 use App\Models\User;
@@ -154,6 +155,17 @@ class DatabaseInvariantsTest extends TestCase
         $entry->update(['status' => 'posted', 'posted_at' => now(), 'posted_by' => $user->id]);
         $this->assertRefused(fn () => $line($cash, '1', '0'), 'line on a posted entry');
         $this->assertRefused(fn () => DB::table('journal_entries')->where('id', $entry->id)->update(['description' => 'x']), 'posted entry');
+    }
+
+    public function test_party_and_product_codes_never_change(): void
+    {
+        $party = Party::factory()->client()->create();
+        $product = Product::factory()->create();
+
+        $this->assertRefused(fn () => DB::table('parties')->where('id', $party->id)->update(['code' => 'C-9999']));
+        $this->assertRefused(fn () => DB::table('products')->where('id', $product->id)->update(['code' => 'P-9999']));
+        DB::table('parties')->where('id', $party->id)->update(['name' => 'Renamed']);
+        $this->assertSame('Renamed', $party->fresh()->name);
     }
 
     public function test_numbers_are_gapless_per_series_and_year(): void
