@@ -339,6 +339,9 @@ details.app-fu-disclosure > summary::-webkit-details-marker { display: none; }
 .app-fu-foot__title { font-weight: 600; margin-block-end: .5rem; display: flex; align-items: center; gap: .4rem; }
 .app-fu-foot__title .bi { color: var(--app-accent); }
 
+/* A line released from a cancelled order: shown, but quieter. */
+.table > tbody > tr.app-fu-row--released > td { color: var(--app-ink-soft); }
+
 /* Received / ordered cartons as a small bar in a table cell. */
 .app-fu-qty { min-inline-size: 8rem; }
 

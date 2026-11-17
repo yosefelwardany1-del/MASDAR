@@ -441,7 +441,7 @@
                     $allIn = bccomp($received, (string) $line->cartons, 4) >= 0;
                     $allLoaded = bccomp($loaded, (string) $line->cartons, 4) >= 0;
                 @endphp
-                <tr>
+                <tr @class(['app-fu-row--released' => $line->released_at])>
                     <td>
                         @if($pi && $canSeePis)
                             <a href="{{ route('proforma-invoices.show', $pi) }}" class="app-ltr">{{ $pi->reference() }}</a>
@@ -455,6 +455,9 @@
                     <td style="white-space:normal; min-inline-size:14rem">
                         <div class="fw-semibold">{{ $line->piLine?->product?->name }}</div>
                         <div class="app-fu-sub">{{ $line->piLine?->description }}</div>
+                        @if($line->released_at)
+                            <x-status tone="skip" icon="box-arrow-right" class="mt-1" :title="__('Released on :date: the PI line can be ordered from another factory.', ['date' => $line->released_at->format('Y-m-d')])">{{ __('Released') }} · <span class="app-num">{{ $line->released_at->format('Y-m-d') }}</span></x-status>
+                        @endif
                     </td>
                     <td class="app-num text-end">{{ Quantity::trim($line->cartons) }}</td>
                     <td class="app-num text-end">{{ Quantity::trim($line->total_qty) }} {{ $line->piLine?->unit }}</td>

@@ -58,7 +58,7 @@
                     <div class="app-timeline__body">
                         <div class="app-timeline__meta">
                             <span class="app-timeline__channel">{{ $labels['interaction_channel'][$i->channel] ?? $i->channel }}</span>
-                            <time class="app-num" datetime="{{ $i->happened_at->toIso8601String() }}">{{ $i->happened_at->format('Y-m-d H:i') }}</time>
+                            <time class="app-num" dir="ltr" datetime="{{ $i->happened_at->toIso8601String() }}">{{ $i->happened_at->format('Y-m-d H:i') }}</time>
                             @if($i->user)<span>· <bdi>{{ $i->user->name }}</bdi></span>@endif
                         </div>
                         <div class="app-timeline__text" dir="auto">{!! nl2br(e($i->summary)) !!}</div>

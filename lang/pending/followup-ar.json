@@ -38,6 +38,8 @@
     "Progress": "التقدم",
     "Receive :item": "استلام :item",
     "Record the first status below once the container is booked.": "سجّل أول حالة من الأسفل بعد حجز الحاوية.",
+    "Released": "مُحرَّر",
+    "Released on :date: the PI line can be ordered from another factory.": "حُرِّر في :date: يمكن طلب بند الفاتورة المبدئية من مصنع آخر.",
     "Route and schedule": "المسار والمواعيد",
     "Some details need fixing": "بعض البيانات تحتاج إلى تصحيح",
     "Step due dates count back from it.": "تُحسب مواعيد الخطوات رجوعاً منه.",

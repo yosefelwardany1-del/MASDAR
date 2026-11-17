@@ -38,6 +38,8 @@
     "Progress": "进度",
     "Receive :item": "收货 :item",
     "Record the first status below once the container is booked.": "集装箱订舱后,在下方记录第一个状态。",
+    "Released": "已释放",
+    "Released on :date: the PI line can be ordered from another factory.": "已于 :date 释放:此形式发票行可改向其他工厂下单。",
     "Route and schedule": "航线与船期",
     "Some details need fixing": "部分信息需要修改",
     "Step due dates count back from it.": "各步骤的到期日据此倒推。",
