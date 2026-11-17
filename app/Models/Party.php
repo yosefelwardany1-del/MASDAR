@@ -133,6 +133,7 @@ class Party extends Model
      */
     public function attachmentAllows(User $user, string $level): bool
     {
+        $level = $level === 'delete' ? 'edit' : $level;
         foreach ($this->kinds() as $kind) {
             if ($user->can($kind->screen().'.'.$level)) {
                 return $this->isVisibleTo($user);

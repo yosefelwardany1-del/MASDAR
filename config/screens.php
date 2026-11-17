@@ -52,6 +52,7 @@ return [
         'group' => 'crm',
         'icon' => 'bi-check2-square',
         'levels' => ['view', 'edit'],
+        'active' => ['crm.*'],
         'signed_in' => false,
     ],
 
@@ -80,6 +81,7 @@ return [
         'group' => 'operations',
         'icon' => 'bi-kanban',
         'levels' => ['view', 'edit'],
+        'active' => ['supplier-orders.*'],
         'signed_in' => false,
     ],
     'goods_receipts' => [
@@ -88,6 +90,7 @@ return [
         'group' => 'operations',
         'icon' => 'bi-clipboard-check',
         'levels' => ['view', 'edit'],
+        'active' => ['goods-receipts.*'],
         'signed_in' => false,
     ],
     'containers' => [
@@ -96,6 +99,7 @@ return [
         'group' => 'operations',
         'icon' => 'bi-boxes',
         'levels' => ['view', 'edit'],
+        'active' => ['containers.*', 'shipments.*'],
         'signed_in' => false,
     ],
 
@@ -106,6 +110,7 @@ return [
         'group' => 'finance',
         'icon' => 'bi-cash-coin',
         'levels' => ['view', 'edit', 'approve'],
+        'active' => ['payments.*', 'money-accounts.*', 'fx-rates.*'],
         'signed_in' => false,
     ],
     'accounting' => [
@@ -114,6 +119,7 @@ return [
         'group' => 'finance',
         'icon' => 'bi-journal-bookmark',
         'levels' => ['view', 'edit', 'approve'],
+        'active' => ['accounting.*'],
         'signed_in' => false,
     ],
     'finance_reports' => [
@@ -122,6 +128,7 @@ return [
         'group' => 'finance',
         'icon' => 'bi-graph-up',
         'levels' => ['view'],
+        'active' => ['finance-reports.*'],
         'signed_in' => false,
     ],
 

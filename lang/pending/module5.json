@@ -22,7 +22,6 @@
     "Both accounts are in :currency, so the same amount arrives as leaves. Record a transfer fee as an expense.": "الحسابان بعملة :currency، فيصل المبلغ نفسه الذي خرج. سجّل رسوم التحويل كمصروف مستقل.",
     "Only a manager approves payments.": "المدير وحده يعتمد المدفوعات.",
     "Only outgoing payments are approved.": "تُعتمد المدفوعات الصادرة فقط.",
-    "A reversal is not approved; it follows the payment it reverses.": "قيد العكس لا يُعتمد؛ بل يتبع الدفعة التي يعكسها.",
     "This payment has been reversed.": "تم عكس هذه الدفعة.",
     "This payment is already approved.": "هذه الدفعة معتمدة بالفعل.",
     "Say why the payment is reversed.": "اذكر سبب عكس الدفعة.",
@@ -132,7 +131,6 @@
     "Recorded by": "سجّلها",
     "This is a reversal": "هذا قيد عكس",
     "It cancels": "يلغي",
-    "It counts exactly when the payment it reverses counts, so the two always net to zero.": "يُحتسب فقط عندما تُحتسب الدفعة التي يعكسها، فيكون صافيهما صفراً دائماً.",
     "Approval": "الاعتماد",
     "Approved by :name on :date.": "اعتمدها :name في :date.",
     "Reversed before it was approved; it never counted.": "عُكست قبل اعتمادها؛ ولم تُحتسب قط.",
@@ -178,5 +176,7 @@
     "No rates yet.": "لا توجد أسعار بعد.",
     "Edit rate": "تعديل السعر",
     "Payments already recorded keep the rate they were made at.": "المدفوعات المسجلة سابقاً تحتفظ بالسعر الذي سُجّلت به.",
-    "The money account changed while the payment was being saved. Check it and try again.": "تغيّر الحساب المالي أثناء حفظ الدفعة. راجعه وحاول مرة أخرى."
+    "The money account changed while the payment was being saved. Check it and try again.": "تغيّر الحساب المالي أثناء حفظ الدفعة. راجعه وحاول مرة أخرى.",
+    "The payment this reverses was never approved, so neither of them counts and there is nothing to approve.": "الدفعة التي يعكسها هذا القيد لم تُعتمد قط، فلا يُحتسب أيٌّ منهما ولا يوجد ما يُعتمد.",
+    "Like any money out, it counts once a manager approves it.": "ومثل أي مبلغ صادر، يُحتسب بعد أن يعتمده المدير."
 }

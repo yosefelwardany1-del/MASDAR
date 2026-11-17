@@ -16,8 +16,10 @@ class BusinessSettingsService
     {
         return DB::transaction(function () use ($data) {
             $setting = BusinessSetting::current();
-            if (isset($data['book_currency']) && $data['book_currency'] !== $setting->book_currency && JournalLine::query()->exists()) {
-                throw ValidationException::withMessages(['book_currency' => __('The book currency cannot change once the ledger has entries.')]);
+            // Payment rates, FX rates and ledger amounts are all in book-currency units.
+            if (isset($data['book_currency']) && $data['book_currency'] !== $setting->book_currency
+                && (JournalLine::query()->exists() || DB::table('payments')->exists() || DB::table('fx_rates')->exists())) {
+                throw ValidationException::withMessages(['book_currency' => __('The book currency cannot change once payments, exchange rates or ledger entries exist.')]);
             }
             $old = $setting->only(array_keys($data));
             $setting->fill($data)->save();

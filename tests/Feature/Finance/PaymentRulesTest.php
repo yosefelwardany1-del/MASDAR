@@ -115,25 +115,27 @@ class PaymentRulesTest extends FinanceTestCase
         $this->payments()->approve($out->fresh(), $this->user(Roles::MANAGER));
     }
 
-    public function test_money_in_and_reversals_are_never_approved(): void
+    public function test_money_in_and_a_payment_reversed_before_approval_are_never_approved(): void
     {
         $usd = $this->usd();
         $manager = $this->user(Roles::MANAGER);
         $in = $this->receipt($usd, '100');
         $out = $this->supplierPayment($usd, '40');
-        $this->payments()->approve($out, $manager);
-        [$reversal] = $this->payments()->reverse($out->fresh(), $this->user(Roles::ACCOUNTANT), 'wrong supplier');
+        [$reversal] = $this->payments()->reverse($out, $this->user(Roles::ACCOUNTANT), 'never sent');
 
-        foreach ([$in, $reversal] as $payment) {
+        foreach ([$in, $out->fresh(), $reversal] as $payment) {
             try {
                 $this->payments()->approve($payment, $manager);
-                $this->fail("payment {$payment->kind} must not be approvable");
+                $this->fail("payment {$payment->number} must not be approvable");
             } catch (ValidationException) {
             }
         }
         // The database refuses as well (payment_approvals_guard).
-        $this->assertDatabaseRefuses(fn () => DB::table('payment_approvals')->insert(['payment_id' => $in->id, 'approved_by' => $manager->id]));
-        $this->assertDatabaseRefuses(fn () => DB::table('payment_approvals')->insert(['payment_id' => $reversal->id, 'approved_by' => $manager->id]));
+        foreach ([$in, $out, $reversal] as $payment) {
+            $this->assertDatabaseRefuses(fn () => DB::table('payment_approvals')->insert(['payment_id' => $payment->id, 'approved_by' => $manager->id]));
+        }
+        $this->assertSame(0, PaymentApproval::count());
+        $this->assertSame('100.0000', $this->queries()->accountBalances()[$usd->id], 'neither the payment nor its reversal ever counts');
     }
 
     public function test_a_reversal_nets_the_balance_to_zero_and_is_never_reversed(): void
@@ -164,22 +166,24 @@ class PaymentRulesTest extends FinanceTestCase
         $this->assertSame(2, Payment::count());
     }
 
-    public function test_an_approved_payment_out_and_its_reversal_count_together(): void
+    public function test_the_reversal_of_an_approved_payment_out_is_approved_in_its_turn(): void
     {
         $usd = $this->usd();
+        $manager = $this->user(Roles::MANAGER);
         $this->receipt($usd, '1000');
         $out = $this->supplierPayment($usd, '300');
-        $this->payments()->approve($out, $this->user(Roles::MANAGER));
+        $this->payments()->approve($out, $manager);
         $this->assertSame('700.0000', $this->queries()->accountBalances()[$usd->id]);
 
         [$reversal] = $this->payments()->reverse($out->fresh(), $this->user(Roles::ACCOUNTANT), 'paid the wrong factory');
-        $this->assertTrue($this->queries()->isEffective($reversal->fresh()));
-        $this->assertSame('1000.0000', $this->queries()->accountBalances()[$usd->id]);
+        $reversal = $reversal->fresh();
+        $this->assertFalse($this->queries()->isEffective($reversal), 'money out, reversal or not, counts once approved');
+        $this->assertTrue($this->queries()->awaitsApproval($reversal));
+        $this->assertSame([$reversal->id], $this->queries()->whereAwaitingApproval(Payment::query())->pluck('id')->all());
+        $this->assertSame('700.0000', $this->queries()->accountBalances()[$usd->id]);
 
-        // Reversed before approval: neither row ever counts.
-        $pending = $this->supplierPayment($usd, '50');
-        [$cancel] = $this->payments()->reverse($pending, $this->user(Roles::ACCOUNTANT), 'not sent');
-        $this->assertFalse($this->queries()->isEffective($cancel->fresh()));
+        $this->payments()->approve($reversal, $manager);
+        $this->assertTrue($this->queries()->isEffective($reversal->fresh()));
         $this->assertSame('1000.0000', $this->queries()->accountBalances()[$usd->id]);
         $this->assertSame(0, $this->queries()->whereAwaitingApproval(Payment::query())->count());
     }

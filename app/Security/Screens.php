@@ -86,7 +86,7 @@ final class Screens
         $items = [];
         foreach (self::all() as $key => $config) {
             if (self::levelOf($user, $key) !== null) {
-                $items[] = ['key' => $key] + array_intersect_key($config, array_flip(['label', 'route', 'group', 'icon']));
+                $items[] = ['key' => $key] + array_intersect_key($config, array_flip(['label', 'route', 'group', 'icon', 'active']));
             }
         }
 

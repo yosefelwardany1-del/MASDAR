@@ -20,7 +20,7 @@ class AttachmentPolicy
 
     public function delete(User $user, Attachment $attachment): bool
     {
-        return $this->parentAllows($user, $attachment, 'edit');
+        return $this->parentAllows($user, $attachment, 'delete');
     }
 
     private function parentAllows(User $user, Attachment $attachment, string $level): bool
@@ -33,6 +33,7 @@ class AttachmentPolicy
             return $parent->attachmentAllows($user, $level);
         }
 
-        return $user->can($parent->attachmentModule().'.'.$level);
+        // Without a rule of its own, deleting a file needs the same level as uploading one.
+        return $user->can($parent->attachmentModule().'.'.($level === 'delete' ? 'edit' : $level));
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Dashboard;
 
 use App\Models\BusinessSetting;
+use App\Services\Finance\PaymentQueries;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -113,10 +114,7 @@ class AttentionQueries
                 JOIN lookups st ON st.list = 'container_status' AND st.code = last.status
                 WHERE st.sort < ?
             SQL, [$arrivedSort])->n,
-            'awaiting_approval' => DB::table('payments')->where('direction', 'out')->whereNull('reverses_payment_id')
-                ->whereNotExists(fn ($q) => $q->from('payment_approvals')->whereColumn('payment_approvals.payment_id', 'payments.id'))
-                ->whereNotExists(fn ($q) => $q->from('payments as r')->whereColumn('r.reverses_payment_id', 'payments.id'))
-                ->count(),
+            'awaiting_approval' => app(PaymentQueries::class)->whereAwaitingApproval(DB::table('payments'))->count(),
         ];
     }
 }

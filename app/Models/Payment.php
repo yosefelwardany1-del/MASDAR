@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAttachments;
+use App\Services\Finance\PaymentQueries;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -35,6 +36,18 @@ class Payment extends Model
     public function attachmentModule(): string
     {
         return 'payments';
+    }
+
+    /**
+     * A payment's evidence follows who may see the payment (a sales user sees only their own
+     * clients' receipts; supplier payments only those who see supplier prices). A payment
+     * never changes, so removing its evidence needs a manager (payments.approve).
+     */
+    public function attachmentAllows(User $user, string $level): bool
+    {
+        $needs = ['view' => 'payments.view', 'edit' => 'payments.edit', 'delete' => 'payments.approve'][$level] ?? null;
+
+        return $needs !== null && $user->can($needs) && app(PaymentQueries::class)->canSee($this, $user);
     }
 
     public function moneyAccount(): BelongsTo

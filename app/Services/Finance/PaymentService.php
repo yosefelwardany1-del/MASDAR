@@ -167,8 +167,7 @@ class PaymentService
             $refuse = match (true) {
                 $payment->direction !== 'out' => __('Only outgoing payments are approved.'),
                 $payment->reversal()->exists() => __('This payment has been reversed.'),
-                $payment->reverses_payment_id !== null && ! PaymentApproval::query()->where('payment_id', $payment->reverses_payment_id)->exists()
-                    => __('The payment this reverses was never approved, so neither of them counts and there is nothing to approve.'),
+                $payment->reverses_payment_id !== null && ! PaymentApproval::query()->where('payment_id', $payment->reverses_payment_id)->exists() => __('The payment this reverses was never approved, so neither of them counts and there is nothing to approve.'),
                 $payment->approval()->exists() => __('This payment is already approved.'),
                 default => null,
             };
