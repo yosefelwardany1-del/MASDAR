@@ -2,6 +2,7 @@
 
 namespace App\Services\Shipping;
 
+use App\Jobs\SendContainerUpdates;
 use App\Models\BusinessSetting;
 use App\Models\Container;
 use App\Models\ContainerEvent;
@@ -71,6 +72,10 @@ class ContainerTrackingService
                     'event_id' => $event->id, 'status' => $status, 'happened_at' => $event->happened_at?->toIso8601String(),
                     'place' => $event->place, 'note' => $event->note, 'corrects_event_id' => $corrects,
                 ]);
+                // Clients hear of it over WhatsApp when MASDAR switched that on — after commit.
+                if (! $corrects && BusinessSetting::current()->whatsapp_container_updates) {
+                    SendContainerUpdates::dispatch($event->id);
+                }
 
                 return $event;
             });

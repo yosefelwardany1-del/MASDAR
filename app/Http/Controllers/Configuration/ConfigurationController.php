@@ -61,8 +61,16 @@ class ConfigurationController extends Controller
             'eta_warning_days' => 'required|integer|min:0|max:90',
         ] + array_fill_keys(array_values(NumberingService::SERIES), $prefix));
 
-        foreach (['pi_issue_requires_approval', 'payments_out_require_approval', 'sales_see_supplier_prices', 'sales_own_clients_only', 'block_loading_unpaid'] as $flag) {
+        foreach (['pi_issue_requires_approval', 'payments_out_require_approval', 'sales_see_supplier_prices', 'sales_own_clients_only', 'block_loading_unpaid', 'whatsapp_container_updates'] as $flag) {
             $data[$flag] = $request->boolean($flag);
+        }
+        // Which container statuses send clients a WhatsApp update (spec Q-C4).
+        if ($request->has('whatsapp_update_statuses')) {
+            $statuses = $request->validate([
+                'whatsapp_update_statuses' => 'array',
+                'whatsapp_update_statuses.*' => [Rule::in(array_keys(Lookup::options('container_status')))],
+            ])['whatsapp_update_statuses'] ?? [];
+            $data['whatsapp_update_statuses'] = implode(',', $statuses);
         }
 
         $service->update($data);

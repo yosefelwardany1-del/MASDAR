@@ -39,6 +39,8 @@ class BusinessSetting extends Model
         'shipment_prefix' => 'SH',
         'payment_prefix' => 'PAY',
         'journal_prefix' => 'JE',
+        'whatsapp_container_updates' => false,
+        'whatsapp_update_statuses' => 'on_board,arrived',
     ];
 
     protected function casts(): array
@@ -52,7 +54,14 @@ class BusinessSetting extends Model
             'block_loading_unpaid' => 'boolean',
             'step_warning_days' => 'integer',
             'eta_warning_days' => 'integer',
+            'whatsapp_container_updates' => 'boolean',
         ];
+    }
+
+    /** The container_status codes that send a client a WhatsApp update (when switched on). */
+    public function whatsappUpdateStatuses(): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', (string) $this->whatsapp_update_statuses))));
     }
 
     public static function current(): self

@@ -45,6 +45,13 @@ return [
     // the shape that worked, so this is a starting point, not a hard rule.
     'auth_template_shape' => env('WHATSAPP_AUTH_TEMPLATE_SHAPE', 'body_and_button'),
 
+    // The approved UTILITY template that tells a client where their container is. Its body
+    // takes four parameters: {{1}} the client's name, {{2}} the container number, {{3}} the
+    // new status, {{4}} the expected arrival (date and port). Switched on per business on
+    // Lists & options; nothing is sent while it is off or this sender is unconfigured.
+    'container_template' => env('WHATSAPP_CONTAINER_TEMPLATE', 'container_update'),
+    'container_template_language' => env('WHATSAPP_CONTAINER_TEMPLATE_LANG', 'en'),
+
     'timeout' => (int) env('WHATSAPP_TIMEOUT', 15),
 
     // The country assumed for a number typed without one (PhoneNumber::normalise).

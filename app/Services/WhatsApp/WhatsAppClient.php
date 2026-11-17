@@ -8,12 +8,11 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
- * Sends a sign-in code over WhatsApp, through Meta's Cloud API.
- *
- * One message type only — the approved AUTHENTICATION template with the code as its
- * one parameter and as the copy-code button. Meta refuses free-text for this purpose,
- * which is also why there is no generic send() here: this class cannot be turned
- * into a marketing channel by accident.
+ * Sends WhatsApp messages through Meta's Cloud API — approved templates only, never free
+ * text: a sign-in code (the AUTHENTICATION template with its copy-code button), and
+ * sendTemplate() for an approved UTILITY template such as the container update. Meta refuses
+ * business-initiated free text, so there is no generic send() here: this class cannot be
+ * turned into a marketing channel by accident.
  *
  * Never throws. A failed send returns false and logs the status and Meta's error
  * message, with the number shown only by its last four digits.
@@ -103,6 +102,31 @@ class WhatsAppClient
         return false;
     }
 
+    /**
+     * One approved template with its body parameters in order ({{1}}, {{2}} …). True when
+     * Meta accepted it; false otherwise, with lastError() saying why. Never throws.
+     *
+     * @param  list<string>  $bodyParams
+     */
+    public function sendTemplate(string $phoneE164, string $template, string $language, array $bodyParams): bool
+    {
+        $this->lastError = null;
+        if (! $this->configured()) {
+            $this->lastError = 'WhatsApp is not configured.';
+
+            return false;
+        }
+
+        return $this->post($phoneE164, [
+            'name' => $template,
+            'language' => ['code' => $language],
+            'components' => [['type' => 'body', 'parameters' => array_map(
+                fn ($value) => ['type' => 'text', 'text' => (string) $value],
+                array_values($bodyParams),
+            )]],
+        ]) === true;
+    }
+
     /** @return array<string,mixed> */
     private function template(string $code, string $shape): array
     {
@@ -165,7 +189,8 @@ class WhatsAppClient
         $details = (string) ($res->json('error.error_data.details') ?: '');
         $this->lastError = (string) ($res->json('error.message') ?: Str::limit($res->body(), 200))
             .($details !== '' ? ' — '.$details : '');
-        Log::warning('WhatsApp: sign-in code not sent', [
+        Log::warning('WhatsApp: message not sent', [
+            'template' => $template['name'] ?? null,
             'status' => $res->status(),
             'code' => $res->json('error.code'),
             'error' => $this->lastError,
