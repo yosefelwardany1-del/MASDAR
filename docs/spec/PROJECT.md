@@ -174,8 +174,9 @@ shipping modes (sea FCL, sea LCL, air, rail, express — OPEN which MASDAR uses)
   rate, and the party and document it relates to.
 - Writer: `PostingService` only, from documents and payments by posting rules. No hand-made
   journal except an adjustment entry approved by a manager.
-- The chart: §5.6. Until Q-A1 to Q-A4 are answered the posting service refuses to post, with a
-  message naming the open question.
+- The chart: §5.6. The posting rules are editable on the Accounting screen, starting from the
+  trader reading of Q-A2 (reading 2026-11-17); a rule or money account left empty makes the
+  posting fail with a message naming exactly what to set.
 
 ### 3.7 CRM log
 

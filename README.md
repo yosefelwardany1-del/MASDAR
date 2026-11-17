@@ -13,7 +13,7 @@ MASDAR's business modules are built on it to MASDAR's spec.
 
 ## Local setup
 
-Requirements: PHP 8.3+ with `pdo_pgsql`, `gd`, `zip`, `intl`; Composer 2; Node 22; PostgreSQL 16
+Requirements: PHP 8.3+ with `pdo_pgsql`, `gd`, `zip`, `intl`, `bcmath`; Composer 2; Node 22; PostgreSQL 16
 (the server **and** its `pg_dump`).
 
 ```bash
@@ -29,6 +29,7 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed                      # tables + the starter roles
 php artisan db:seed --class=DemoUsersSeeder     # one user per role: {role}@example.test / password
+php artisan db:seed --class=MasdarDemoSeeder    # example clients, PIs, orders and a container at sea
 php artisan serve                               # http://localhost:8000
 
 # 3. Checks (CI runs exactly these)
@@ -54,8 +55,10 @@ worker + the scheduler, health check `/up`). It needs three accounts that only y
 1. Create a project on PostgreSQL 16, region close to Render's (Frankfurt).
 2. Copy the connection details into Render: `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`,
    `DB_PASSWORD` (`DB_SSLMODE=require` is already set).
-3. Every deploy runs `php artisan migrate --force` and `RolesAndPermissionsSeeder`. The seeder
-   creates missing roles and permissions; it never undoes a change made in the role editor.
+3. Every deploy runs `php artisan migrate --force`, `RolesAndPermissionsSeeder` and
+   `MasdarReferenceSeeder`. They create missing roles, permissions, lists, order steps, accounts
+   and posting rules; they never undo a change made in the role editor, on Lists & options or on
+   the Accounting screen.
 
 ### 2. Cloudflare R2 (private files)
 

@@ -53,6 +53,8 @@ composer install && npm install && npm run build
 cp .env.example .env && php artisan key:generate
 php artisan migrate --seed
 php artisan db:seed --class=DemoUsersSeeder   # local only: {role}@example.test / password
+php artisan db:seed --class=MasdarDemoSeeder  # local only, after DemoUsersSeeder: example clients, PIs, orders, a container at sea
+php artisan masdar:daily-alerts                # the morning summary (scheduled 08:10 China time)
 php artisan serve                              # http://localhost:8000
 php artisan queue:work                         # large imports run here
 php artisan test            # PostgreSQL only (see phpunit.xml) — never SQLite
@@ -61,7 +63,8 @@ php artisan test --filter=RoleMatrixTest
 php artisan user:create someone@example.com "Name" --role=manager --generate
 ```
 
-Tests need a local PostgreSQL 16 with role `erp` / password `erp` and a database `erp_test`
+PHP needs the `bcmath` extension (money is computed with it; Docker and CI have it). Tests need a
+local PostgreSQL 16 with role `erp` / password `erp` and a database `erp_test`
 (CI runs the same in `.github/workflows/ci.yml`). The backup test runs a real `pg_dump`, so the
 client must be 16 or newer.
 
@@ -128,7 +131,7 @@ Single company: there is no multi-company layer (a guard test fails on a `compan
 |---|---|---|
 | Audit | `App\Support\Audit\AuditTrail::record()` | Called EXPLICITLY inside each writer's transaction (fail-closed). A client with a ledger may replace it with a trigger audit in PostgreSQL. |
 | Settings | `App\Models\Setting::current()` | One row (`CHECK id = 1`); a read never writes. Company name, Arabic name, logo. |
-| Attachments | `HasAttachments`, `AttachmentService`, `config/attachments.php` | Private disk; access = the parent's screen (`attachmentModule()`). |
+| Attachments | `HasAttachments`, `AttachmentService`, `config/attachments.php` | Private disk; access = the parent's screen (`attachmentModule()`), or the parent's own rule when it has `attachmentAllows($user, $level)` (parties, PIs, supplier orders, containers, payments: the data rules below). |
 | Notifications | `App\Services\Notifications\NotificationService::send()` | In-app only for now. |
 | AI | `OpenRouterClient` (resolves to `AnthropicClient` when `ANTHROPIC_API_KEY` is set), `AiFeature::enabled()` | Drafts only. Features register in `config/ai.php`; none ship yet. |
 | WhatsApp | `App\Services\WhatsApp\{WhatsAppClient,PhoneNumber}` | Env-only credentials; numbers without a country code take `WHATSAPP_DEFAULT_COUNTRY_CODE`, Arabic-Indic digits accepted. |
@@ -139,3 +142,52 @@ Single company: there is no multi-company layer (a guard test fails on a `compan
 Guard tests in `tests/Feature/Guards/` fail on a `company_id` column, a float column, a stored
 `balance`, a reference to removed code, a former client's name, or a screen whose route does
 not exist. `tests/Unit/NoProcessLevelMemoTest` fails on a function-level `static` in `app/`.
+
+## MASDAR phase 1
+
+Built 2026-11-17 to `docs/superpowers/plans/2026-11-17-phase-1-build.md`. Each module owns its
+tables through one service; the others only read them or call that service.
+
+| Module | Screens (route names) | Writers (`app/Services/…`) |
+|---|---|---|
+| Clients, suppliers, shipping companies, CRM | `clients.*`, `suppliers.*`, `shipping-companies.*`, `crm.*` | `Parties\PartyService`, `Crm\CrmService` |
+| Products | `products.*`, `products.photo` | `Products\ProductService` |
+| Proforma invoices | `proforma-invoices.*` (incl. `.print`, MASDAR's own layout, English) | `ProformaInvoices\ProformaInvoiceService` |
+| Order follow-up | `supplier-orders.*` (the board, `.evaluation`), `goods-receipts.*` | `SupplierOrders\{SupplierOrderService,OrderStepService,GoodsReceiptService}` |
+| Container follow-up | `containers.*` (the board, `.packing-list`), `shipments.*` | `Shipping\{ShipmentService,ContainerTrackingService}` |
+| Money | `payments.*`, `money-accounts.*`, `fx-rates.*` | `Finance\{PaymentService,MoneyAccountService,FxRateService}` |
+| Accounting | `accounting.*` (chart, rules, periods, journal, the posting queue), `finance-reports.*` | `Accounting\{PostingService,ChartOfAccountsService,PeriodService}` |
+| Lists & options, home, alerts | `configuration.*`, `dashboard`, `masdar:daily-alerts` | `Configuration\*`, `Dashboard\AttentionQueries` (read-only) |
+
+**Every OPEN item is a setting, not code.** `BusinessSetting::current()` (Lists & options →
+Business options) holds currencies, the default deposit and PI terms, the approval switches, who
+sees what, warning days and number prefixes. `Lookup::options($list)` holds every editable list
+(units, currencies, container types with capacity, container statuses — whose order is the
+forward path — ports, modes, countries …). `OrderStepDefinition` holds the follow-up board's
+steps (S2's eleven to start). Posting rules and the chart are edited on the Accounting screen. The
+starting values come from `MasdarReferenceSeeder`, which runs on every deploy and only adds
+what is missing.
+
+**Invariants held by PostgreSQL** (proven in `tests/Feature/Invariants`): an issued PI and its
+lines never change (a revision supersedes it) and one revision is current; line totals are
+generated columns; party and product codes never change; received cartons never go below zero or
+below what is loaded; a load never exceeds what was received; a container's status only moves
+forward along the list unless a correction names the event it corrects; logs (CRM, steps, date
+changes, receipts, events, loads, payments, approvals) are append-only; a payment is in its
+account's currency and a reversal repeats it; a journal entry posts only when balanced, to
+postable accounts, outside a closed period, and never changes after.
+
+**Rules shared across modules — use these, don't re-derive them:**
+- Who sees what: `Support\Access\Visibility` (supplier identities and prices; sales limited to
+  their own clients).
+- When a payment counts: `Finance\PaymentQueries::whereEffective` / `isEffective`. Money in counts
+  at once, money out once approved (while the switch is on), and a transfer counts as a whole.
+  PI paid figures: `PaymentQueries::paidForPiNumber` (client receipts in the PI currency, all
+  revisions).
+- Step completion from other modules: `OrderStepService::recordAutomatic` (`receive_goods`
+  from goods receipt, `booking` and `loading` from shipping).
+- Numbers: `Numbering\NumberingService::next($series)`, inside the writer's transaction.
+
+`tests/Feature/Integration/OrderToCashTest.php` runs one order through every module. Keep it
+green.
+

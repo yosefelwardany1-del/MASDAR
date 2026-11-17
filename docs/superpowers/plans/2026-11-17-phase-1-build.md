@@ -1,5 +1,9 @@
 # MASDAR phase 1 — build plan
 
+> **Status: built 2026-11-17.** All six modules and the integrator's part are in, with 439
+> tests passing, including `tests/Feature/Integration/OrderToCashTest.php`, which runs one
+> order through every module. `CLAUDE.md` § MASDAR phase 1 is the map of what was built.
+
 Built 2026-11-17 from `docs/spec/PROJECT.md` (draft 0.1). The client asked for the whole of
 phase 1 at once, with every `OPEN` item built configurable ("we can change it later"). So each
 open choice is a list entry, a business option or a role grant on a screen, never a hard-coded
