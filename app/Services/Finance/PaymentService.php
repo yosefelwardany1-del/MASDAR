@@ -69,6 +69,7 @@ class PaymentService
         $links = $this->links($kind, $data);
 
         return DB::transaction(function () use ($kind, $paidOn, $account, $amount, $rate, $links, $data, $by, $evidence) {
+            $this->holdAccounts($account);
             $payment = Payment::create([
                 'number' => $this->numbers->next('payment', $paidOn),
                 'paid_on' => $paidOn->toDateString(),
@@ -124,6 +125,7 @@ class PaymentService
         $inRate = $this->rate($to->currency, $arrivedOn, $data['in_rate'] ?? null, 'in_rate');
 
         return DB::transaction(function () use ($from, $to, $paidOn, $arrivedOn, $outAmount, $inAmount, $outRate, $inRate, $data, $by, $evidence) {
+            $this->holdAccounts($from, $to);
             $common = [
                 'transfer_group' => (string) Str::uuid(),
                 'reference' => $this->text($data['reference'] ?? null, 120),
@@ -198,13 +200,15 @@ class PaymentService
         }
 
         return DB::transaction(function () use ($payment, $by, $reason) {
-            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
             if ($payment->reverses_payment_id !== null) {
                 throw ValidationException::withMessages(['reason' => __('A reversal cannot be reversed. Record the payment again instead.')]);
             }
-            $legs = $payment->transfer_group
-                ? Payment::query()->where('transfer_group', $payment->transfer_group)->whereNull('reverses_payment_id')->orderBy('id')->lockForUpdate()->get()
-                : collect([$payment]);
+            // Lock every row reversed together, in id order, so two people never interleave.
+            $legs = Payment::query()
+                ->when($payment->transfer_group,
+                    fn ($q, $group) => $q->where('transfer_group', $group)->whereNull('reverses_payment_id'),
+                    fn ($q) => $q->whereKey($payment->id))
+                ->orderBy('id')->lockForUpdate()->get();
             if (Payment::query()->whereIn('reverses_payment_id', $legs->pluck('id'))->exists()) {
                 throw ValidationException::withMessages(['reason' => __('This payment has already been reversed.')]);
             }
@@ -293,6 +297,22 @@ class PaymentService
         }
 
         return $links;
+    }
+
+    /**
+     * Hold the accounts' rows (FOR SHARE, in id order) until the payment commits, so an account's
+     * currency cannot change between the check above and the insert (money_accounts_currency_guard).
+     */
+    private function holdAccounts(MoneyAccount ...$accounts): void
+    {
+        $ids = collect($accounts)->pluck('id')->sort()->values();
+        $held = MoneyAccount::query()->whereKey($ids)->orderBy('id')->sharedLock()->get(['id', 'currency', 'active'])->keyBy('id');
+        foreach ($accounts as $account) {
+            $now = $held->get($account->id);
+            if (! $now || ! $now->active || $now->currency !== $account->currency) {
+                throw ValidationException::withMessages(['money_account_id' => __('The money account changed while the payment was being saved. Check it and try again.')]);
+            }
+        }
     }
 
     private function activeAccount(mixed $id, string $field): MoneyAccount

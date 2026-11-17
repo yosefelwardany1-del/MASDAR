@@ -35,7 +35,7 @@ class LedgerReports
             ->groupBy('l.account_id')
             ->selectRaw('l.account_id, SUM(l.debit) - SUM(l.credit) AS net')
             ->pluck('net', 'account_id')
-            ->map(fn ($net) => (string) $net)
+            ->map(fn ($net) => Decimal::normalize((string) $net))
             ->all();
     }
 
@@ -64,9 +64,9 @@ class LedgerReports
         $totals = array_fill_keys(['opening_dr', 'opening_cr', 'debit', 'credit', 'closing_dr', 'closing_cr'], '0');
         foreach (Account::query()->where('is_postable', true)->orderBy('code')->get() as $account) {
             $sum = $sums->get($account->id);
-            $opening = (string) ($sum->opening ?? '0');
-            $debit = (string) ($sum->debit ?? '0');
-            $credit = (string) ($sum->credit ?? '0');
+            $opening = Decimal::normalize((string) ($sum->opening ?? '0'));
+            $debit = Decimal::normalize((string) ($sum->debit ?? '0'));
+            $credit = Decimal::normalize((string) ($sum->credit ?? '0'));
             $closing = Decimal::add($opening, Decimal::sub($debit, $credit));
             if (! $all && Decimal::isZero($opening) && Decimal::isZero($debit) && Decimal::isZero($credit)) {
                 continue;
@@ -155,8 +155,8 @@ class LedgerReports
     public function accountLedger(Account $account, string $from, string $to, User $viewer): array
     {
         $sign = fn (string $raw) => $account->isDebitNatured() ? $raw : Decimal::neg($raw);
-        $opening = $sign((string) $this->lines()->where('l.account_id', $account->id)->where('e.entry_date', '<', $from)
-            ->selectRaw('COALESCE(SUM(l.debit) - SUM(l.credit), 0) AS net')->value('net'));
+        $opening = $sign(Decimal::normalize((string) $this->lines()->where('l.account_id', $account->id)->where('e.entry_date', '<', $from)
+            ->selectRaw('COALESCE(SUM(l.debit) - SUM(l.credit), 0) AS net')->value('net')));
 
         $lines = $this->rangeLines($from, $to)->where('l.account_id', $account->id)->get();
         $parties = Party::query()->whereIn('id', $lines->pluck('party_id')->filter()->unique())->get()->keyBy('id');
@@ -182,8 +182,8 @@ class LedgerReports
     /** A party's statement: every posted line carrying its party_id, running balance as debit − credit (Dr positive). */
     public function partyStatement(Party $party, string $from, string $to): array
     {
-        $opening = (string) $this->lines()->where('l.party_id', $party->id)->where('e.entry_date', '<', $from)
-            ->selectRaw('COALESCE(SUM(l.debit) - SUM(l.credit), 0) AS net')->value('net');
+        $opening = Decimal::normalize((string) $this->lines()->where('l.party_id', $party->id)->where('e.entry_date', '<', $from)
+            ->selectRaw('COALESCE(SUM(l.debit) - SUM(l.credit), 0) AS net')->value('net'));
 
         $lines = $this->rangeLines($from, $to)->where('l.party_id', $party->id)
             ->join('accounts as a', 'a.id', '=', 'l.account_id')
@@ -218,7 +218,7 @@ class LedgerReports
 
         $rows = $accounts->map(fn (MoneyAccount $m) => [
             'account' => $m,
-            'native' => (string) ($native[$m->id] ?? '0'),
+            'native' => Decimal::normalize((string) ($native[$m->id] ?? '0')),
             'book' => $m->ledger_account_id ? ($ledger[$m->ledger_account_id] ?? '0') : null,
         ])->all();
 
