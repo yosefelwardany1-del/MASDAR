@@ -29,7 +29,7 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed                      # tables + the starter roles
 php artisan db:seed --class=DemoUsersSeeder     # one user per role: {role}@example.test / password
-php artisan db:seed --class=MasdarDemoSeeder    # example clients, PIs, orders and a container at sea
+php artisan db:seed --class=MasdarDemoSeeder    # example clients, PIs, orders, a container at sea and posted books
 php artisan serve                               # http://localhost:8000
 
 # 3. Checks (CI runs exactly these)

@@ -53,7 +53,7 @@ composer install && npm install && npm run build
 cp .env.example .env && php artisan key:generate
 php artisan migrate --seed
 php artisan db:seed --class=DemoUsersSeeder   # local only: {role}@example.test / password
-php artisan db:seed --class=MasdarDemoSeeder  # local only, after DemoUsersSeeder: example clients, PIs, orders, a container at sea
+php artisan db:seed --class=MasdarDemoSeeder  # local only, after DemoUsersSeeder: example clients, PIs, orders, a container at sea, posted books
 php artisan masdar:daily-alerts                # the morning summary (scheduled 08:10 China time)
 php artisan serve                              # http://localhost:8000
 php artisan queue:work                         # large imports run here
