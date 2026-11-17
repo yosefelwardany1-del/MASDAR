@@ -1,10 +1,10 @@
-{{-- Report header: title, back to the list, the CSV download of the current view. --}}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <a href="{{ route('finance-reports.index') }}" class="small text-muted">{{ __('Financial reports') }}</a>
-        <h1 class="h4 mb-0">{{ $title }}</h1>
-    </div>
-    @if($csv ?? true)
-        <a href="{{ request()->fullUrlWithQuery(['format' => 'csv']) }}" class="btn btn-light"><i class="bi bi-download me-1"></i>{{ __('Download CSV') }}</a>
-    @endif
-</div>
+{{-- Report header: title, back to the list, print, and the CSV download of the current view.
+     $title, $subtitle (optional), $csv (default true). --}}
+<x-page-header :title="$title" :back="route('finance-reports.index')" :back-label="__('Financial reports')" :subtitle="$subtitle ?? null">
+    <x-slot:actions>
+        <button type="button" class="btn btn-light" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i>{{ __('Print') }}</button>
+        @if($csv ?? true)
+            <a href="{{ request()->fullUrlWithQuery(['format' => 'csv']) }}" class="btn btn-light"><i class="bi bi-download" aria-hidden="true"></i>{{ __('Download CSV') }}</a>
+        @endif
+    </x-slot:actions>
+</x-page-header>

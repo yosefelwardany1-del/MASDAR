@@ -99,6 +99,8 @@ class ShipmentController extends Controller
             'modes' => $this->queries->names('shipping_mode'),
             'ports' => $this->queries->names('port'),
             'arrivedSort' => $this->queries->arrivedSort(),
+            // Read-only, for the status stepper: each container status's place along the path.
+            'statusSorts' => Lookup::query()->where('list', 'container_status')->pluck('sort', 'code')->map(fn ($sort) => (int) $sort)->all(),
         ]);
     }
 

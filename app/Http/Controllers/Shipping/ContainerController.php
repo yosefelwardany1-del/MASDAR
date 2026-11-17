@@ -51,6 +51,7 @@ class ContainerController extends Controller
             'modes' => $this->queries->names('shipping_mode'),
             'ports' => $this->queries->names('port'),
             'arrivedSort' => $this->queries->arrivedSort(),
+            'statusSorts' => $this->statusSorts(),
             'companies' => Party::query()->shippingCompanies()->orderBy('name')->get(['id', 'name']),
             'clientOptions' => Visibility::scopeClients(Party::query()->clients(), $user)->orderBy('name')->get(['id', 'name']),
             'warningDays' => BusinessSetting::current()->eta_warning_days,
@@ -79,6 +80,7 @@ class ContainerController extends Controller
             'types' => $this->queries->names('container_type'),
             'modes' => $this->queries->names('shipping_mode'),
             'ports' => $this->queries->names('port'),
+            'statusSorts' => $this->statusSorts(),
         ]);
     }
 
@@ -126,6 +128,12 @@ class ContainerController extends Controller
             'pod' => $english('port', $shipment->port_of_discharge),
             'shippingCompany' => $shipment->shippingCompany?->name,
         ]);
+    }
+
+    /** Read-only, for the status stepper: each container status's place along the path (code => sort). */
+    private function statusSorts(): array
+    {
+        return Lookup::query()->where('list', 'container_status')->pluck('sort', 'code')->map(fn ($sort) => (int) $sort)->all();
     }
 
     private function typeOptions(?Container $container): array

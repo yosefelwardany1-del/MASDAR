@@ -1,5 +1,5 @@
-{{-- A supplier order's status as a badge. Requires $status. --}}
+{{-- A supplier order's status as a pill: an icon and a word. Requires $status. --}}
 @php
-    $tone = ['open' => 'primary', 'completed' => 'success', 'cancelled' => 'secondary'][$status] ?? 'secondary';
+    [$tone, $icon] = ['open' => ['info', 'play-circle'], 'completed' => ['done', 'check-circle'], 'cancelled' => ['skip', 'x-circle']][$status] ?? ['neutral', 'circle'];
 @endphp
-<span class="badge bg-{{ $tone }}-subtle text-{{ $tone }}-emphasis">{{ \App\Services\SupplierOrders\SupplierOrderService::statusLabel($status) }}</span>
+<x-status :tone="$tone" :icon="$icon">{{ \App\Services\SupplierOrders\SupplierOrderService::statusLabel($status) }}</x-status>

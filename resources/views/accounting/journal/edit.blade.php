@@ -3,15 +3,14 @@
 @section('title', __('Edit draft entry'))
 
 @section('content')
-<h1 class="h4 mb-3">{{ __('Edit draft entry') }} <span class="text-muted">{{ $entry->displayNumber() }}</span></h1>
-<div class="app-card p-4">
-    <form method="POST" action="{{ route('accounting.journal.update', $entry) }}">
-        @csrf @method('PUT')
-        @include('accounting.journal._form', ['entry' => $entry])
-        <div class="mt-3 d-flex gap-2">
-            <button class="btn btn-primary">{{ __('Save draft') }}</button>
-            <a href="{{ route('accounting.journal.show', $entry) }}" class="btn btn-light">{{ __('Cancel') }}</a>
-        </div>
-    </form>
-</div>
+<x-page-header :title="__('Edit draft entry')" :back="route('accounting.journal.show', $entry)" :back-label="$entry->displayNumber()"
+               :subtitle="__('A manual entry is an adjustment: it is saved as a draft and posted by a manager.')" />
+<form method="POST" action="{{ route('accounting.journal.update', $entry) }}" class="app-form">
+    @csrf @method('PUT')
+    @include('accounting.journal._form', ['entry' => $entry])
+    <div class="app-form__actions">
+        <button class="btn btn-primary"><i class="bi bi-check2" aria-hidden="true"></i>{{ __('Save draft') }}</button>
+        <a href="{{ route('accounting.journal.show', $entry) }}" class="btn btn-light">{{ __('Cancel') }}</a>
+    </div>
+</form>
 @endsection

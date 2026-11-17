@@ -3,13 +3,15 @@
 @section('title', \App\Security\Roles::label($role->name))
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">{{ \App\Security\Roles::label($role->name) }}</h1>
+<x-page-header :title="\App\Security\Roles::label($role->name)" :back="route('roles.index')" :back-label="__('Roles and permissions')"
+               :subtitle="__('Levels add up: Edit includes View, Approve includes Edit. You can only grant or remove what you hold yourself.')">
     @if($canEdit)
-        <a href="{{ route('roles.edit', $role) }}" class="btn btn-light"><i class="bi bi-pencil me-1"></i>{{ __('Edit') }}</a>
+        <x-slot:actions>
+            <a href="{{ route('roles.edit', $role) }}" class="btn btn-light"><i class="bi bi-pencil" aria-hidden="true"></i>{{ __('Edit') }}</a>
+        </x-slot:actions>
     @endif
-</div>
-<div class="app-card">
+</x-page-header>
+<x-section :title="__('Screens and levels')" icon="grid-3x3-gap" flush>
     @include('roles._matrix', ['editable' => false])
-</div>
+</x-section>
 @endsection

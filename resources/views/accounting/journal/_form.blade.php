@@ -1,43 +1,49 @@
 {{-- Shared by create and edit: the header and the dynamic lines table with a live balance check. --}}
-<div class="row g-3 mb-3">
-    <div class="col-md-3">
-        <label class="form-label" for="entry_date">{{ __('Date') }} <span class="text-danger">*</span></label>
-        <input id="entry_date" name="entry_date" type="date" class="form-control @error('entry_date') is-invalid @enderror" value="{{ old('entry_date', $entry?->entry_date?->toDateString() ?? now()->toDateString()) }}" required>
-        @error('entry_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-    </div>
-    <div class="col-md-9">
-        <label class="form-label" for="description">{{ __('Description') }}</label>
-        <input id="description" name="description" class="form-control" value="{{ old('description', $entry?->description) }}" maxlength="2000">
-    </div>
-</div>
+@include('configuration._form-errors')
+<p class="app-form__legend"><span class="app-req" aria-hidden="true">*</span>{{ __('Required field') }}</p>
 
-<p class="form-text mb-2">{{ __('Enter each line\'s debit or credit in its currency. A line in another currency than :book takes the rate to :book; its :book amount is the amount × the rate.', ['book' => $book]) }}</p>
+<x-section :title="__('Entry')" icon="journal-text">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label" for="entry_date">{{ __('Date') }}<span class="app-req" aria-hidden="true">*</span></label>
+            <input id="entry_date" name="entry_date" type="date" class="form-control @error('entry_date') is-invalid @enderror" value="{{ old('entry_date', $entry?->entry_date?->toDateString() ?? now()->toDateString()) }}" required>
+            @error('entry_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
+        <div class="col-md-9">
+            <label class="form-label" for="description">{{ __('Description') }}</label>
+            <input id="description" name="description" class="form-control" value="{{ old('description', $entry?->description) }}" maxlength="2000">
+        </div>
+    </div>
+</x-section>
+
 @php $lineErrors = collect($errors->getMessages())->filter(fn ($m, $key) => str_starts_with($key, 'lines'))->flatten()->unique(); @endphp
-@if($lineErrors->isNotEmpty())
-    <div class="alert alert-danger py-2">@foreach($lineErrors as $message)<div>{{ $message }}</div>@endforeach</div>
-@endif
-
-<div class="table-responsive app-board">
-    <table class="table table-sm align-middle mb-2" id="journal-lines">
-        <thead><tr>
-            <th>{{ __('Account') }}</th><th>{{ __('Party') }}</th><th>{{ __('Memo') }}</th><th>{{ __('Currency') }}</th>
-            <th>{{ __('Debit') }}</th><th>{{ __('Credit') }}</th><th>{{ __('Rate') }}</th><th class="text-end">{{ __('In :book', ['book' => $book]) }}</th><th></th>
-        </tr></thead>
-        <tbody>
-            @foreach($lines as $i => $line)
-                @include('accounting.journal._line', ['i' => $i, 'line' => $line])
-            @endforeach
-        </tbody>
-        <tfoot>
-            <tr class="fw-semibold">
-                <td colspan="4"><button type="button" class="btn btn-sm btn-light" id="add-line"><i class="bi bi-plus-lg me-1"></i>{{ __('Add line') }}</button></td>
-                <td class="app-num" id="total-debit">0.00</td>
-                <td class="app-num" id="total-credit">0.00</td>
-                <td colspan="3" class="text-end"><span id="balance-state" class="app-pill"></span></td>
-            </tr>
-        </tfoot>
-    </table>
-</div>
+<x-section :title="__('Lines')" icon="list-ul" flush>
+    <p class="app-note mx-3 mt-3 mb-2"><i class="bi bi-info-circle" aria-hidden="true"></i><span>{{ __('Enter each line\'s debit or credit in its currency. A line in another currency than :book takes the rate to :book; its :book amount is the amount × the rate.', ['book' => $book]) }}</span></p>
+    @if($lineErrors->isNotEmpty())
+        <div class="alert alert-danger mx-3 mb-2" role="alert">@foreach($lineErrors as $message)<div class="app-field-error text-reset">{{ $message }}</div>@endforeach</div>
+    @endif
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 app-jlines" id="journal-lines">
+            <thead><tr>
+                <th scope="col">{{ __('Account') }}</th><th scope="col">{{ __('Party') }}</th><th scope="col">{{ __('Memo') }}</th><th scope="col">{{ __('Currency') }}</th>
+                <th scope="col" class="text-end">{{ __('Debit') }}</th><th scope="col" class="text-end">{{ __('Credit') }}</th><th scope="col" class="text-end">{{ __('Rate') }}</th><th scope="col" class="text-end">{{ __('In :book', ['book' => $book]) }}</th><th scope="col"><span class="visually-hidden">{{ __('Remove line') }}</span></th>
+            </tr></thead>
+            <tbody>
+                @foreach($lines as $i => $line)
+                    @include('accounting.journal._line', ['i' => $i, 'line' => $line])
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4"><button type="button" class="btn btn-sm btn-light" id="add-line"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __('Add line') }}</button></td>
+                    <td class="text-end app-jlines__total"><span class="app-num" id="total-debit">0.00</span></td>
+                    <td class="text-end app-jlines__total"><span class="app-num" id="total-credit">0.00</span></td>
+                    <td colspan="3" class="text-end"><span id="balance-state" class="app-pill" role="status" aria-live="polite"></span></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</x-section>
 
 <template id="line-template">
     @include('accounting.journal._line', ['i' => '__INDEX__', 'line' => []])

@@ -46,8 +46,8 @@
         'draft' => __('Add the lines, then issue the PI to the client.'),
         'issued' => __('With the client: mark it accepted, or confirm once the deposit arrives.'),
         'accepted' => __('Waiting for the deposit: confirm once it arrives.'),
-        'confirmed' => __('The client\'s deposit has arrived.'),
-        'superseded' => __('A newer revision replaced this one.'),
+        'confirmed' => __('Confirmed: the client\'s deposit has arrived.'),
+        'superseded' => __('This revision has been replaced by a newer one and can no longer change.'),
     ][$pi->status] ?? null;
 
     // The letterhead, as on MASDAR's printed PI.
@@ -57,8 +57,8 @@
     $clientLink = $pi->client && Route::has('clients.show') && $user->can('clients.view') ? route('clients.show', $pi->client) : null;
     $heading = new HtmlString('<span class="app-ltr">'.e($pi->reference()).'</span>');
     $subtitle = $pi->client ? new HtmlString(
-        ($clientLink ? '<a href="'.e($clientLink).'">'.e($pi->client->name).'</a>' : e($pi->client->name))
-        .($pi->client->accountManager ? ' · '.e(__('Account manager')).': '.e($pi->client->accountManager->name) : '')
+        ($clientLink ? '<a href="'.e($clientLink).'"><bdi>'.e($pi->client->name).'</bdi></a>' : '<bdi>'.e($pi->client->name).'</bdi>')
+        .($pi->client->accountManager ? ' · '.e(__('Account manager')).': <bdi>'.e($pi->client->accountManager->name).'</bdi>' : '')
     ) : null;
 @endphp
 
@@ -151,7 +151,7 @@
                 <div class="app-doc-note app-doc-note--late">
                     <i class="bi bi-x-circle" aria-hidden="true"></i>
                     <div><strong>{{ __('Cancelled') }}</strong> · <span class="app-num">{{ $pi->cancelled_at->toDateString() }}</span>
-                        @if($pi->cancel_reason)<div class="app-doc-note__text">{{ $pi->cancel_reason }}</div>@endif</div>
+                        @if($pi->cancel_reason)<div class="app-doc-note__text" dir="auto">{{ $pi->cancel_reason }}</div>@endif</div>
                 </div>
             @elseif($nextStep)
                 <div class="app-doc-note"><i class="bi bi-arrow-return-right" aria-hidden="true"></i><div>{{ $nextStep }}</div></div>
@@ -159,7 +159,7 @@
             @if($pi->notes)
                 <div class="app-doc-internal mt-3">
                     <div class="app-doc-internal__label"><i class="bi bi-lock" aria-hidden="true"></i>{{ __('Internal notes') }} · {{ __('Not printed on the PI.') }}</div>
-                    <div class="app-doc-internal__text">{{ $pi->notes }}</div>
+                    <div class="app-doc-internal__text" dir="auto">{{ $pi->notes }}</div>
                 </div>
             @endif
         </div>
@@ -251,7 +251,7 @@
 
     <div class="app-doc-sheet__parties">
         <dl class="app-doc-fields">
-            <div><dt>{{ __('To') }}</dt><dd>@if($clientLink)<a href="{{ $clientLink }}">{{ $pi->client?->name }}</a>@else{{ $pi->client?->name ?? '—' }}@endif</dd></div>
+            <div><dt>{{ __('To') }}</dt><dd>@if($clientLink)<a href="{{ $clientLink }}"><bdi>{{ $pi->client?->name }}</bdi></a>@else<bdi>{{ $pi->client?->name ?? '—' }}</bdi>@endif</dd></div>
             <div><dt>{{ __('Shipped to') }}</dt><dd><span class="app-ltr">{{ $pi->shipped_to ?: '—' }}</span></dd></div>
         </dl>
         <dl class="app-doc-fields">
@@ -312,7 +312,7 @@
                     <td class="app-num text-end" data-label="{{ __('Total KG') }}">{{ PiAmounts::number($line->total_kg) }}</td>
                     @if($seeSuppliers)
                         <td class="app-doc-lines__internal" data-label="{{ __('Supplier') }}">
-                            <div class="app-doc-lines__supplier">{{ $line->supplier?->name ?? '—' }}</div>
+                            <div class="app-doc-lines__supplier" dir="auto">{{ $line->supplier?->name ?? '—' }}</div>
                             <div class="app-num app-doc-lines__sprice">{{ $line->supplier_price !== null ? PiAmounts::money($line->supplier_price, $line->supplier_currency ?? '') : '—' }}</div>
                         </td>
                     @endif
@@ -380,13 +380,11 @@
     </section>
 @endif
 
+@php $showPayments = $payments !== null && (! $pi->isDraft() || $payments->isNotEmpty()); @endphp
 <div class="row g-3 mt-0">
-    @if($payments !== null)
+    @if($showPayments)
         <div class="col-xl-7">
             <x-section :title="__('Payments')" icon="cash-coin" flush class="h-100">
-                @if($canRecordPayment)
-                    <x-slot:actions><a href="{{ route('payments.create', ['kind' => 'client_receipt', 'pi' => $pi->id]) }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ __('Record a payment') }}</a></x-slot:actions>
-                @endif
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
                         <thead><tr><th scope="col">{{ __('Date') }}</th><th scope="col">{{ __('Number') }}</th><th scope="col">{{ __('Revision') }}</th><th scope="col">{{ __('Account') }}</th><th scope="col" class="text-end">{{ __('Amount') }}</th></tr></thead>
@@ -398,7 +396,7 @@
                                 <td>@if(Route::has('payments.show'))<a href="{{ route('payments.show', $payment) }}" class="app-ltr">{{ $payment->number }}</a>@else<span class="app-ltr">{{ $payment->number }}</span>@endif
                                     @if($payment->reverses_payment_id)<span class="app-pill app-pill--skip ms-1"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>{{ __('reversal') }}</span>@endif</td>
                                 <td class="app-ltr">{{ $payment->proformaInvoice?->reference() }}</td>
-                                <td>{{ $payment->moneyAccount?->name }}</td>
+                                <td><bdi>{{ $payment->moneyAccount?->name }}</bdi></td>
                                 <td class="app-num text-end fw-semibold">{{ PiAmounts::money($payment->signed_amount, $payment->currency) }}
                                     @unless($counted)<div class="small fw-normal">{{ __('not counted') }}</div>@endunless</td>
                             </tr>
@@ -412,7 +410,7 @@
             </x-section>
         </div>
     @endif
-    <div class="{{ $payments !== null ? 'col-xl-5' : 'col-12' }} app-doc-attach">
+    <div class="{{ $showPayments ? 'col-xl-5' : 'col-12' }} app-doc-attach">
         @include('partials.attachments', ['attachable' => $pi, 'type' => 'proforma-invoices'])
     </div>
 </div>

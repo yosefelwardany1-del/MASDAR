@@ -79,7 +79,7 @@
                         <td>
                             <a href="{{ route('proforma-invoices.show', $pi) }}" class="app-doc-list__ref"><span class="app-ltr">{{ $pi->reference() }}</span></a>
                         </td>
-                        <td class="app-doc-list__client">{{ $pi->client?->name }}
+                        <td class="app-doc-list__client"><bdi>{{ $pi->client?->name }}</bdi>
                             @if($pi->client?->code)<div class="app-doc-list__sub app-num">{{ $pi->client->code }}</div>@endif</td>
                         <td><span class="app-ltr">{{ $pi->po_number ?: '—' }}</span></td>
                         <td class="app-num text-nowrap">{{ ($pi->issued_at ?? $pi->created_at)?->toDateString() }}</td>

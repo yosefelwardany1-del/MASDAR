@@ -3,15 +3,16 @@
 @section('title', __('Edit role'))
 
 @section('content')
-<h1 class="h4 mb-1">{{ \App\Security\Roles::label($role->name) }}</h1>
-<p class="text-muted mb-3">{{ __('Levels add up: Edit includes View, Approve includes Edit. You can only grant or remove what you hold yourself.') }}</p>
-<form method="POST" action="{{ route('roles.update', $role) }}">
+<x-page-header :title="\App\Security\Roles::label($role->name)" :back="route('roles.show', $role)" :back-label="\App\Security\Roles::label($role->name)"
+               :subtitle="__('Levels add up: Edit includes View, Approve includes Edit. You can only grant or remove what you hold yourself.')" />
+<form method="POST" action="{{ route('roles.update', $role) }}" class="app-form">
     @csrf @method('PUT')
-    <div class="app-card">
+    @include('configuration._form-errors')
+    <x-section :title="__('Screens and levels')" icon="grid-3x3-gap" flush>
         @include('roles._matrix', ['editable' => true])
-    </div>
-    <div class="mt-3 d-flex gap-2">
-        <button class="btn btn-primary">{{ __('Save') }}</button>
+    </x-section>
+    <div class="app-form__actions">
+        <button class="btn btn-primary"><i class="bi bi-check2" aria-hidden="true"></i>{{ __('Save') }}</button>
         <a href="{{ route('roles.show', $role) }}" class="btn btn-light">{{ __('Cancel') }}</a>
     </div>
 </form>

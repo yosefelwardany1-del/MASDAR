@@ -2,58 +2,74 @@
 
 @section('title', __('Account ledger'))
 
-@section('content')
-@php $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v); @endphp
-@include('finance-reports._header', ['title' => __('Account ledger'), 'csv' => (bool) $report])
+@php
+    use App\Services\Accounting\Decimal;
+    use Illuminate\Support\HtmlString;
 
-<form method="GET" class="row g-2 mb-3 align-items-end">
-    <div class="col-12 col-md-5">
-        <label class="form-label small" for="account_id">{{ __('Account') }}</label>
-        <select id="account_id" name="account_id" class="form-select" required>
+    $fig = fn ($v, bool $blankZero = false) => $blankZero && Decimal::isZero($v)
+        ? ''
+        : new HtmlString('<span class="app-num app-fig'.(Decimal::cmp((string) $v, '0') < 0 ? ' app-fig--neg' : '').'">'.e(Decimal::format($v)).'</span>');
+@endphp
+
+@section('content')
+@include('finance-reports._header', ['title' => __('Account ledger'), 'csv' => (bool) $report, 'subtitle' => __('One account\'s postings for a range, with a running balance.')])
+
+<form method="GET" class="app-filterbar" aria-label="{{ __('Account ledger') }}">
+    <div class="app-filterbar__field" style="flex-basis: 20rem">
+        <label class="form-label" for="account_id">{{ __('Account') }}</label>
+        <select id="account_id" name="account_id" class="form-select form-select-sm" required>
             <option value="">{{ __('— account —') }}</option>
             @foreach($accounts as $a)
                 <option value="{{ $a->id }}" @selected($account?->id === $a->id)>{{ $a->label() }}</option>
             @endforeach
         </select>
     </div>
-    <div class="col-6 col-md-2"><label class="form-label small" for="from">{{ __('From') }}</label><input id="from" type="date" name="from" value="{{ $from }}" class="form-control"></div>
-    <div class="col-6 col-md-2"><label class="form-label small" for="to">{{ __('To') }}</label><input id="to" type="date" name="to" value="{{ $to }}" class="form-control"></div>
-    <div class="col-12 col-md-3"><button class="btn btn-primary w-100">{{ __('Show') }}</button></div>
+    <div class="app-filterbar__field app-filterbar__field--narrow"><label class="form-label" for="from">{{ __('From') }}</label><input id="from" type="date" name="from" value="{{ $from }}" class="form-control form-control-sm"></div>
+    <div class="app-filterbar__field app-filterbar__field--narrow"><label class="form-label" for="to">{{ __('To') }}</label><input id="to" type="date" name="to" value="{{ $to }}" class="form-control form-control-sm"></div>
+    <div class="app-filterbar__actions"><button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>{{ __('Show') }}</button></div>
 </form>
 
 @if($report)
-    <p class="text-muted small">{{ __('Balances in :book, positive when normal for a :type account.', ['book' => $book, 'type' => $account->typeLabel()]) }}</p>
-    <div class="app-card">
+    <div class="row g-3 mb-4 app-kpis">
+        <div class="col-6 col-lg-3"><x-kpi :label="__('Opening balance')" :value="$fig($report['opening'])" icon="box-arrow-in-right" /></div>
+        <div class="col-6 col-lg-3"><x-kpi :label="__('Debits')" :value="$fig($report['debit'])" icon="plus-circle" /></div>
+        <div class="col-6 col-lg-3"><x-kpi :label="__('Credits')" :value="$fig($report['credit'])" icon="dash-circle" /></div>
+        <div class="col-6 col-lg-3"><x-kpi :label="__('Closing balance')" :value="$fig($report['closing'])" icon="flag" tone="gold" /></div>
+    </div>
+
+    <div class="app-card app-stmt-card">
+        @include('finance-reports._stmt-head', ['title' => $account->label(), 'from' => $from, 'to' => $to, 'book' => $book])
+        <p class="app-note justify-content-center text-center mx-auto mt-3 mb-0 px-3">{{ __('Balances in :book, positive when normal for a :type account.', ['book' => $book, 'type' => $account->typeLabel()]) }}</p>
         <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
+            <table class="table table-sm table-hover mb-0 app-ledger">
                 <thead><tr>
-                    <th>{{ __('Date') }}</th><th>{{ __('Entry') }}</th><th>{{ __('Description') }}</th><th>{{ __('Party') }}</th>
-                    <th class="text-end">{{ __('Amount in currency') }}</th><th class="text-end">{{ __('Debit') }}</th><th class="text-end">{{ __('Credit') }}</th><th class="text-end">{{ __('Balance') }}</th>
+                    <th scope="col">{{ __('Date') }}</th><th scope="col">{{ __('Entry') }}</th><th scope="col">{{ __('Description') }}</th><th scope="col">{{ __('Party') }}</th>
+                    <th scope="col" class="text-end">{{ __('Amount in currency') }}</th><th scope="col" class="text-end">{{ __('Debit') }}</th><th scope="col" class="text-end">{{ __('Credit') }}</th><th scope="col" class="text-end">{{ __('Balance') }}</th>
                 </tr></thead>
                 <tbody>
-                    <tr class="table-light"><td colspan="7">{{ __('Opening balance') }}</td><td class="app-num text-end">{{ $fmt($report['opening']) }}</td></tr>
+                    <tr class="app-ledger__bf"><td colspan="7">{{ __('Opening balance') }}</td><td class="app-figcell">{{ $fig($report['opening']) }}</td></tr>
                     @forelse($report['rows'] as $r)
                         <tr>
-                            <td class="app-num text-nowrap">{{ substr($r['entry_date'], 0, 10) }}</td>
-                            <td class="app-num text-nowrap"><a href="{{ route('accounting.journal.show', $r['journal_entry_id']) }}">{{ $r['number'] }}</a></td>
-                            <td>{{ $r['description'] }}@if($r['memo'])<div class="small text-muted">{{ $r['memo'] }}</div>@endif</td>
+                            <td class="app-ledger__date"><span class="app-num">{{ substr($r['entry_date'], 0, 10) }}</span></td>
+                            <td class="text-nowrap"><a href="{{ route('accounting.journal.show', $r['journal_entry_id']) }}" class="app-ltr">{{ $r['number'] }}</a></td>
+                            <td>{{ $r['description'] }}@if($r['memo'])<span class="app-ledger__memo">{{ $r['memo'] }}</span>@endif</td>
                             <td>{{ $r['party_name'] ?? '—' }}</td>
-                            <td class="app-num text-end text-nowrap">{{ $fmt($r['amount_currency']) }} {{ $r['currency'] }}</td>
-                            <td class="app-num text-end">{{ \App\Services\Accounting\Decimal::isZero($r['debit']) ? '' : $fmt($r['debit']) }}</td>
-                            <td class="app-num text-end">{{ \App\Services\Accounting\Decimal::isZero($r['credit']) ? '' : $fmt($r['credit']) }}</td>
-                            <td class="app-num text-end">{{ $fmt($r['running']) }}</td>
+                            <td class="app-figcell"><span class="app-num app-fig">{{ \App\Services\Accounting\Decimal::format($r['amount_currency']) }}</span><span class="app-unit">{{ $r['currency'] }}</span></td>
+                            <td class="app-figcell">{{ $fig($r['debit'], true) }}</td>
+                            <td class="app-figcell">{{ $fig($r['credit'], true) }}</td>
+                            <td class="app-figcell app-ledger__running">{{ $fig($r['running']) }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="app-empty">{{ __('Nothing posted in this range.') }}</td></tr>
+                        <tr><td colspan="8" class="p-0"><x-empty icon="journal-text" :title="__('Nothing posted in this range.')" /></td></tr>
                     @endforelse
                 </tbody>
                 <tfoot>
-                    <tr class="fw-bold"><td colspan="5">{{ __('Closing balance') }}</td><td class="app-num text-end">{{ $fmt($report['debit']) }}</td><td class="app-num text-end">{{ $fmt($report['credit']) }}</td><td class="app-num text-end">{{ $fmt($report['closing']) }}</td></tr>
+                    <tr><th scope="row" colspan="5">{{ __('Closing balance') }}</th><td class="app-figcell">{{ $fig($report['debit']) }}</td><td class="app-figcell">{{ $fig($report['credit']) }}</td><td class="app-figcell">{{ $fig($report['closing']) }}</td></tr>
                 </tfoot>
             </table>
         </div>
     </div>
 @else
-    <div class="app-card p-4 text-muted">{{ __('Choose an account.') }}</div>
+    <div class="app-card"><x-empty icon="journal-text" :title="__('Choose an account.')" :text="__('Pick an account and a range above to see its postings and running balance.')" /></div>
 @endif
 @endsection

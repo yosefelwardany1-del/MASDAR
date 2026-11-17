@@ -43,8 +43,12 @@
 .app-fu-filters .form-check { margin-block-end: 0; }
 @media (max-width: 575.98px) {
     .app-fu-filters > * { flex: 1 1 100% !important; max-inline-size: none !important; }
+    .app-fu-filters > .form-select { flex: 1 1 calc(50% - .25rem) !important; min-inline-size: 0; }
     .app-fu-filters .form-check { flex: 1 1 auto !important; }
 }
+/* A section head whose tools may need a second line on a phone. */
+.app-fu-wraphead > .app-card__head { flex-wrap: wrap; }
+.app-fu-wraphead > .app-card__head > .app-section__actions { flex-wrap: wrap; }
 
 /* ---------- The step dot: one step's state, icon only (the word is for screen readers and the tooltip) ---------- */
 .app-pill.app-fu-dot {
@@ -96,18 +100,17 @@
 /* The step columns: a narrow header (number + name, at most three lines) and a dot on a line. */
 .app-fu-board > .table > thead > tr > th.app-fu-stephead {
     min-inline-size: 4.25rem; inline-size: 4.25rem; max-inline-size: 4.75rem; padding-inline: .25rem !important;
-    text-align: center; vertical-align: bottom; white-space: normal;
+    text-align: center; vertical-align: top; white-space: normal;
 }
 .app-fu-stephead__no {
-    display: inline-flex; align-items: center; justify-content: center; inline-size: 18px; block-size: 18px;
-    border-radius: 50%; background: var(--app-surface-3); color: var(--app-ink-soft); font-size: 10px; font-weight: 700;
+    display: flex; margin-inline: auto; align-items: center; justify-content: center; inline-size: 20px; block-size: 20px;
+    border-radius: 50%; background: var(--app-surface-3); color: var(--app-ink-soft); font-size: var(--app-fs-xs); font-weight: 700;
     margin-block-end: .3rem; font-variant-numeric: tabular-nums;
 }
 .app-fu-stephead__name {
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
     line-height: 1.25; font-weight: 600; letter-spacing: 0; overflow-wrap: break-word; hyphens: auto;
 }
-.app-fu-stephead.is-auto .app-fu-stephead__no { background: var(--app-info-bg); color: var(--app-info); }
 
 .app-fu-board > .table > tbody > tr > td.app-fu-trk { position: relative; padding-inline: 0; text-align: center; }
 .app-fu-trk::before, .app-fu-trk::after {
@@ -150,25 +153,26 @@
 .app-fu-card__top { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; }
 .app-fu-card__aside { margin-inline-start: auto; text-align: end; }
 .app-fu-card .app-stepper--compact { padding-block: .15rem; }
+.app-fu-card > .app-pill { justify-self: start; }
+.app-fu-card .app-fu-phases { max-inline-size: none; }
 .app-fu-card__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; }
 
 /* ---------- The order page: summary and the steps as a vertical stepper ---------- */
-.app-fu-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
-.app-fu-summary__item { padding: var(--app-sp-4); min-inline-size: 0; display: grid; align-content: start; gap: .35rem; }
-.app-fu-summary__item + .app-fu-summary__item { border-inline-start: 1px solid var(--app-line); }
+.app-fu-summary {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; overflow: hidden;
+    background: var(--app-line); /* the 1px gaps draw the dividers, whatever the layout */
+}
+.app-fu-summary__item { padding: var(--app-sp-4); min-inline-size: 0; display: grid; align-content: start; gap: .35rem; background: var(--app-surface); }
 .app-fu-summary__label { font-size: var(--app-fs-xs); font-weight: 600; color: var(--app-muted); letter-spacing: .02em; }
 .app-fu-summary__value { font-size: var(--app-fs-xl); font-weight: 600; color: var(--app-ink); line-height: 1.25; }
 .app-fu-summary__value.is-text { font-size: var(--app-fs-md); }
 @media (max-width: 991.98px) {
     .app-fu-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .app-fu-summary__item + .app-fu-summary__item { border-inline-start: 0; }
-    .app-fu-summary__item:nth-child(even) { border-inline-start: 1px solid var(--app-line); }
-    .app-fu-summary__item:nth-child(n + 3) { border-block-start: 1px solid var(--app-line); }
 }
-@media (max-width: 479.98px) {
-    .app-fu-summary { grid-template-columns: 1fr; }
-    .app-fu-summary__item:nth-child(even) { border-inline-start: 0; }
-    .app-fu-summary__item + .app-fu-summary__item { border-block-start: 1px solid var(--app-line); }
+@media (max-width: 575.98px) {
+    .app-fu-summary { grid-auto-flow: row dense; }
+    .app-fu-summary__item { padding: var(--app-sp-3); }
+    .app-fu-summary__item.is-wide { grid-column: 1 / -1; }
 }
 
 .app-fu-tl { list-style: none; margin: 0; padding: var(--app-sp-2) 0; }
@@ -225,6 +229,7 @@
 .app-fu-status-actions details > summary::-webkit-details-marker { display: none; }
 .app-fu-inlineform { display: flex; gap: var(--app-sp-2); align-items: flex-end; }
 .app-fu-inlineform > :first-child { flex: 1 1 auto; min-inline-size: 0; }
+.app-fu-inlineform > .btn { flex: 0 0 auto; white-space: nowrap; }
 details.app-fu-disclosure > summary { list-style: none; display: inline-flex; cursor: pointer; }
 details.app-fu-disclosure > summary::-webkit-details-marker { display: none; }
 
@@ -236,8 +241,23 @@ details.app-fu-disclosure > summary::-webkit-details-marker { display: none; }
 .table > tbody > tr.app-fu-hasform.is-open > td { border-block-end-color: transparent; }
 
 /* ---------- Containers: the phase stepper, the fill gauge and the route ---------- */
-.app-fu-phases { min-inline-size: 8.5rem; max-inline-size: 11rem; }
-.app-fu-phases .app-stepper--compact .app-stepper__step { min-inline-size: 24px; }
+.app-fu-phases { min-inline-size: 12rem; max-inline-size: 15rem; }
+
+/* A small stepper with its labels under the dots (the container phases in a row or a card): the
+   shared stepper, smaller, kept horizontal at every width; the state words stay for screen readers. */
+.app-fu-mini .app-stepper { flex-direction: row; gap: 0; }
+.app-fu-mini .app-stepper > .app-stepper__step { flex-direction: column; align-items: center; text-align: center; gap: .2rem; min-inline-size: 0; }
+.app-fu-mini .app-stepper > .app-stepper__step + .app-stepper__step::before {
+    display: block; inset-block-start: 8px; inset-inline-end: calc(50% + 10px); inline-size: calc(100% - 20px);
+}
+.app-fu-mini .app-stepper__dot { inline-size: 18px; block-size: 18px; font-size: .6rem; border-width: 1.5px; }
+.app-fu-mini .is-current > .app-stepper__dot { box-shadow: 0 0 0 3px rgba(var(--app-primary-rgb), .14); }
+.app-fu-mini .app-stepper__text { max-inline-size: none; }
+.app-fu-mini .app-stepper__label { font-size: var(--app-fs-xs); font-weight: 500; color: var(--app-ink-soft); white-space: nowrap; }
+.app-fu-mini .is-current .app-stepper__label, .app-fu-mini .is-late .app-stepper__label { color: var(--app-ink); font-weight: 600; }
+.app-fu-mini .app-stepper__sub, .app-fu-mini .app-stepper__hint {
+    position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
 .app-fu-statusline { margin-block-start: .35rem; }
 
 .app-fu-fill { min-inline-size: 10rem; }
@@ -295,6 +315,7 @@ details.app-fu-disclosure > summary::-webkit-details-marker { display: none; }
 }
 
 .app-fu-journey .app-stepper { margin-block: .25rem var(--app-sp-4); }
+.app-fu-journey .app-stepper__sub .app-num, .app-fu-journey .app-stepper__hint .app-num { white-space: nowrap; }
 .app-fu-journey__now { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; padding-block-start: var(--app-sp-3); border-block-start: 1px solid var(--app-line); font-size: var(--app-fs-sm); color: var(--app-ink-soft); }
 
 /* The container's status events, newest first. */
@@ -339,4 +360,13 @@ details.app-fu-disclosure > summary::-webkit-details-marker { display: none; }
 }
 @media print {
     .app-fu-tl__actions, .app-fu-tl__panel, .app-fu-foot { display: none !important; }
+}
+
+/* Four phases fit across a phone: the journey stepper stays horizontal there (the shared stepper turns vertical below 768px). */
+@media (max-width: 767.98px) {
+    .app-fu-journey .app-stepper:not(.app-stepper--compact) { flex-direction: row; gap: 0; }
+    .app-fu-journey .app-stepper:not(.app-stepper--compact) .app-stepper__step { flex-direction: column; align-items: center; text-align: center; }
+    .app-fu-journey .app-stepper:not(.app-stepper--compact) .app-stepper__step + .app-stepper__step::before { display: block; }
+    .app-fu-journey .app-stepper__text { max-inline-size: 100%; padding-inline: 2px; }
+    .app-fu-journey .app-stepper__label { font-size: var(--app-fs-xs); }
 }

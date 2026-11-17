@@ -113,8 +113,8 @@
     @endif
 </form>
 
-<ul class="app-fu-legend" aria-label="{{ __('Key:') }}">
-    <li class="app-fu-legend__title">{{ __('Key:') }}</li>
+<ul class="app-fu-legend" aria-label="{{ __('Legend') }}">
+    <li class="app-fu-legend__title" aria-hidden="true">{{ __('Legend') }}:</li>
     <li><span class="app-pill app-pill--done app-fu-dot" aria-hidden="true"><i class="bi bi-check-lg"></i></span>{{ __('Done') }}</li>
     <li><span class="app-pill app-pill--due app-fu-dot" aria-hidden="true"><i class="bi bi-clock"></i></span>{{ __('Due soon') }}</li>
     <li><span class="app-pill app-pill--late app-fu-dot" aria-hidden="true"><i class="bi bi-exclamation-lg"></i></span>{{ __('Late') }}</li>
@@ -151,8 +151,8 @@
                     </span>
                 </div>
                 <div class="app-fu-sub">
-                    @if($seeSuppliers){{ $order->supplier?->name }}<span class="app-fu-sep" aria-hidden="true">·</span>@endif
-                    {{ collect($orderClients[$order->id] ?? [])->pluck('client_name')->unique()->join($comma) ?: '—' }}
+                    @if($seeSuppliers)<bdi>{{ $order->supplier?->name }}</bdi><span class="app-fu-sep" aria-hidden="true">·</span>@endif
+                    <bdi>{{ collect($orderClients[$order->id] ?? [])->pluck('client_name')->unique()->join($comma) ?: '—' }}</bdi>
                 </div>
                 <x-stepper :steps="$stepperFor($order)" compact :label="__('Steps of :number', ['number' => $order->number])" />
                 <div class="app-fu-card__foot">
@@ -176,7 +176,7 @@
                     <th scope="col" class="app-fu-ordercell">{{ __('Order no.') }} · {{ __('Factory / supplier') }}</th>
                     <th scope="col" class="app-fu-progresscell">{{ __('Delivery date') }} · {{ __('Progress') }}</th>
                     @foreach($stepList as $i => $step)
-                        <th scope="col" class="app-fu-stephead @if($step->kind !== 'manual') is-auto @endif" title="{{ $step->displayName() }}">
+                        <th scope="col" class="app-fu-stephead" title="{{ $step->displayName() }}">
                             <span class="app-fu-stephead__no" aria-hidden="true">{{ $i + 1 }}</span>
                             <span class="app-fu-stephead__name">{{ $step->displayName() }}</span>
                         </th>
@@ -207,7 +207,7 @@
                                         <span class="visually-hidden">{{ __('Factory / supplier') }}:</span> —
                                     @endif
                                 </div>
-                                <div class="app-fu-order__line">
+                                <div class="app-fu-order__line" title="{{ collect($orderClients[$order->id] ?? [])->map(fn ($c) => $c->pi_reference.' '.$c->client_name)->join(' · ') }}">
                                     <i class="bi bi-person" aria-hidden="true"></i>
                                     @forelse($orderClients[$order->id] ?? [] as $client)
                                         @if(! $loop->first)<span class="app-fu-sep" aria-hidden="true">·</span>@endif
@@ -221,9 +221,9 @@
                                         —
                                     @endforelse
                                 </div>
-                                <div class="app-fu-order__line">
-                                    @if($order->merchandiser)<i class="bi bi-person-badge" aria-hidden="true"></i><bdi>{{ $order->merchandiser->name }}</bdi><span class="app-fu-sep" aria-hidden="true">·</span>@endif
+                                <div class="app-fu-order__line" title="{{ __('Confirmation date') }}: {{ $order->confirmation_date?->format('Y-m-d') ?? '—' }}{{ $order->merchandiser ? ' · '.__('Merchandiser').': '.$order->merchandiser->name : '' }}">
                                     {{ __('Confirmed') }} <span class="app-num">{{ $order->confirmation_date?->format('Y-m-d') ?? '—' }}</span>
+                                    @if($order->merchandiser)<span class="app-fu-sep" aria-hidden="true">·</span><i class="bi bi-person-badge" aria-hidden="true"></i><span class="visually-hidden">{{ __('Merchandiser') }}:</span> <bdi>{{ $order->merchandiser->name }}</bdi>@endif
                                 </div>
                             </div>
                         </th>

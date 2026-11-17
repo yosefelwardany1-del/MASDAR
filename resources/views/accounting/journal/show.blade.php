@@ -3,114 +3,125 @@
 @section('title', $entry->displayNumber())
 
 @section('content')
-@php $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v); @endphp
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">
-        <span class="app-num">{{ $entry->displayNumber() }}</span>
+@php
+    use App\Services\Accounting\Decimal;
+    use Illuminate\Support\HtmlString;
+
+    $fmt = fn ($v) => Decimal::format($v);
+    $fig = fn ($v) => Decimal::isZero($v) ? '' : new HtmlString('<span class="app-num app-fig">'.e(Decimal::format($v)).'</span>');
+    $canReverse = $entry->isPosted() && ! $entry->reversal && ! $entry->reverses_entry_id && $entry->source_type !== 'payment';
+    $balanced = Decimal::cmp($debit, $credit) === 0;
+
+    $details = [
+        __('Date') => new HtmlString('<span class="app-num">'.e($entry->entry_date->toDateString()).'</span>'),
+        __('Event') => \App\Services\Accounting\PostingService::eventLabel($entry->event),
+        __('Description') => $entry->description ?: null,
+    ];
+    if ($source) {
+        $details[__('Source')] = $source[1] ? new HtmlString('<a href="'.e($source[1]).'">'.e($source[0]).'</a>') : $source[0];
+    }
+    if ($entry->reverses) {
+        $details[__('Reverses')] = new HtmlString('<a href="'.e(route('accounting.journal.show', $entry->reverses)).'" class="app-ltr">'.e($entry->reverses->number).'</a>');
+    }
+    if ($entry->reversal) {
+        $details[__('Reversed by')] = new HtmlString('<a href="'.e(route('accounting.journal.show', $entry->reversal)).'" class="app-ltr">'.e($entry->reversal->number).'</a>');
+    }
+    $details[__('Created by')] = new HtmlString(e($entry->creator?->name).' · <span class="app-num">'.e($entry->created_at?->toDateTimeString()).'</span>');
+    if ($entry->isPosted()) {
+        $details[__('Posted by')] = new HtmlString(e($entry->poster?->name).' · <span class="app-num">'.e($entry->posted_at?->toDateTimeString()).'</span>');
+    }
+@endphp
+<x-page-header :title="new HtmlString('<bdi>'.e($entry->displayNumber()).'</bdi>')" :back="route('accounting.journal.index')" :back-label="__('Journal')">
+    <x-slot:meta>
         @if($entry->isDraft())
-            <span class="app-pill app-pill--due ms-2">{{ __('Draft') }}</span>
+            <x-status tone="due" icon="pencil-square">{{ __('Draft') }}</x-status>
         @else
-            <span class="app-pill app-pill--done ms-2">{{ __('Posted') }}</span>
+            <x-status tone="done">{{ __('Posted') }}</x-status>
         @endif
-        @if($entry->reversal)<span class="app-pill app-pill--skip ms-1">{{ __('Reversed') }}</span>@endif
-    </h1>
-    <div class="d-flex flex-wrap gap-2">
+        @if($entry->reversal)<x-status tone="skip" icon="x-circle">{{ __('Reversed') }}</x-status>@endif
+    </x-slot:meta>
+    <x-slot:actions>
         @if($entry->isDraft())
             @can('accounting.edit')
-                <a href="{{ route('accounting.journal.edit', $entry) }}" class="btn btn-light"><i class="bi bi-pencil me-1"></i>{{ __('Edit') }}</a>
-                <button type="button" class="btn btn-light text-danger" onclick="confirmDelete(@js(route('accounting.journal.destroy', $entry)), @js(__('Delete this draft entry?')))"><i class="bi bi-trash me-1"></i>{{ __('Delete') }}</button>
+                <a href="{{ route('accounting.journal.edit', $entry) }}" class="btn btn-light"><i class="bi bi-pencil" aria-hidden="true"></i>{{ __('Edit') }}</a>
+                <button type="button" class="btn btn-outline-danger" onclick="confirmDelete(@js(route('accounting.journal.destroy', $entry)), @js(__('Delete this draft entry?')))"><i class="bi bi-trash" aria-hidden="true"></i>{{ __('Delete') }}</button>
             @endcan
             @can('accounting.approve')
                 <form method="POST" action="{{ route('accounting.journal.post', $entry) }}" onsubmit="return confirm(@js(__('Post this entry? A posted entry never changes; it can only be reversed.')));">
-                    @csrf <button class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>{{ __('Post') }}</button>
+                    @csrf <button class="btn btn-primary"><i class="bi bi-check2-circle" aria-hidden="true"></i>{{ __('Post') }}</button>
                 </form>
             @endcan
-        @elseif(! $entry->reversal && ! $entry->reverses_entry_id && $entry->source_type !== 'payment')
+        @elseif($canReverse)
             @can('accounting.approve')
-                <button type="button" class="btn btn-light" data-bs-toggle="collapse" data-bs-target="#reverse-form"><i class="bi bi-arrow-counterclockwise me-1"></i>{{ __('Reverse') }}</button>
+                <button type="button" class="btn btn-light" data-bs-toggle="collapse" data-bs-target="#reverse-form" aria-expanded="false" aria-controls="reverse-form"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>{{ __('Reverse') }}</button>
             @endcan
         @endif
-    </div>
-</div>
+    </x-slot:actions>
+</x-page-header>
 
 @can('accounting.approve')
-    @if($entry->isPosted() && ! $entry->reversal && ! $entry->reverses_entry_id && $entry->source_type !== 'payment')
-        <form method="POST" action="{{ route('accounting.journal.reverse', $entry) }}" id="reverse-form" class="collapse app-card p-3 mb-3">
+    @if($canReverse)
+        <form method="POST" action="{{ route('accounting.journal.reverse', $entry) }}" id="reverse-form" class="collapse mb-4">
             @csrf
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label" for="reverse_on">{{ __('Reversal date') }}</label>
-                    <input id="reverse_on" name="reverse_on" type="date" class="form-control" value="{{ now()->toDateString() }}">
+            <x-section :title="__('Reverse')" icon="arrow-counterclockwise" :subtitle="__('A new posted entry with the debits and credits swapped.')">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label" for="reverse_on">{{ __('Reversal date') }}</label>
+                        <input id="reverse_on" name="reverse_on" type="date" class="form-control" value="{{ now()->toDateString() }}">
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label" for="reason">{{ __('Reason') }}</label>
+                        <input id="reason" name="reason" class="form-control" maxlength="500">
+                    </div>
+                    <div class="col-md-2"><button class="btn btn-warning w-100"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>{{ __('Reverse') }}</button></div>
                 </div>
-                <div class="col-md-7">
-                    <label class="form-label" for="reason">{{ __('Reason') }}</label>
-                    <input id="reason" name="reason" class="form-control" maxlength="500">
-                </div>
-                <div class="col-md-2"><button class="btn btn-warning w-100">{{ __('Reverse') }}</button></div>
-            </div>
-            <div class="form-text">{{ __('A new posted entry with the debits and credits swapped.') }}</div>
+            </x-section>
         </form>
     @endif
 @endcan
 
-<div class="app-card p-4 mb-3">
-    <dl class="row mb-0">
-        <dt class="col-sm-3 text-muted fw-normal">{{ __('Date') }}</dt><dd class="col-sm-9 app-num">{{ $entry->entry_date->toDateString() }}</dd>
-        <dt class="col-sm-3 text-muted fw-normal">{{ __('Event') }}</dt><dd class="col-sm-9">{{ \App\Services\Accounting\PostingService::eventLabel($entry->event) }}</dd>
-        <dt class="col-sm-3 text-muted fw-normal">{{ __('Description') }}</dt><dd class="col-sm-9">{{ $entry->description ?: '—' }}</dd>
-        @if($source)
-            <dt class="col-sm-3 text-muted fw-normal">{{ __('Source') }}</dt>
-            <dd class="col-sm-9">@if($source[1])<a href="{{ $source[1] }}">{{ $source[0] }}</a>@else{{ $source[0] }}@endif</dd>
-        @endif
-        @if($entry->reverses)
-            <dt class="col-sm-3 text-muted fw-normal">{{ __('Reverses') }}</dt><dd class="col-sm-9"><a href="{{ route('accounting.journal.show', $entry->reverses) }}" class="app-num">{{ $entry->reverses->number }}</a></dd>
-        @endif
-        @if($entry->reversal)
-            <dt class="col-sm-3 text-muted fw-normal">{{ __('Reversed by') }}</dt><dd class="col-sm-9"><a href="{{ route('accounting.journal.show', $entry->reversal) }}" class="app-num">{{ $entry->reversal->number }}</a></dd>
-        @endif
-        <dt class="col-sm-3 text-muted fw-normal">{{ __('Created by') }}</dt><dd class="col-sm-9">{{ $entry->creator?->name }} · {{ $entry->created_at?->toDateTimeString() }}</dd>
-        @if($entry->isPosted())
-            <dt class="col-sm-3 text-muted fw-normal">{{ __('Posted by') }}</dt><dd class="col-sm-9">{{ $entry->poster?->name }} · {{ $entry->posted_at?->toDateTimeString() }}</dd>
-        @endif
-    </dl>
-</div>
+<x-section :title="__('Entry')" icon="info-circle" class="mb-4">
+    <x-detail-list :items="$details" :cols="3" />
+</x-section>
 
-<div class="app-card">
+<x-section :title="__('Lines')" icon="list-ul" flush>
     <div class="table-responsive">
-        <table class="table align-middle mb-0">
+        <table class="table table-hover align-middle mb-0 app-ledger">
             <thead><tr>
-                <th>{{ __('Account') }}</th><th>{{ __('Party') }}</th><th>{{ __('Memo') }}</th><th>{{ __('Currency') }}</th>
-                <th class="text-end">{{ __('Amount in currency') }}</th><th class="text-end">{{ __('Rate') }}</th>
-                <th class="text-end">{{ __('Debit') }}</th><th class="text-end">{{ __('Credit') }}</th>
+                <th scope="col">{{ __('Account') }}</th><th scope="col">{{ __('Party') }}</th><th scope="col">{{ __('Memo') }}</th>
+                <th scope="col" class="text-end">{{ __('Amount in currency') }}</th><th scope="col" class="text-end">{{ __('Rate') }}</th>
+                <th scope="col" class="text-end">{{ __('Debit') }} <span class="app-unit">{{ $book }}</span></th><th scope="col" class="text-end">{{ __('Credit') }} <span class="app-unit">{{ $book }}</span></th>
             </tr></thead>
             <tbody>
             @foreach($entry->lines as $line)
                 <tr>
                     <td>{{ $line->account?->label() }}</td>
                     <td>{{ $line->party ? ($canSee($line->party) ? $line->party->name : __('(hidden)')) : '—' }}</td>
-                    <td>{{ $line->memo }}</td>
-                    <td>{{ $line->currency }}</td>
-                    <td class="app-num text-end">{{ $fmt($line->amount_currency) }}</td>
-                    <td class="app-num text-end">{{ rtrim(rtrim((string) $line->rate, '0'), '.') }}</td>
-                    <td class="app-num text-end">{{ \App\Services\Accounting\Decimal::isZero($line->debit) ? '' : $fmt($line->debit) }}</td>
-                    <td class="app-num text-end">{{ \App\Services\Accounting\Decimal::isZero($line->credit) ? '' : $fmt($line->credit) }}</td>
+                    <td class="small">{{ $line->memo }}</td>
+                    <td class="app-figcell"><span class="app-num app-fig">{{ $fmt($line->amount_currency) }}</span><span class="app-unit">{{ $line->currency }}</span></td>
+                    <td class="app-figcell"><span class="app-num text-muted">{{ rtrim(rtrim((string) $line->rate, '0'), '.') }}</span></td>
+                    <td class="app-figcell">{{ $fig($line->debit) }}</td>
+                    <td class="app-figcell">{{ $fig($line->credit) }}</td>
                 </tr>
             @endforeach
             </tbody>
             <tfoot>
-                <tr class="fw-semibold">
-                    <td colspan="6">{{ __('Total') }}
-                        @if(\App\Services\Accounting\Decimal::cmp($debit, $credit) !== 0)
-                            <span class="app-pill app-pill--late ms-2">{{ __('Not balanced') }}</span>
+                <tr>
+                    <th scope="row" colspan="5">
+                        {{ __('Total') }}
+                        @if($balanced)
+                            <x-status tone="done" icon="check2-circle" class="ms-2">{{ __('Balanced') }}</x-status>
+                        @else
+                            <x-status tone="late" class="ms-2">{{ __('Not balanced') }}</x-status>
                         @endif
-                    </td>
-                    <td class="app-num text-end">{{ $fmt($debit) }}</td>
-                    <td class="app-num text-end">{{ $fmt($credit) }}</td>
+                    </th>
+                    <td class="app-figcell"><span class="app-num app-fig">{{ $fmt($debit) }}</span></td>
+                    <td class="app-figcell"><span class="app-num app-fig">{{ $fmt($credit) }}</span></td>
                 </tr>
             </tfoot>
         </table>
     </div>
-</div>
+</x-section>
 
 @include('partials.attachments', ['attachable' => $entry, 'type' => 'journal-entries'])
 @include('partials.delete-modal')

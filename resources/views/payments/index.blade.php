@@ -88,7 +88,7 @@
     </div>
 </form>
 
-<div class="row g-3 mb-2">
+<div class="row g-3 mb-2 app-kpis">
     <div class="col-sm-4">
         <x-kpi :label="__('Money in').' ('.$book.')'" :value="$fig($totals->total_in)" icon="box-arrow-in-down" tone="done" />
     </div>
@@ -103,7 +103,7 @@
 <p class="app-note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>{{ __('Totals are in the book currency, at each payment\'s own rate, over every row the filters select (including payments awaiting approval).') }}</span></p>
 
 @if($collections->isNotEmpty())
-    <x-section :title="__('Collections on open PIs')" icon="receipt" :subtitle="__('Paid against total, in each PI\'s currency')" class="mb-4">
+    <x-section :title="__('Collections on open PIs')" icon="receipt" :subtitle="__('Paid against total, in each PI\'s currency')" class="mb-4 app-section--wrap">
         @if(Route::has('proforma-invoices.index'))
             <x-slot:actions><a href="{{ route('proforma-invoices.index') }}">{{ __('All proforma invoices') }}</a></x-slot:actions>
         @endif

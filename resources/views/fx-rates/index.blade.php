@@ -17,24 +17,26 @@
 @include('payments._nav', ['active' => 'rates'])
 
 @if($latest->isNotEmpty())
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 app-kpis">
         @foreach($latest as $r)
             @php
                 $inverse = bccomp((string) $r->rate, '0', 6) > 0 ? bcdiv('1', (string) $r->rate, 4) : null;
                 $value = new \Illuminate\Support\HtmlString('<span class="app-num">'.e(MoneyFormat::rate($r->rate)).'</span><span class="app-unit">'.e($book).'</span>');
+                $hint = new \Illuminate\Support\HtmlString(e(__('Latest rate · :date', ['date' => substr((string) $r->rate_date, 0, 10)]))
+                    .($inverse ? ' · <span class="app-num">1 '.e($book).' = '.e(MoneyFormat::rate($inverse)).' '.e($r->currency).'</span>' : ''));
             @endphp
             <div class="col-sm-6 col-lg-3">
-                <x-kpi :label="'1 '.$r->currency.' · '.($currencies[$r->currency] ?? $r->currency)"
+                <x-kpi :label="$r->currency.' · '.($currencies[$r->currency] ?? $r->currency)"
                        :value="$value"
                        icon="currency-exchange" tone="gold"
-                       :hint="__('Latest rate · :date', ['date' => substr((string) $r->rate_date, 0, 10)]).($inverse ? ' · 1 '.$book.' = '.MoneyFormat::rate($inverse).' '.$r->currency : '')"
+                       :hint="$hint"
                        :href="route('fx-rates.index', ['currency' => $r->currency])" />
             </div>
         @endforeach
     </div>
 @endif
 
-<x-section :title="__('Rates')" icon="list-ul" flush>
+<x-section :title="__('Rates')" icon="list-ul" flush class="app-section--wrap">
     <x-slot:actions>
         <form method="GET" class="app-headfilter" role="search" aria-label="{{ __('Filter FX rates') }}">
             <label class="visually-hidden" for="fx-currency">{{ __('Currency') }}</label>
