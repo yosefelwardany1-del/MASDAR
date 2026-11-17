@@ -177,5 +177,6 @@
     "Entered by": "أدخله",
     "No rates yet.": "لا توجد أسعار بعد.",
     "Edit rate": "تعديل السعر",
-    "Payments already recorded keep the rate they were made at.": "المدفوعات المسجلة سابقاً تحتفظ بالسعر الذي سُجّلت به."
+    "Payments already recorded keep the rate they were made at.": "المدفوعات المسجلة سابقاً تحتفظ بالسعر الذي سُجّلت به.",
+    "The money account changed while the payment was being saved. Check it and try again.": "تغيّر الحساب المالي أثناء حفظ الدفعة. راجعه وحاول مرة أخرى."
 }
