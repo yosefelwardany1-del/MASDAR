@@ -45,8 +45,9 @@ class UnpaidBeforeShippingTest extends TestCase
         $this->assertCount(0, $attention->unpaidBooked($otherSales->id));
 
         $this->artisan('masdar:daily-alerts')->assertSuccessful();
-        $this->assertStringContainsString('not paid in full', (string) ErpNotification::where('user_id', $accountant->id)->value('message'));
-        $this->assertStringContainsString('not paid in full', (string) ErpNotification::where('user_id', $sales->id)->value('message'));
+        $line = trans_choice('{1} One PI is booked to ship but not paid in full.|[2,*] :count PIs are booked to ship but not paid in full.', 1, ['count' => 1]);
+        $this->assertStringContainsString($line, (string) ErpNotification::where('user_id', $accountant->id)->value('message'));
+        $this->assertStringContainsString($line, (string) ErpNotification::where('user_id', $sales->id)->value('message'));
         $this->assertSame(0, ErpNotification::where('user_id', $otherSales->id)->count());
 
         Payment::create(['number' => 'PAY-T-1', 'paid_on' => now()->toDateString(), 'kind' => 'client_receipt', 'direction' => 'in',

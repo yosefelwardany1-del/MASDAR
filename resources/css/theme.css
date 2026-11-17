@@ -315,6 +315,8 @@ small, .small { font-size: var(--app-fs-sm); }
     border-block-end: 1px solid var(--app-line);
 }
 .app-topbar__title { font-weight: 600; font-size: var(--app-fs-lg); color: var(--app-ink); }
+.min-w-0 { min-inline-size: 0; }   /* a flex child that may shrink (a long title truncates instead of widening the page) */
+#app-topbar > .d-flex:first-of-type { flex: 1 1 auto; }
 .app-topbar__crumb { color: var(--app-muted); font-size: var(--app-fs-sm); font-weight: 500; }
 .app-topbar__crumb + .bi { color: var(--app-line-strong); font-size: .7rem; }
 .app-iconbtn {

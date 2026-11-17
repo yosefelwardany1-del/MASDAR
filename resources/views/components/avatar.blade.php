@@ -7,8 +7,8 @@
     $parts = preg_split('/\s+/u', trim($name)) ?: [];
     $initials = mb_substr($parts[0] ?? '', 0, 1).(count($parts) > 1 ? mb_substr(end($parts), 0, 1) : '');
     $initials = $initials !== '' ? mb_strtoupper($initials) : '?';
-    // A stable colour per name, from the brand's two hues.
-    $palettes = [['#1b2a4a', '#24365e'], ['#7a1f2b', '#5e1721'], ['#2f4a7a', '#1b2a4a'], ['#8f3442', '#7a1f2b']];
+    // A stable colour per name, from MASDAR's two hues (navy, gold); white initials stay above 4.5:1.
+    $palettes = [['#1f3b5c', '#284b73'], ['#8c6b30', '#6f5425'], ['#284b73', '#132840'], ['#6f5425', '#5a4420']];
     [$c1, $c2] = $palettes[crc32($name ?: '?') % count($palettes)];
 @endphp
 {{-- Initials are always drawn; a photo is layered over them and removes itself if it

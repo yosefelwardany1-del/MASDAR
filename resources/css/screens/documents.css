@@ -605,10 +605,6 @@ a.app-way:hover { border-color: var(--app-primary-2); background: rgba(var(--app
 /* ======================================================================
    Phone widths
    ====================================================================== */
-/* The layout's top bar marks its title wrapper "min-w-0", which Bootstrap does not define, so a
-   long title (a party's or product's code and name) pushes the page wider than a phone. Scoped
-   to this area's pages until theme.css defines .min-w-0 (reported). */
-body:has(.app-profile, .app-doc-sheet, .app-docform, .app-doc-search, .app-product-page, .app-tasks) #app-topbar > .min-w-0 { min-inline-size: 0; }
 .app-ptabs__nav { contain: paint; }
 @media (max-width: 575.98px) {
     .app-ptabs__nav { gap: 0; }
