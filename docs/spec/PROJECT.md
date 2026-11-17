@@ -481,3 +481,10 @@ Decisions settled during the build from this spec (marked `INFERRED`) or with th
 | 2026-11-17 | INFERRED | Orders and containers are many-to-many (consolidation is common in Yiwu); built that way even if MASDAR only ships one order per container. |
 | 2026-11-17 | INFERRED | The PI never shows a supplier or a supplier's price (S1 has no such column). |
 | 2026-11-17 | INFERRED | The two follow-ups are built before accounting (S3 names them as the essential needs; the accounting questions do not block them). |
+| 2026-11-17 | DECIDED | Build all of phase 1 now rather than in six steps. Every OPEN item becomes something MASDAR can change later without code: a business option or an editable list on the Lists & options screen, a step on the follow-up board, or a grant in the role editor. The answers to §11 then become settings, not rebuilds. |
+| 2026-11-17 | INFERRED | §6's proposed roles and grants are the defaults; the role editor changes them. Proposed approvals (issuing a PI, every payment out) are switches, on by default. |
+| 2026-11-17 | INFERRED | Q-B2 is answered by building all three: each user picks Arabic, English or Chinese. Printed documents stay English, like S1. |
+| 2026-11-17 | INFERRED | MASDAR's logo and colours (navy, gold) come from S1's letterhead. The Arabic name stays OPEN; "MASDAR TRADING" stands in. |
+| 2026-11-17 | INFERRED | Supplier identities and prices are visible to whoever may view the Suppliers screen. A switch extends this to sales (Q-R1). Another switch limits sales to the clients they manage, on by default. |
+| 2026-11-17 | INFERRED | I9 (no loading before full payment) is a switch, off by default. When it is on, a manager can still override, and the override is audited. |
+| 2026-11-17 | INFERRED | The posting rules assume a trader (Q-A2). For an agent, point the client_invoice rule's credit at 4201 Commission income on the Accounting screen. |

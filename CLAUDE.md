@@ -4,14 +4,16 @@ Guidance for Claude Code (claude.ai/code) working in this repository.
 
 ## What this is
 
-**MASDAR's ERP.** It started as a copy of the starter ERP
-(`yosefelwardany1-del/Empty-ERP` at `88da6fd`): the platform layer only (sign-in, roles and
-screen permissions, audit log, settings, attachments, notifications, AI and WhatsApp clients,
-import/export, backups) behind an Arabic RTL shell, with no business module yet. MASDAR's
-modules are built on it to MASDAR's specification.
+**MASDAR's ERP + CRM** for MASDAR FOR TRADING CO., LIMITED, a Hong Kong company sourcing
+goods from Chinese factories for its clients from an office in Yiwu. It started as a copy of the
+starter ERP (`yosefelwardany1-del/Empty-ERP` at `88da6fd`) — the platform layer (sign-in, roles
+and screen permissions, audit log, settings, attachments, notifications, AI and WhatsApp
+clients, import/export, backups) — and phase 1 adds the business: clients, suppliers and
+shipping companies with a CRM log, products, Proforma Invoices, the supplier-order follow-up,
+the container follow-up, payments and the ledger.
 
-**The authority for this build is MASDAR's spec, `docs/spec/PROJECT.md`** (still the template
-until MASDAR's spec replaces it). Where anything here, in a plan, or in the code disagrees with the
+**The authority for this build is MASDAR's spec, `docs/spec/PROJECT.md`** (draft 0.1, not yet
+signed off). Where anything here, in a plan, or in the code disagrees with the
 spec, the spec wins. Items it marks `OPEN` are built configurable and fail loudly — never
 guessed, never silently defaulted.
 
@@ -27,20 +29,19 @@ Where MASDAR stands on each step is marked; every `OPEN` step waits on MASDAR's 
 
 1. Put the client's build spec in `docs/spec/PROJECT.md` (keep the template's headings).
    **Drafted** (0.1, 2026-11-17) from MASDAR's PI template, order follow-up sheet and phase-1
-   note; not signed off. Its §11 lists the open questions and the sub-project each blocks.
+   note; not signed off. Its §11 lists the open questions.
 2. Name it: `APP_NAME` (env), the company name, Arabic name and logo (Settings screen), the
-   brand colours `--app-primary` / `--app-accent` in `resources/css/app.css`.
-   **Done:** `APP_NAME=MASDAR` (`.env.example`, `render.yaml`). **OPEN:** the Arabic name,
-   the logo and the brand colours (the starter's colours stay until then); the company name
-   and Arabic name are entered on the Settings screen after the first deploy.
-3. Set the regional defaults if they differ: `APP_TIMEZONE` (default `Africa/Cairo`, also the
-   time the scheduler runs in), `APP_LOCALE` (`ar`), `WHATSAPP_DEFAULT_COUNTRY_CODE` (`20`).
-   **OPEN** — the spec infers `Asia/Shanghai` (the office is in Yiwu); it is applied in
-   sub-project 1 with the languages and country code (spec Q-B2, Q-B3).
-4. Replace the starter roles in `app/Security/Roles.php` with the spec's, and give each its
-   screens in `Roles::defaultGrants` as the screens are built. **OPEN.**
-5. Split the spec into sub-projects; each gets its own spec → plan → build cycle, and this
-   file gains a section per sub-project as it lands. **OPEN.**
+   brand colours. **Done:** `APP_NAME=MASDAR`; the legal name and MASDAR's logo (read from
+   their PI, `public/images/masdar-logo.png` and `masdar-mark.png`) are the defaults until one is
+   uploaded on the Settings screen; navy and gold in `resources/css/theme.css`. **OPEN:** the
+   Arabic name (the brand "MASDAR TRADING" stands in).
+3. Regional defaults. **Done:** `APP_TIMEZONE=Asia/Shanghai` (the scheduler runs in China
+   time); each user picks Arabic, English or Chinese. **OPEN:** `WHATSAPP_DEFAULT_COUNTRY_CODE`
+   (still `20`; clients are abroad — spec Q-B3).
+4. Roles. **Done:** spec §6's proposed roles, editable in the role editor (below).
+5. Sub-projects. **Decided by the client (2026-11-17):** phase 1 is built at once, with every
+   OPEN item configurable so it can be changed later — the plan is
+   `docs/superpowers/plans/2026-11-17-phase-1-build.md`.
 
 Starter fixes are pulled in from the `Empty-ERP` repository (add it as a remote named
 `starter` and merge its `main`); MASDAR's own work never goes back to it.
@@ -85,20 +86,27 @@ idioms push the other way, so:
 ## Architecture
 
 Laravel 12, PHP 8.3+ (8.4 in Docker), PostgreSQL 16 (Neon in production), Blade + Bootstrap 5.3
-RTL bundled by Vite (no CDN). IBM Plex Sans Arabic; brand tokens `--app-primary` /
-`--app-accent` in `resources/css/app.css`, classes prefixed `app-`. Arabic UI through `__()`
-with English keys in `lang/ar.json`; logical CSS properties only (`ms-`/`me-`, `inline-size`).
+bundled by Vite (no CDN). IBM Plex Sans Arabic; brand tokens `--app-primary` / `--app-accent`
+in `resources/css/theme.css`, classes prefixed `app-`. Two CSS entries: `app.css` (Bootstrap
+RTL) and `app-ltr.css` (Bootstrap LTR), the same `theme.css` on top; the layouts pick one by
+language. Every UI string goes through `__()` with English keys, translated in `lang/ar.json`
+and `lang/zh_CN.json`; each user picks their language (`users.locale`, `SetUserLocale`
+middleware, the switcher in the user menu). Logical CSS properties only (`ms-`/`me-`,
+`inline-size`). Printed documents (the PI, the packing list) are always English, as MASDAR's
+own are.
 Single company: there is no multi-company layer (a guard test fails on a `company_id` column).
 
 ### Screens, roles and permissions
 
-- `config/screens.php` is the ONE screen registry. Each screen has a key, Arabic label,
-  route, sidebar group, icon and its levels. It drives the sidebar AND the permissions.
+- `config/screens.php` is the ONE screen registry. Each screen has a key, an English label
+  (shown through `__()`), route, sidebar group, icon and its levels. It drives the sidebar AND
+  the permissions.
 - Permissions are `{screen}.{level}`, levels cumulative: `view` ⊂ `edit` ⊂ `approve`
   (`App\Security\Screens::grantsFor`). Screens marked `signed_in` need sign-in only.
-- Starter roles (`App\Security\Roles`): `manager` (every screen), `supervisor` and `staff`
-  (nothing until a client's screens exist), `system_admin`. A user may hold several: the
-  union applies. **There is no `Gate::before` and no bypass role.** `system_admin` is the
+- MASDAR's roles (`App\Security\Roles`, spec §6): `manager` (every screen), `sales`,
+  `merchandiser` (order follow-up), `warehouse_qc`, `logistics`, `accountant`, `staff` (nothing
+  until granted) and `system_admin`. `Roles::defaultGrants` gives each its screens when the role
+  is created. A user may hold several: the union applies. **There is no `Gate::before` and no bypass role.** `system_admin` is the
   vendor's support staff: users, roles, settings, audit log — never business data or approvals.
 - `RolesAndPermissionsSeeder` runs on every deploy: it creates what is missing and grants a
   role its defaults only when it creates the role. It never revokes an editor change.
