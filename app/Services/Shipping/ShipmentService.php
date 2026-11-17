@@ -115,8 +115,8 @@ class ShipmentService
 
     /**
      * Takes $order off $shipment — only while none of its goods are loaded on the shipment's
-     * containers (the trigger is the gate). The order's booking step stays as it is: reopening
-     * a step is the follow-up board's call.
+     * containers (the trigger is the gate). When the order is then booked on no shipment at
+     * all, its booking step opens again.
      */
     public function unbookOrder(Shipment $shipment, SupplierOrder $order, User $by): void
     {
@@ -130,9 +130,12 @@ class ShipmentService
         }
 
         try {
-            DB::transaction(function () use ($booking, $shipment, $order) {
+            DB::transaction(function () use ($booking, $shipment, $order, $by) {
                 $booking->delete();
                 AuditTrail::record('order_unbooked', $shipment, ['supplier_order_id' => $order->id, 'supplier_order' => $order->number], []);
+                if (! ShipmentOrder::query()->where('supplier_order_id', $order->id)->exists()) {
+                    app(OrderStepService::class)->reopenAutomatic($order, 'booking', $by, 'Unbooked from '.$shipment->number);
+                }
             });
         } catch (QueryException $e) {
             if ($e->getCode() === '23514') {

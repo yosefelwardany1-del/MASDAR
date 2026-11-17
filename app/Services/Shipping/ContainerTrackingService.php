@@ -179,6 +179,11 @@ class ContainerTrackingService
                     'load_id' => $load->id, 'supplier_order_line_id' => $line->id,
                     'supplier_order' => $line->supplierOrder?->number, 'cartons' => $cartons, 'unloaded_on' => $unloadedOn,
                 ]);
+                // Goods taken out again: the order is no longer fully loaded.
+                $order = $line->supplierOrder;
+                if ($order && ! $this->queries->orderFullyLoaded($order)) {
+                    app(OrderStepService::class)->reopenAutomatic($order, 'loading', $by, 'Unloaded from '.($container->container_no ?: $container->shipment?->number));
+                }
 
                 return $load;
             });

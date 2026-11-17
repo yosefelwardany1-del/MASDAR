@@ -69,6 +69,21 @@ class OrderStepService
         return $this->record($order, $step, 'done', $by, $happenedOn ?? now()->toDateString(), $note ?: null, $paymentId);
     }
 
+    /**
+     * Open the step with $stepCode again on behalf of another module when what completed it is
+     * undone: the order was unbooked, its goods taken out of a container, a payment reversed.
+     * Only a step that is currently DONE reopens; one a person marked not applicable stays so.
+     */
+    public function reopenAutomatic(SupplierOrder $order, string $stepCode, User $by, string $note = ''): ?SupplierOrderStepEvent
+    {
+        $step = OrderStepDefinition::where('code', $stepCode)->where('active', true)->first();
+        if (! $step || $this->latestEvents($order)->get($step->id)?->status !== 'done') {
+            return null;
+        }
+
+        return $this->record($order, $step, 'reopened', $by, now()->toDateString(), $note ?: null);
+    }
+
     /** Record one event; the single place a step event is written. */
     public function record(SupplierOrder $order, OrderStepDefinition $step, string $status, User $by, string $happenedOn, ?string $note = null, ?int $paymentId = null): SupplierOrderStepEvent
     {
