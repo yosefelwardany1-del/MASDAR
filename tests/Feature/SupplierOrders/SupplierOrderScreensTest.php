@@ -7,6 +7,7 @@ use App\Models\Party;
 use App\Models\SupplierOrderLine;
 use App\Security\Roles;
 use App\Services\SupplierOrders\OrderStepService;
+use App\Services\SupplierOrders\SupplierOrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\Concerns\SeedsReference;
@@ -39,7 +40,7 @@ class SupplierOrderScreensTest extends TestCase
         $this->actingAs($qc)->post(route('goods-receipts.store'), [
             'supplier_order_line_id' => $line->id, 'received_on' => now()->toDateString(), 'cartons' => 4, 'inspection_result' => 'pass',
         ])->assertRedirect()->assertSessionHasNoErrors();
-        $this->assertSame('4.0000', (string) $line->receipts()->sum('cartons') === '4' ? '4.0000' : (string) $line->receipts()->value('cartons'));
+        $this->assertSame('4.0000', (string) $line->receipts()->value('cartons'));
 
         $this->actingAs($qc)->get(route('supplier-orders.show', $order))->assertOk();
         $this->actingAs($qc)->put(route('supplier-orders.update', $order), ['currency' => 'USD'])->assertForbidden();
@@ -62,11 +63,16 @@ class SupplierOrderScreensTest extends TestCase
             $response->assertSee($step->displayName());
         }
         $response->assertSee($late->number)->assertSee($calm->number)->assertDontSee($done->number)
-            ->assertSee('app-pill app-pill--done', false)
-            ->assertSee('app-pill app-pill--late', false)
-            ->assertSee('app-pill app-pill--due', false)
             ->assertSee($late->supplier->name)
-            ->assertSee('table-responsive app-board', false);
+            ->assertSee('table-responsive app-board', false)
+            // The artwork done yesterday, the initial sample late since its due date (21 days before delivery).
+            ->assertSee(Carbon::today()->subDay()->format('Y-m-d'))
+            ->assertSee(Carbon::today()->addDays(5)->subDays(21)->format('Y-m-d'));
+        $html = $response->getContent();
+        // Beyond the one in the key: artwork done; initial and final sample late; labelling due in 2 days.
+        $this->assertGreaterThan(1, substr_count($html, 'app-pill app-pill--done'));
+        $this->assertGreaterThan(2, substr_count($html, 'app-pill app-pill--late'));
+        $this->assertGreaterThan(1, substr_count($html, 'app-pill app-pill--due'));
         // Late rows first.
         $this->assertLessThan(strpos($response->getContent(), $calm->number), strpos($response->getContent(), $late->number));
 
@@ -84,7 +90,7 @@ class SupplierOrderScreensTest extends TestCase
     {
         $merch = $this->user(Roles::MERCHANDISER);
         $order = $this->orderWithLines(1, 10, ['delivery_date' => Carbon::today()->addDays(20)]);
-        app(\App\Services\SupplierOrders\SupplierOrderService::class)->changeDeliveryDate($order, Carbon::today()->addDays(30)->toDateString(), 'Factory holiday', $merch);
+        app(SupplierOrderService::class)->changeDeliveryDate($order, Carbon::today()->addDays(30)->toDateString(), 'Factory holiday', $merch);
 
         $this->actingAs($merch)->get(route('supplier-orders.index'))->assertOk()
             ->assertSee('bi-calendar-x', false)
@@ -95,10 +101,10 @@ class SupplierOrderScreensTest extends TestCase
     {
         $sales = $this->user(Roles::SALES);
         $client = Party::factory()->client()->create(['account_manager_id' => $sales->id]);
-        $pi = $this->issuedPi([['supplier_price' => '7.2500']], ['client_id' => $client->id]);
+        $pi = $this->issuedPi([['supplier_price' => '13.5791']], ['client_id' => $client->id]);
         $supplier = $this->supplier(['name' => 'Hidden Factory Ltd']);
         $order = $this->orderWithLines(0, 10, ['supplier_id' => $supplier->id]);
-        SupplierOrderLine::factory()->create(['supplier_order_id' => $order->id, 'pi_line_id' => $pi->lines()->first()->id, 'unit_price' => '7.2500']);
+        SupplierOrderLine::factory()->create(['supplier_order_id' => $order->id, 'pi_line_id' => $pi->lines()->first()->id, 'unit_price' => '13.5791']);
         $other = $this->orderWithLines(); // another account manager's client
 
         $this->actingAs($sales)->get(route('supplier-orders.index'))->assertOk()
@@ -106,13 +112,13 @@ class SupplierOrderScreensTest extends TestCase
             ->assertDontSee('Hidden Factory Ltd')
             ->assertDontSee($other->number);
         $this->actingAs($sales)->get(route('supplier-orders.show', $order))->assertOk()
-            ->assertDontSee('Hidden Factory Ltd')->assertDontSee('7.25')->assertDontSee(__('Attachments'));
+            ->assertDontSee('Hidden Factory Ltd')->assertDontSee('13.5791')->assertDontSee(__('Attachments'));
         $this->actingAs($sales)->get(route('supplier-orders.show', $other))->assertNotFound();
         $this->actingAs($sales)->get(route('supplier-orders.evaluation'))->assertOk()->assertDontSee('Hidden Factory Ltd');
 
         $merch = $this->user(Roles::MERCHANDISER);
         $this->actingAs($merch)->get(route('supplier-orders.show', $order))->assertOk()
-            ->assertSee('Hidden Factory Ltd')->assertSee('7.25')->assertSee(__('Attachments'));
+            ->assertSee('Hidden Factory Ltd')->assertSee('13.5791')->assertSee(__('Attachments'));
     }
 
     public function test_the_order_page_shows_lines_steps_and_history(): void

@@ -1,9 +1,5 @@
 <?php
 
-use App\Support\IO\Resources\ClientSchema;
-use App\Support\IO\Resources\ProductSchema;
-use App\Support\IO\Resources\SupplierSchema;
-
 return [
 
     /*
@@ -16,9 +12,9 @@ return [
     |
     */
     'resources' => [
-        ClientSchema::class,
-        SupplierSchema::class,
-        ProductSchema::class,
+        App\Support\IO\Resources\ClientSchema::class,
+        App\Support\IO\Resources\SupplierSchema::class,
+        App\Support\IO\Resources\ProductSchema::class,
     ],
 
     /*
