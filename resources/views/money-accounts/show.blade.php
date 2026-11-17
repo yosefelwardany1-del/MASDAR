@@ -55,7 +55,7 @@
                     <td>{{ $payment->party?->name ?? '—' }}</td>
                     <td class="text-end app-num">{{ MoneyFormat::amount($payment->signed_amount) }}</td>
                     @if($complete)<td class="text-end app-num">{{ MoneyFormat::amount($payment->running_total) }}</td>@endif
-                    <td>@include('payments._status', ['status' => $queries->status($payment, $approvalRequired)])</td>
+                    <td>@include('payments._pills', ['payment' => $payment])</td>
                 </tr>
             @empty
                 <tr><td colspan="7" class="app-empty">{{ __('No payments in this account yet.') }}</td></tr>

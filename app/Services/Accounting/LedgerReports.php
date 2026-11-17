@@ -7,6 +7,7 @@ use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\User;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -138,7 +139,7 @@ class LedgerReports
             $earlierYears = $result(null, $asAt);
         } else {
             $currentYear = $result($yearStart, $asAt);
-            $earlierYears = $result(null, \Illuminate\Support\Carbon::parse($yearStart)->subDay()->toDateString());
+            $earlierYears = $result(null, Carbon::parse($yearStart)->subDay()->toDateString());
         }
         $equityTotal = Decimal::sum([$equity['total'], $currentYear, $earlierYears]);
         $liabilitiesAndEquity = Decimal::add($liabilities['total'], $equityTotal);

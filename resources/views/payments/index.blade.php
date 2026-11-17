@@ -116,7 +116,7 @@
                         @if(! $payment->proformaInvoice && ! $payment->supplierOrder && ! $payment->container)—@endif
                     </td>
                     <td>
-                        @include('payments._status', ['status' => $queries->status($payment, $approvalRequired)])
+                        @include('payments._pills', ['payment' => $payment])
                     </td>
                 </tr>
             @empty

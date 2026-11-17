@@ -83,7 +83,7 @@ class FollowUpBoard
      * One page of the board.
      *
      * @param  array<string, mixed>  $filters
-     * @return array{orders: LengthAwarePaginator, steps: Collection, states: array, clients: array, original: array}
+     * @return array{orders: LengthAwarePaginator, steps: Collection, states: array, orderClients: array, original: array}
      */
     public function page(array $filters, User $viewer, int $perPage = 50): array
     {
@@ -102,7 +102,7 @@ class FollowUpBoard
             'orders' => $orders,
             'steps' => $steps,
             'states' => $this->steps->boardStates($page, $steps),
-            'clients' => $this->clientsOf($page->pluck('id'), $viewer),
+            'orderClients' => $this->clientsOf($page->pluck('id'), $viewer),
             'original' => $this->originalDates($page),
         ];
     }

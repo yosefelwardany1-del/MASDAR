@@ -151,9 +151,10 @@ class PaymentService
     }
 
     /**
-     * A manager's approval of an outgoing payment (spec §6): one row, once. A reversal is not
-     * approved (it follows its payment), and neither is a payment already reversed. Transfers
-     * are approved on their outgoing row.
+     * A manager's approval of an outgoing payment (spec §6): one row, once. Transfers are
+     * approved on their outgoing row. A payment already reversed is not approved; the reversal
+     * of money out is approved like any payment out, once the payment it reverses is approved
+     * (until then neither counts, so they cannot count apart).
      */
     public function approve(Payment $payment, User $by, ?string $note = null): PaymentApproval
     {
@@ -165,8 +166,9 @@ class PaymentService
             $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
             $refuse = match (true) {
                 $payment->direction !== 'out' => __('Only outgoing payments are approved.'),
-                $payment->reverses_payment_id !== null => __('A reversal is not approved; it follows the payment it reverses.'),
                 $payment->reversal()->exists() => __('This payment has been reversed.'),
+                $payment->reverses_payment_id !== null && ! PaymentApproval::query()->where('payment_id', $payment->reverses_payment_id)->exists()
+                    => __('The payment this reverses was never approved, so neither of them counts and there is nothing to approve.'),
                 $payment->approval()->exists() => __('This payment is already approved.'),
                 default => null,
             };

@@ -23,7 +23,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div class="d-flex align-items-center gap-2">
         <h1 class="h4 mb-0"><span class="app-ltr">{{ $payment->number }}</span></h1>
-        @include('payments._status', ['status' => $status])
+        @include('payments._pills', ['payment' => $payment])
     </div>
     <a href="{{ route('payments.index') }}" class="btn btn-light"><i class="bi bi-list me-1"></i>{{ __('All payments') }}</a>
 </div>
@@ -103,11 +103,14 @@
             <div class="app-card p-3">
                 <div class="fw-semibold mb-1"><i class="bi bi-arrow-counterclockwise me-1"></i>{{ __('This is a reversal') }}</div>
                 <div>{{ __('It cancels') }} <a href="{{ route('payments.show', $payment->reverses) }}" class="app-ltr">{{ $payment->reverses->number }}</a>.
-                    {{ __('It counts exactly when the payment it reverses counts, so the two always net to zero.') }}</div>
+                    @if($payment->direction === 'out')
+                        {{ __('Like any money out, it counts once a manager approves it.') }}
+                    @endif
+                </div>
             </div>
         @endif
 
-        @if($payment->direction === 'out' && ! $payment->isReversal())
+        @if($payment->direction === 'out')
             <div class="app-card p-3">
                 <div class="fw-semibold mb-2"><i class="bi bi-patch-check me-1"></i>{{ __('Approval') }}</div>
                 @if($payment->approval)
@@ -115,6 +118,8 @@
                     @if($payment->approval->note)<div class="text-muted small mt-1">{{ $payment->approval->note }}</div>@endif
                 @elseif($payment->reversal)
                     <div class="text-muted">{{ __('Reversed before it was approved; it never counted.') }}</div>
+                @elseif($payment->isReversal() && ! $payment->reverses?->approval)
+                    <div class="text-muted">{{ __('The payment this reverses was never approved, so neither of them counts and there is nothing to approve.') }}</div>
                 @elseif(! $approvalRequired)
                     <div class="text-muted">{{ __('Payments out do not need approval at the moment, so this one counts already.') }}</div>
                 @else
@@ -137,7 +142,7 @@
                     @foreach($legs as $leg)
                         <li class="d-flex flex-wrap justify-content-between gap-2 py-1">
                             <span><a href="{{ route('payments.show', $leg) }}" class="app-ltr">{{ $leg->number }}</a> · {{ Payment::kindLabel($leg->kind) }} · {{ $leg->moneyAccount->name }}</span>
-                            <span><span class="app-num">{{ MoneyFormat::amount($leg->signed_amount) }}</span> {{ $leg->currency }} @include('payments._status', ['status' => $queries->status($leg, $approvalRequired)])</span>
+                            <span><span class="app-num">{{ MoneyFormat::amount($leg->signed_amount) }}</span> {{ $leg->currency }} @include('payments._pills', ['payment' => $leg])</span>
                         </li>
                     @endforeach
                 </ul>

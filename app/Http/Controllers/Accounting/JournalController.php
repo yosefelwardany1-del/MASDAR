@@ -8,6 +8,7 @@ use App\Models\JournalEntry;
 use App\Models\Lookup;
 use App\Models\Party;
 use App\Services\Accounting\AccountingException;
+use App\Services\Accounting\Decimal;
 use App\Services\Accounting\Ledger;
 use App\Services\Accounting\PostingService;
 use Illuminate\Http\Request;
@@ -63,8 +64,8 @@ class JournalController extends Controller
             'entry' => $entry,
             'source' => $entry->sourceLink(),
             'canSee' => fn (?Party $party) => $ledger->canSeeParty($request->user(), $party),
-            'debit' => $entry->lines->reduce(fn ($sum, $l) => \App\Services\Accounting\Decimal::add($sum, (string) $l->debit), '0'),
-            'credit' => $entry->lines->reduce(fn ($sum, $l) => \App\Services\Accounting\Decimal::add($sum, (string) $l->credit), '0'),
+            'debit' => $entry->lines->reduce(fn ($sum, $l) => Decimal::add($sum, (string) $l->debit), '0'),
+            'credit' => $entry->lines->reduce(fn ($sum, $l) => Decimal::add($sum, (string) $l->credit), '0'),
         ]);
     }
 
@@ -187,8 +188,8 @@ class JournalController extends Controller
             'party_id' => $l->party_id,
             'memo' => $l->memo,
             'currency' => $l->currency,
-            'debit' => \App\Services\Accounting\Decimal::isPositive((string) $l->debit) ? (string) $l->amount_currency : '',
-            'credit' => \App\Services\Accounting\Decimal::isPositive((string) $l->credit) ? (string) $l->amount_currency : '',
+            'debit' => Decimal::isPositive((string) $l->debit) ? (string) $l->amount_currency : '',
+            'credit' => Decimal::isPositive((string) $l->credit) ? (string) $l->amount_currency : '',
             'rate' => (string) $l->rate,
         ])->all() ?? []);
 

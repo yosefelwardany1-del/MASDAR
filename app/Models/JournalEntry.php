@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Route;
 
 /**
  * A journal entry: built as a draft, then posted once — posting checks it balances (I1) and is
@@ -87,7 +88,7 @@ class JournalEntry extends Model
 
         return [
             (string) ($label() ?? $this->source_type.' #'.$this->source_id),
-            $route && \Illuminate\Support\Facades\Route::has($route) ? route($route, $this->source_id) : null,
+            $route && Route::has($route) ? route($route, $this->source_id) : null,
         ];
     }
 }

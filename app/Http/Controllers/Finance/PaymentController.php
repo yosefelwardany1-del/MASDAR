@@ -181,7 +181,6 @@ class PaymentController extends Controller
         return view('payments.show', [
             'payment' => $payment,
             'legs' => $legs,
-            'status' => $this->queries->status($payment),
             'effective' => $this->queries->isEffective($payment),
             'canApprove' => $this->queries->canBeApproved($payment) && $user->can('payments.approve'),
             'approvalRequired' => $this->queries->approvalRequired(),

@@ -5,6 +5,7 @@ namespace Tests\Feature\Accounting;
 use App\Models\AccountingPeriod;
 use App\Models\JournalEntry;
 use App\Security\Roles;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\SeedsReference;
 use Tests\TestCase;
@@ -82,7 +83,7 @@ class AccountingPermissionsTest extends TestCase
 
         // The service enforces it too, whoever calls it.
         $this->actingAs($accountant);
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(AuthorizationException::class);
         $this->posting()->post($entry, $accountant);
     }
 

@@ -7,8 +7,9 @@ use Illuminate\Support\Facades\DB;
  * Module 5 (money): two rules the PHP writers check for the message, held here as the gate.
  *  - A money account's currency never changes once it has payments: every payment is in its
  *    account's currency (payments_guard), so changing it would make the old rows wrong.
- *  - An approval is for an original outgoing payment that has not been reversed. A reversal
- *    is never approved itself: it is effective exactly when the payment it reverses is.
+ *  - An approval is for an outgoing payment that has not been reversed. The reversal of money
+ *    out is approved like any payment out, but only once the payment it reverses is approved:
+ *    a payment reversed before its approval never counts, and neither does its reversal.
  */
 return new class extends Migration
 {
@@ -37,8 +38,10 @@ return new class extends Migration
                 IF p.direction <> 'out' THEN
                     RAISE EXCEPTION 'only an outgoing payment is approved' USING ERRCODE = 'check_violation';
                 END IF;
-                IF p.reverses_payment_id IS NOT NULL THEN
-                    RAISE EXCEPTION 'a reversal is not approved; it follows the payment it reverses' USING ERRCODE = 'check_violation';
+                IF p.reverses_payment_id IS NOT NULL
+                   AND NOT EXISTS (SELECT 1 FROM payment_approvals WHERE payment_id = p.reverses_payment_id) THEN
+                    RAISE EXCEPTION 'payment % reverses a payment that was never approved; neither is approved', p.number
+                        USING ERRCODE = 'check_violation';
                 END IF;
                 IF EXISTS (SELECT 1 FROM payments WHERE reverses_payment_id = p.id) THEN
                     RAISE EXCEPTION 'payment % has been reversed and is not approved', p.number USING ERRCODE = 'check_violation';

@@ -95,7 +95,7 @@
                         @if($order->merchandiser)<div class="text-muted small">{{ $order->merchandiser->name }}</div>@endif
                     </td>
                     <td>
-                        @forelse($clients[$order->id] ?? [] as $row)
+                        @forelse($orderClients[$order->id] ?? [] as $row)
                             <div>{{ $row->client_name }} ·
                                 @if($canSeePis)
                                     <a href="{{ route('proforma-invoices.show', $row->pi_id) }}" class="app-ltr">{{ $row->pi_reference }}</a>

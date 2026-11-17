@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Support\Access\Visibility;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -96,7 +97,7 @@ class Ledger
     }
 
     /** Accounts that take postings, for the forms: code — name. */
-    public function postableAccounts(): \Illuminate\Support\Collection
+    public function postableAccounts(): Collection
     {
         return Account::query()->where('is_postable', true)->where('active', true)->orderBy('code')->get();
     }

@@ -8,6 +8,7 @@ use App\Models\JournalEntry;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrderLine;
 use App\Services\Accounting\AccountingException;
+use App\Services\Accounting\Ledger;
 use App\Services\Accounting\PostingQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\SeedsReference;
@@ -144,8 +145,8 @@ class DocumentPostingTest extends TestCase
         $this->actingAs($accountant)->post(route('accounting.to-post.invoices'))
             ->assertSessionHas('success')
             ->assertSessionHas('error', fn ($m) => str_contains($m, $noRate->pi_number) && str_contains($m, 'EUR'));
-        $this->assertNotNull(app(\App\Services\Accounting\Ledger::class)->postingOf('proforma_invoice', $ok->id));
-        $this->assertNull(app(\App\Services\Accounting\Ledger::class)->postingOf('proforma_invoice', $noRate->id));
+        $this->assertNotNull(app(Ledger::class)->postingOf('proforma_invoice', $ok->id));
+        $this->assertNull(app(Ledger::class)->postingOf('proforma_invoice', $noRate->id));
     }
 
     private function expectRefusal(callable $call, string $message): void
