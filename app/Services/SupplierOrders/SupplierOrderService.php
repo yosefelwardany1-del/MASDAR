@@ -15,6 +15,7 @@ use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -44,11 +45,11 @@ class SupplierOrderService
     {
         return <<<'SQL'
             WITH RECURSIVE up AS (
-                SELECT sol.pi_line_id AS id FROM supplier_order_lines sol
+                SELECT sol.pi_line_id AS id FROM supplier_order_lines sol WHERE sol.released_at IS NULL
                 UNION
                 SELECT p.source_line_id FROM pi_lines p JOIN up ON p.id = up.id WHERE p.source_line_id IS NOT NULL
             ), down AS (
-                SELECT sol.pi_line_id AS id FROM supplier_order_lines sol
+                SELECT sol.pi_line_id AS id FROM supplier_order_lines sol WHERE sol.released_at IS NULL
                 UNION
                 SELECT p.id FROM pi_lines p JOIN down ON p.source_line_id = down.id
             )
@@ -247,27 +248,60 @@ class SupplierOrderService
         return $this->moveStatus($order, ['open'], 'completed', 'completed', $note);
     }
 
-    /** Cancelled while nothing has been received for it; received goods are corrected first. */
+    /**
+     * Cancelled while nothing has been received for it; received goods are corrected first.
+     * Its PI lines are released in the same transaction, so they can be ordered from another
+     * factory; the cancelled order keeps them in its history.
+     */
     public function cancel(SupplierOrder $order, User $by, string $reason): SupplierOrder
     {
         if (trim($reason) === '') {
             throw ValidationException::withMessages(['reason' => __('Give a reason.')]);
         }
 
-        return $this->moveStatus($order, ['open'], 'cancelled', 'cancelled', $reason, function (SupplierOrder $order) {
-            $received = DB::table('goods_receipts')
-                ->join('supplier_order_lines', 'supplier_order_lines.id', '=', 'goods_receipts.supplier_order_line_id')
-                ->where('supplier_order_lines.supplier_order_id', $order->id)
-                ->sum('goods_receipts.cartons');
-            if (bccomp((string) $received, '0', 4) > 0) {
-                throw ValidationException::withMessages(['status' => __('Goods have been received for this order: complete it instead, or correct the receipts first.')]);
+        return DB::transaction(function () use ($order, $reason) {
+            $order = $this->moveStatus($order, ['open'], 'cancelled', 'cancelled', $reason, function (SupplierOrder $order) {
+                $received = DB::table('goods_receipts')
+                    ->join('supplier_order_lines', 'supplier_order_lines.id', '=', 'goods_receipts.supplier_order_line_id')
+                    ->where('supplier_order_lines.supplier_order_id', $order->id)
+                    ->sum('goods_receipts.cartons');
+                if (bccomp((string) $received, '0', 4) > 0) {
+                    throw ValidationException::withMessages(['status' => __('Goods have been received for this order: complete it instead, or correct the receipts first.')]);
+                }
+            });
+            $released = SupplierOrderLine::query()->where('supplier_order_id', $order->id)->whereNull('released_at')
+                ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('goods_receipts')->whereColumn('goods_receipts.supplier_order_line_id', 'supplier_order_lines.id'))
+                ->update(['released_at' => now()]);
+            if ($released > 0) {
+                AuditTrail::record('lines_released', $order, [], ['lines' => $released]);
             }
+
+            return $order;
         });
     }
 
+    /**
+     * Opens a completed or cancelled order again. A cancelled order takes its released lines
+     * back — refused when one of them has since been ordered from another factory.
+     */
     public function reopen(SupplierOrder $order, User $by, ?string $reason = null): SupplierOrder
     {
-        return $this->moveStatus($order, ['completed', 'cancelled'], 'open', 'reopened', $reason);
+        return DB::transaction(function () use ($order, $reason) {
+            $order = $this->moveStatus($order, ['completed', 'cancelled'], 'open', 'reopened', $reason);
+            try {
+                $taken = SupplierOrderLine::query()->where('supplier_order_id', $order->id)->whereNotNull('released_at')->update(['released_at' => null]);
+            } catch (QueryException $e) {
+                if (in_array($e->getCode(), ['23505'], true)) {
+                    throw ValidationException::withMessages(['status' => __('A line of this order has since been ordered from another supplier, so the order cannot be reopened. Create a new order instead.')]);
+                }
+                throw $e;
+            }
+            if ($taken > 0) {
+                AuditTrail::record('lines_taken_back', $order, [], ['lines' => $taken]);
+            }
+
+            return $order;
+        });
     }
 
     /** @param  list<string>  $from */

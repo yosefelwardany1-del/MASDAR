@@ -21,7 +21,7 @@ class SupplierOrderLine extends Model
     {
         return [
             'cartons' => 'decimal:4', 'qty_per_carton' => 'decimal:4', 'total_qty' => 'decimal:4',
-            'unit_price' => 'decimal:4', 'amount' => 'decimal:4',
+            'unit_price' => 'decimal:4', 'amount' => 'decimal:4', 'released_at' => 'datetime',
         ];
     }
 
