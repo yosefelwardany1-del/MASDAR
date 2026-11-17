@@ -58,4 +58,36 @@ class JournalEntry extends Model
     {
         return $this->status === 'posted';
     }
+
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    /** A draft carries a provisional number until it is posted. */
+    public function displayNumber(): string
+    {
+        return $this->isPosted() ? $this->number : __('Draft').' #'.$this->id;
+    }
+
+    /** The document or payment this entry was posted from, as [label, url or null]; null for a manual entry. */
+    public function sourceLink(): ?array
+    {
+        if ($this->source_type === null || $this->source_id === null) {
+            return null;
+        }
+
+        [$route, $label] = match ($this->source_type) {
+            'payment' => ['payments.show', fn () => Payment::query()->whereKey($this->source_id)->value('number')],
+            'proforma_invoice' => ['proforma-invoices.show', fn () => ($pi = ProformaInvoice::query()->find($this->source_id)) ? $pi->reference() : null],
+            'supplier_order' => ['supplier-orders.show', fn () => SupplierOrder::query()->whereKey($this->source_id)->value('number')],
+            'container' => ['containers.show', fn () => Container::query()->whereKey($this->source_id)->value('container_no')],
+            default => [null, fn () => null],
+        };
+
+        return [
+            (string) ($label() ?? $this->source_type.' #'.$this->source_id),
+            $route && \Illuminate\Support\Facades\Route::has($route) ? route($route, $this->source_id) : null,
+        ];
+    }
 }

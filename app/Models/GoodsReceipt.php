@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Goods received (and inspected) for a supplier order line — step 8 of S2. Append-only; a
@@ -29,5 +30,22 @@ class GoodsReceipt extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** The receipt this row corrects (a correction has negative cartons). */
+    public function corrects(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'corrects_receipt_id');
+    }
+
+    /** The corrections made to this receipt. */
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(self::class, 'corrects_receipt_id');
+    }
+
+    public function isCorrection(): bool
+    {
+        return $this->corrects_receipt_id !== null;
     }
 }

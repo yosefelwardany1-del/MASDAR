@@ -49,28 +49,4 @@ class Container extends Model
     {
         return $this->hasOne(ContainerEvent::class)->latestOfMany('id');
     }
-
-    /** The usable CBM of the container's type (Lookup container_type meta.cbm), or null. */
-    public function capacityCbm(): ?string
-    {
-        return $this->typeMeta('cbm');
-    }
-
-    /** The maximum KG of the container's type (Lookup container_type meta.max_kg), or null. */
-    public function capacityKg(): ?string
-    {
-        return $this->typeMeta('max_kg');
-    }
-
-    private function typeMeta(string $key): ?string
-    {
-        if (! $this->container_type) {
-            return null;
-        }
-        $meta = Lookup::query()->where('list', 'container_type')->where('code', $this->container_type)->value('meta');
-        $meta = is_string($meta) ? json_decode($meta, true) : $meta;
-        $value = $meta[$key] ?? null;
-
-        return is_numeric($value) && (float) $value > 0 ? (string) $value : null;
-    }
 }

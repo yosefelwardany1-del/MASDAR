@@ -86,4 +86,30 @@ class Payment extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /** The name of a kind of payment in the user's language. */
+    public static function kindLabel(string $kind): string
+    {
+        return match ($kind) {
+            'client_receipt' => __('Client receipt'),
+            'supplier_payment' => __('Supplier payment'),
+            'shipping_payment' => __('Shipping payment'),
+            'expense' => __('Expense'),
+            'other_in' => __('Other money in'),
+            'other_out' => __('Other money out'),
+            'transfer_out' => __('Transfer out'),
+            'transfer_in' => __('Transfer in'),
+            default => $kind,
+        };
+    }
+
+    public function isReversal(): bool
+    {
+        return $this->reverses_payment_id !== null;
+    }
+
+    public function isTransfer(): bool
+    {
+        return $this->transfer_group !== null;
+    }
 }

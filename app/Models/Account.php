@@ -44,4 +44,24 @@ class Account extends Model
     {
         return in_array($this->type, ['asset', 'expense'], true);
     }
+
+    /** @return array<string, string> type => its name in the user's language */
+    public static function typeLabels(): array
+    {
+        return [
+            'asset' => __('Asset'), 'liability' => __('Liability'), 'equity' => __('Equity'),
+            'income' => __('Income'), 'expense' => __('Expense'),
+        ];
+    }
+
+    public function typeLabel(): string
+    {
+        return self::typeLabels()[$this->type] ?? (string) $this->type;
+    }
+
+    /** "1401 — Client receivables", in the user's language. */
+    public function label(): string
+    {
+        return $this->code.' — '.$this->displayName();
+    }
 }

@@ -1,5 +1,9 @@
 <?php
 
+use App\Support\IO\Resources\ClientSchema;
+use App\Support\IO\Resources\ProductSchema;
+use App\Support\IO\Resources\SupplierSchema;
+
 return [
 
     /*
@@ -11,7 +15,11 @@ return [
     | sub-project lists its own; none ship with the platform.
     |
     */
-    'resources' => [],
+    'resources' => [
+        ClientSchema::class,
+        SupplierSchema::class,
+        ProductSchema::class,
+    ],
 
     /*
     |--------------------------------------------------------------------------

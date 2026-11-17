@@ -59,6 +59,14 @@ class ProductService
         });
     }
 
+    /** CBM per carton: L × W × H in cm ÷ 1,000,000, rounded half up to 4 places, without floats. */
+    public static function cbm(string $length, string $width, string $height): string
+    {
+        $exact = bcdiv(bcmul(bcmul($length, $width, 8), $height, 12), '1000000', 12);
+
+        return bcadd($exact, '0.00005', 4);
+    }
+
     /** A product on a PI line is never deleted: it is taken out of the catalog. */
     public function deactivate(Product $product): Product
     {

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * One factory's part of a client order — one row of the follow-up sheet (spec §5.3, S2).
@@ -63,5 +65,32 @@ class SupplierOrder extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function isOpen(): bool
+    {
+        return $this->status === 'open';
+    }
+
+    /**
+     * The first delivery date the supplier promised: the first date the change history
+     * starts from, else the current delivery date. Pass the order's changes (in id order) to
+     * avoid a query.
+     *
+     * @param  Collection<int, SupplierOrderDateChange>|null  $changes
+     */
+    public function firstPromisedDate(?Collection $changes = null): ?Carbon
+    {
+        $changes ??= $this->dateChanges;
+        foreach ($changes as $change) {
+            if ($change->old_date !== null) {
+                return $change->old_date;
+            }
+            if ($change->new_date !== null) {
+                return $change->new_date;
+            }
+        }
+
+        return $this->delivery_date;
     }
 }

@@ -35,4 +35,31 @@ class MoneyAccount extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    public static function kindLabel(string $kind): string
+    {
+        return match ($kind) {
+            'bank' => __('Bank account'),
+            'ewallet' => __('E-wallet (Alipay, WeChat Pay)'),
+            'cash' => __('Cash'),
+            'agent' => __('Payment agent'),
+            default => $kind,
+        };
+    }
+
+    public static function locationLabel(string $location): string
+    {
+        return match ($location) {
+            'hong_kong' => __('Hong Kong'),
+            'mainland' => __('Mainland China'),
+            'other' => __('Elsewhere'),
+            default => $location,
+        };
+    }
+
+    /** "HSBC USD (USD)" — how the account shows in lists. */
+    public function label(): string
+    {
+        return "{$this->name} ({$this->currency})";
+    }
 }
