@@ -3,7 +3,7 @@
     $date = $state->date();
     $tip = $state->label();
     if ($state->isSettled() && $state->latest) {
-        $tip .= ' — '.$state->latest->happened_on->format('Y-m-d').($state->latest->note ? ': '.$state->latest->note : '');
+        $tip .= ' — '.$state->latest->happened_on->format('Y-m-d').($state->latest->note ? ': '.$state->latest->displayNote() : '');
     } elseif ($state->dueOn) {
         $tip .= ' — '.__('due :date', ['date' => $state->dueOn->format('Y-m-d')]);
     }

@@ -156,7 +156,7 @@
                             @if($latest)
                                 <div class="app-fu-tl__meta">
                                     <span class="app-num">{{ $latest->happened_on->format('Y-m-d') }}</span> · {{ $latest->user?->name }}
-                                    @if($latest->note)<span class="app-fu-sep" aria-hidden="true">—</span><span class="app-fu-note">{{ $latest->note }}</span>@endif
+                                    @if($latest->note)<span class="app-fu-sep" aria-hidden="true">—</span><span class="app-fu-note">{{ $latest->displayNote() }}</span>@endif
                                 </div>
                             @endif
 
@@ -505,7 +505,7 @@
                         @endif
                     </td>
                     <td class="app-num app-fu-nowrap">{{ $event->happened_on?->format('Y-m-d') }}</td>
-                    <td class="small" style="white-space:normal">{{ $event->note }}</td>
+                    <td class="small" style="white-space:normal">{{ $event->displayNote() }}</td>
                     <td>
                         @if($event->payment)
                             @if($canSeePayments)

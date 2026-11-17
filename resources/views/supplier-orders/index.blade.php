@@ -195,7 +195,7 @@
                                     @endif
                                     @if($order->status !== 'open')@include('supplier-orders._status', ['status' => $order->status])@endif
                                 </div>
-                                <div class="app-fu-order__line">
+                                <div class="app-fu-order__line app-fu-order__line--names">
                                     @if($seeSuppliers)
                                         <i class="bi bi-buildings" aria-hidden="true"></i>
                                         @if($canSeeSupplierPage)
@@ -207,7 +207,7 @@
                                         <span class="visually-hidden">{{ __('Factory / supplier') }}:</span> —
                                     @endif
                                 </div>
-                                <div class="app-fu-order__line" title="{{ collect($orderClients[$order->id] ?? [])->map(fn ($c) => $c->pi_reference.' '.$c->client_name)->join(' · ') }}">
+                                <div class="app-fu-order__line app-fu-order__line--names" title="{{ collect($orderClients[$order->id] ?? [])->map(fn ($c) => $c->pi_reference.' '.$c->client_name)->join(' · ') }}">
                                     <i class="bi bi-person" aria-hidden="true"></i>
                                     @forelse($orderClients[$order->id] ?? [] as $client)
                                         @if(! $loop->first)<span class="app-fu-sep" aria-hidden="true">·</span>@endif

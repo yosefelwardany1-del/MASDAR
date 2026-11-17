@@ -104,8 +104,8 @@
                 </div>
                 <fieldset>
                     <legend class="form-label">{{ __('Send an update when a container is') }}</legend>
-                    <input type="hidden" name="whatsapp_update_statuses[]" value="">
                     @php $chosen = old('whatsapp_update_statuses', $setting->whatsappUpdateStatuses()); @endphp
+                    {{-- The row must follow the legend directly: Bootstrap floats a legend and clears only its next sibling. --}}
                     <div class="d-flex flex-wrap gap-3">
                         @foreach($containerStatuses as $code => $name)
                             <div class="form-check">
@@ -114,6 +114,7 @@
                             </div>
                         @endforeach
                     </div>
+                    <input type="hidden" name="whatsapp_update_statuses[]" value="">
                 </fieldset>
             </x-section>
 

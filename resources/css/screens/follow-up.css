@@ -96,6 +96,13 @@
 .app-fu-order__line a { color: inherit; font-weight: 500; }
 .app-fu-order__line a:hover { color: var(--app-primary); }
 .app-fu-order__line .bi { color: var(--app-muted); margin-inline-end: .2rem; }
+/* A line of names: each name shortens itself. A <bdi> takes the direction of its own text, so a
+   Latin name in an Arabic row loses its end ("Acme Trad…"), not its start ("…ome Trading"). */
+.app-fu-order__line--names { display: flex; align-items: baseline; gap: .25rem; }
+.app-fu-order__line--names > * { flex: none; }
+.app-fu-order__line--names > bdi, .app-fu-order__line--names > a:has(> bdi) { flex: 0 1 auto; min-inline-size: 0; }
+.app-fu-order__line--names bdi { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-fu-order__line--names .bi { margin-inline-end: 0; }
 
 /* The step columns: a narrow header (number + name, at most three lines) and a dot on a line. */
 .app-fu-board > .table > thead > tr > th.app-fu-stephead {

@@ -40,4 +40,31 @@ class SupplierOrderStepEvent extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * The note in the reader's language. Notes the system writes when another module completes
+     * or reopens a step (shipping, goods receipt, payments) are stored in English, the way
+     * OrderStepService's callers word them, and translated here; a person's note shows as typed.
+     */
+    public function displayNote(): ?string
+    {
+        $note = $this->note;
+        if ($note === null || $note === '') {
+            return $note;
+        }
+        if ($note === 'All cartons received') {
+            return __('All cartons received');
+        }
+        if (! preg_match('/^(Booked on|Unbooked from|Loaded in|Unloaded from|Payment) (\S+)$/', $note, $m)) {
+            return $note;
+        }
+
+        return match ($m[1]) {
+            'Booked on' => __('Booked on :ref', ['ref' => $m[2]]),
+            'Unbooked from' => __('Unbooked from :ref', ['ref' => $m[2]]),
+            'Loaded in' => __('Loaded in :ref', ['ref' => $m[2]]),
+            'Unloaded from' => __('Unloaded from :ref', ['ref' => $m[2]]),
+            'Payment' => __('Payment :ref', ['ref' => $m[2]]),
+        };
+    }
 }
