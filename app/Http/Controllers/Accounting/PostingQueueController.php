@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
+use App\Models\TradeNote;
 use App\Services\Accounting\AccountingException;
 use App\Services\Accounting\Ledger;
 use App\Services\Accounting\PostingQueue;
@@ -33,6 +34,7 @@ class PostingQueueController extends Controller
             'invoices' => $queue->invoices(),
             'bills' => $queue->bills(),
             'payrolls' => $queue->payrolls(),
+            'notes' => $queue->tradeNotes(),
             'shippingCompanies' => Party::query()->shippingCompanies()->where('active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'containers' => Container::query()->orderByDesc('id')->limit(500)->get(['id', 'container_no', 'shipment_id']),
             'currencies' => array_keys(Lookup::options('currency')) ?: [$ledger->bookCurrency()],
@@ -82,6 +84,16 @@ class PostingQueueController extends Controller
     public function postAllPayrolls(Request $request, PostingQueue $queue, PostingService $posting)
     {
         return $this->all($queue->payrolls(), fn (PayrollRun $run) => $posting->postPayroll($run, $request->user()), fn (PayrollRun $run) => $run->number);
+    }
+
+    public function postNote(Request $request, TradeNote $note, PostingService $posting)
+    {
+        return $this->one(fn () => $posting->postTradeNote($note, $request->user()));
+    }
+
+    public function postAllNotes(Request $request, PostingQueue $queue, PostingService $posting)
+    {
+        return $this->all($queue->tradeNotes(), fn (TradeNote $n) => $posting->postTradeNote($n, $request->user()), fn (TradeNote $n) => $n->number);
     }
 
     public function postShippingBill(Request $request, PostingService $posting)

@@ -81,7 +81,18 @@ class ConfigurationController extends Controller
             'default_incoterm' => 'sometimes|required|string|max:60',
             'invoice_bank_details' => 'sometimes|nullable|string|max:2000',
             'purchase_contract_terms' => 'sometimes|nullable|string|max:10000',
+            // Profit and ageing (spec §5.8): how a shared container's costs split (Q-C3), the age buckets.
+            'container_cost_split' => 'sometimes|required|in:cbm,kg,value,cartons',
+            'ageing_buckets' => ['sometimes', 'required', 'string', 'max:40', 'regex:/^\s*\d{1,3}(\s*,\s*\d{1,3}){0,5}\s*$/'],
         ] + array_fill_keys(array_values(NumberingService::SERIES), $prefix));
+        if (isset($data['ageing_buckets'])) {
+            $days = array_values(array_unique(array_filter(array_map('intval', explode(',', $data['ageing_buckets'])), fn (int $d) => $d > 0)));
+            sort($days);
+            if ($days === []) {
+                throw ValidationException::withMessages(['ageing_buckets' => __('Enter the days of each bucket, e.g. 30,60,90.')]);
+            }
+            $data['ageing_buckets'] = implode(',', $days);
+        }
         foreach (['si_employee_percent', 'si_employer_percent', 'hf_employee_percent', 'hf_employer_percent', 'si_base_min', 'si_base_max'] as $optional) {
             if (array_key_exists($optional, $data) && ($data[$optional] === null || $data[$optional] === '')) {
                 $data[$optional] = null;

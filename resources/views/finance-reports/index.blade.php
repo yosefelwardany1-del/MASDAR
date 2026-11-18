@@ -14,6 +14,7 @@
     __('Ledgers') => [
         ['finance-reports.account-ledger', 'journal-text', __('Account ledger'), __('One account\'s postings for a range, with a running balance.'), ''],
         ['finance-reports.party-statement', 'person-lines-fill', __('Party statement'), __('A client\'s, supplier\'s or shipping company\'s postings, with opening and running balance.'), ''],
+        ['finance-reports.ageing', 'hourglass-split', __('Ageing'), __('Who owes what, and for how long: receivables and payables by age, per currency.'), 'gold'],
     ],
     __('Cash') => [
         ['finance-reports.cash-position', 'wallet2', __('Cash position'), __('Each money account: its ledger balance and the balance of its payments, per currency.'), 'gold'],

@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
+use App\Models\TradeNote;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 
@@ -82,6 +83,19 @@ class PostingQueue
                 ->join('supplier_order_lines as l', 'l.id', '=', 'g.supplier_order_line_id')
                 ->whereColumn('l.supplier_order_id', 'supplier_orders.id')])
             ->orderBy('id')
+            ->get();
+    }
+
+    /** Issued credit and debit notes with no entry yet (spec §5.8). */
+    public function tradeNotes(): Collection
+    {
+        return TradeNote::query()->where('status', 'issued')
+            ->whereNotExists(fn (Builder $q) => $q->selectRaw('1')->from('journal_entries as e')
+                ->where('e.source_type', PostingService::SOURCE_TRADE_NOTE)
+                ->whereColumn('e.source_id', 'trade_notes.id'))
+            ->with('party')
+            ->withSum('lines', 'amount')
+            ->orderBy('issued_on')->orderBy('id')
             ->get();
     }
 }

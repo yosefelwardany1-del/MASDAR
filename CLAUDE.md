@@ -211,6 +211,23 @@ postable accounts, outside a closed period, and never changes after.
 - Attention (home page and `masdar:daily-alerts`): `Dashboard\AttentionQueries` covers late and
   due steps, containers late or arriving soon, PIs booked to ship but not paid in full, and tasks.
 
+## Beyond phase 1 (spec §5.8)
+
+Added 2026-11-18. Read side: `Reports\ProfitQueries` (profit per PI and per container; the
+container split is `container_cost_split`), `Reports\AgeingQueries` (FIFO over posted lines of the
+posting rules' accounts), `Claims\NoteQueries` (credited per PI number, debited per order — use
+these wherever a PI's or an order's settlement is checked). Writers: `Claims\ClaimService`
+(claims, claim_events), `Claims\TradeNoteService` (trade_notes, trade_note_lines; issuing and
+voiding need `claims.approve`; a debit note re-runs `PaymentService::syncOrderPaymentSteps`),
+`Documents\DocumentSender` (document_sends). `PostingService::postTradeNote` posts notes (rules
+`credit_note`, `debit_note`). `Documents\DocumentRegistry` lists the sendable documents; each
+renders through its own print action, so the print page's checks decide who sees it, and
+`Documents\PdfRenderer` makes the PDF with Chromium (images inlined, network off). Printed pages
+must stay self-contained (inline CSS) for that.
+
+The PostgreSQL session's time zone is `APP_TIMEZONE` (`config/database.php`): PHP writes local
+times without an offset.
+
 ## HR (spec §5.7)
 
 Added 2026-11-18. Screens `employees.*`, `leave.*` (with `attendance.*`) and `payroll.*`, plus

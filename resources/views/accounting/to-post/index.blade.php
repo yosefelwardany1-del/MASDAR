@@ -5,7 +5,7 @@
 @section('content')
 @php
     $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v);
-    $waiting = $payments->count() + $invoices->count() + $bills->count() + $payrolls->count();
+    $waiting = $payments->count() + $invoices->count() + $bills->count() + $payrolls->count() + $notes->count();
     $seesPayroll = auth()->user()->can('payroll.view');
 @endphp
 <x-page-header :title="__('To post')" :eyebrow="__('Accounting')"
@@ -149,6 +149,38 @@
     @endif
 </x-section>
 @endif
+
+{{-- Credit and debit notes (spec §5.8). A debit note names a factory: only for those who see suppliers. --}}
+@php $seesSuppliers = \App\Support\Access\Visibility::canSeeSupplierPrices(auth()->user()); @endphp
+<x-section :title="__('Credit and debit notes to post')" icon="arrow-left-right" flush class="mb-4 app-section--wrap">
+    @if($notes->isNotEmpty())
+        <x-slot:actions>
+            <form method="POST" action="{{ route('accounting.to-post.notes') }}">@csrf <button class="btn btn-sm btn-primary"><i class="bi bi-check2-all" aria-hidden="true"></i>{{ __('Post all') }}</button></form>
+        </x-slot:actions>
+    @endif
+    <p class="app-note mx-3 mt-3 mb-0"><i class="bi bi-info-circle" aria-hidden="true"></i><span>{{ __('Issued notes, posted on their date: a credit note lowers what the client owes, a debit note what MASDAR owes the factory.') }}</span></p>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th scope="col">{{ __('Note') }}</th><th scope="col">{{ __('Party') }}</th><th scope="col">{{ __('Date') }}</th><th scope="col" class="text-end">{{ __('Amount') }}</th><th scope="col"><span class="visually-hidden">{{ __('Post') }}</span></th></tr></thead>
+            <tbody>
+            @forelse($notes as $note)
+                <tr>
+                    <td class="text-nowrap">
+                        @if(Route::has('trade-notes.show') && auth()->user()->can('claims.view'))<a href="{{ route('trade-notes.show', $note) }}" class="app-ltr fw-semibold">{{ $note->number }}</a>@else<span class="app-ltr">{{ $note->number }}</span>@endif
+                        <div class="small text-muted">{{ $note->kindLabel() }}</div>
+                    </td>
+                    <td>{{ $note->isCredit() || $seesSuppliers ? $note->party?->name : __('(hidden)') }}</td>
+                    <td><span class="app-num">{{ $note->issued_on?->toDateString() }}</span></td>
+                    <td class="app-figcell"><span class="app-num app-fig">{{ $fmt($note->lines_sum_amount) }}</span><span class="app-unit">{{ $note->currency }}</span></td>
+                    <td class="text-end"><form method="POST" action="{{ route('accounting.to-post.note', $note) }}">@csrf <button class="btn btn-sm btn-light">{{ __('Post') }}</button></form></td>
+                </tr>
+            @empty
+                <tr><td colspan="5" class="p-0"><div class="app-panel-empty"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('No issued note is waiting to be posted.') }}</div></td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+</x-section>
 
 {{-- Shipping company bill --}}
 <form method="POST" action="{{ route('accounting.to-post.shipping-bill') }}" class="app-form">

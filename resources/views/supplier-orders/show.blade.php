@@ -69,6 +69,12 @@
         @endif
         @if(\App\Support\Access\Visibility::canSeeSupplierPrices(auth()->user()))
             <a href="{{ route('supplier-orders.contract', $order) }}" target="_blank" class="btn btn-light"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>{{ __('Purchase contract') }}</a>
+            @if($order->status !== 'cancelled')
+                <a href="{{ route('documents.send.create', ['type' => 'purchase-contract', 'id' => $order->id]) }}" class="btn btn-light"><i class="bi bi-send" aria-hidden="true"></i>{{ __('Send the contract') }}</a>
+            @endif
+            @can('claims.edit')
+                <a href="{{ route('claims.create', ['order' => $order->id]) }}" class="btn btn-light"><i class="bi bi-exclamation-octagon" aria-hidden="true"></i>{{ __('Open a claim') }}</a>
+            @endcan
         @endif
         <a href="#steps" class="btn btn-light d-xl-none"><i class="bi bi-list-check" aria-hidden="true"></i>{{ __('Steps') }}</a>
     </x-slot:actions>

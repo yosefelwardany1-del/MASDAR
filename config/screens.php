@@ -113,6 +113,17 @@ return [
         'signed_in' => false,
     ],
 
+    // Quality claims with factories and clients, settled by credit and debit notes (spec §5.8).
+    'claims' => [
+        'label' => 'Claims & notes',
+        'route' => 'claims.index',
+        'group' => 'operations',
+        'icon' => 'bi-exclamation-octagon',
+        'levels' => ['view', 'edit', 'approve'],
+        'active' => ['claims.*', 'trade-notes.*'],
+        'signed_in' => false,
+    ],
+
     // Finance (spec §5.6).
     'payments' => [
         'label' => 'Payments',
@@ -139,6 +150,17 @@ return [
         'icon' => 'bi-graph-up',
         'levels' => ['view'],
         'active' => ['finance-reports.*'],
+        'signed_in' => false,
+    ],
+
+    // Profit per sales order and per container (spec §5.8); names factories' prices.
+    'profit' => [
+        'label' => 'Profit',
+        'route' => 'profit.index',
+        'group' => 'finance',
+        'icon' => 'bi-graph-up-arrow',
+        'levels' => ['view'],
+        'active' => ['profit.*'],
         'signed_in' => false,
     ],
 

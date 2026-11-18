@@ -52,6 +52,11 @@ class BusinessSetting extends Model
         'quotation_prefix' => 'QT',
         'quotation_valid_days' => 30,
         'default_incoterm' => 'FOB',
+        'container_cost_split' => 'cbm',
+        'ageing_buckets' => '30,60,90',
+        'claim_prefix' => 'CL',
+        'credit_note_prefix' => 'CN',
+        'debit_note_prefix' => 'DN',
     ];
 
     protected function casts(): array
@@ -105,6 +110,15 @@ class BusinessSetting extends Model
     }
 
     /** ISO weekdays (1 = Monday … 7 = Sunday) that are working days. @return list<int> */
+    /** The ageing report's bucket limits in days, ascending: "30,60,90" gives [30, 60, 90]. */
+    public function ageingBuckets(): array
+    {
+        $days = array_values(array_unique(array_filter(array_map('intval', explode(',', (string) $this->ageing_buckets)), fn (int $d) => $d > 0)));
+        sort($days);
+
+        return $days === [] ? [30, 60, 90] : $days;
+    }
+
     public function workDays(): array
     {
         return array_values(array_unique(array_filter(array_map('intval', explode(',', (string) $this->hr_work_days)), fn (int $d) => $d >= 1 && $d <= 7)));

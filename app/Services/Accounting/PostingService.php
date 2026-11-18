@@ -12,6 +12,7 @@ use App\Models\PayrollRun;
 use App\Models\PostingRule;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
+use App\Models\TradeNote;
 use App\Models\User;
 use App\Services\Hr\PayrollQueries;
 use App\Services\Numbering\NumberingService;
@@ -46,6 +47,8 @@ class PostingService
 
     public const SOURCE_PAYROLL = 'payroll_run';
 
+    public const SOURCE_TRADE_NOTE = 'trade_note';
+
     /**
      * The sides of each posting rule that the rule sets. For payments the other side is the
      * money account's own ledger account; events not listed here set both sides.
@@ -65,6 +68,8 @@ class PostingService
         'payroll_tax' => ['credit'],
         'payroll_deductions' => ['credit'],
         'salary_payment' => ['debit'],
+        'credit_note' => ['debit', 'credit'],
+        'debit_note' => ['debit', 'credit'],
     ];
 
     /** English names of the posting events, shown through __(). */
@@ -86,6 +91,8 @@ class PostingService
         'payroll_tax' => 'Income tax withheld',
         'payroll_deductions' => 'Other salary deductions',
         'salary_payment' => 'Salary payment',
+        'credit_note' => 'Credit note to a client',
+        'debit_note' => 'Debit note on a supplier',
     ];
 
     public function __construct(private NumberingService $numbers, private Ledger $ledger) {}
@@ -402,6 +409,46 @@ class PostingService
             'source_type' => self::SOURCE_PAYROLL, 'source_id' => $run->id,
             'description' => $this->stored('Payroll :number for :month', ['number' => $run->number, 'month' => $run->period->locale('en')->isoFormat('MMMM YYYY')]),
         ], $lines, $by);
+    }
+
+    /**
+     * Post an issued credit or debit note (spec §5.8) at the rate of its date:
+     *   credit note:  Dr 4102 Sales returns and allowances   Cr 1401 Client receivables (party = client)
+     *   debit note:   Dr 2201 Supplier payables (party)       Cr 5102 Purchase returns and allowances
+     * Each account comes from its posting rule. Voiding the note needs this entry reversed.
+     */
+    public function postTradeNote(TradeNote $note, User $by): JournalEntry
+    {
+        $this->authorize($by, 'accounting.edit');
+        $note = TradeNote::query()->with('party')->findOrFail($note->id);
+        if ($note->status !== 'issued') {
+            throw new AccountingException(__('Only an issued note is posted; :number is not.', ['number' => $note->number]));
+        }
+        $event = $note->isCredit() ? 'credit_note' : 'debit_note';
+        if ($posted = $this->ledger->postingOf(self::SOURCE_TRADE_NOTE, $note->id, $event)) {
+            throw new AccountingException(__('Note :number is already posted (:entry).', ['number' => $note->number, 'entry' => $posted->number]));
+        }
+
+        $total = $note->total();
+        if (! Decimal::isPositive($total)) {
+            throw new AccountingException(__('Note :number has no amount to post.', ['number' => $note->number]));
+        }
+        $date = $note->issued_on->toDateString();
+        $rate = $this->ledger->rateOn($note->currency, $date);
+        $book = Decimal::mul($total, $rate);
+        $party = $note->party_id;
+        $memo = $note->number;
+
+        return $this->postNew([
+            'entry_date' => $date, 'event' => $event,
+            'source_type' => self::SOURCE_TRADE_NOTE, 'source_id' => $note->id,
+            'description' => $note->isCredit()
+                ? $this->stored('Credit note :number to :party', ['number' => $note->number, 'party' => $note->party?->name])
+                : $this->stored('Debit note :number on :party', ['number' => $note->number, 'party' => $note->party?->name]),
+        ], [
+            $this->line($this->ruleAccount($event, 'debit'), 'debit', $book, $note->currency, $total, $rate, $note->isCredit() ? null : $party, $memo),
+            $this->line($this->ruleAccount($event, 'credit'), 'credit', $book, $note->currency, $total, $rate, $note->isCredit() ? $party : null, $memo),
+        ], $by);
     }
 
     /**

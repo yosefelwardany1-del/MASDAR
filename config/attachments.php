@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Claim;
 use App\Models\Container;
 use App\Models\Employee;
 use App\Models\JournalEntry;
@@ -7,6 +8,7 @@ use App\Models\Party;
 use App\Models\Payment;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
+use App\Models\TradeNote;
 
 return [
 
@@ -37,6 +39,8 @@ return [
         'payments' => Payment::class,
         'journal-entries' => JournalEntry::class,
         'employees' => Employee::class,
+        'claims' => Claim::class,
+        'trade-notes' => TradeNote::class,
     ],
 
 ];

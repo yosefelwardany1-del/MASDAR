@@ -127,6 +127,51 @@ class WhatsAppClient
         ]) === true;
     }
 
+    /**
+     * A document (a PDF) as the header of an approved template, with its body parameters
+     * (spec §5.8). The file is uploaded to Meta first; true when the message was accepted,
+     * false otherwise with lastError() saying why. Never throws.
+     *
+     * @param  list<string>  $bodyParams
+     */
+    public function sendDocumentTemplate(string $phoneE164, string $pdf, string $filename, string $template, string $language, array $bodyParams): bool
+    {
+        $this->lastError = null;
+        if (! $this->configured()) {
+            $this->lastError = 'WhatsApp is not configured.';
+
+            return false;
+        }
+
+        $base = rtrim((string) config('whatsapp.base_url'), '/').'/'.config('whatsapp.api_version').'/'.config('whatsapp.phone_number_id');
+        try {
+            $upload = Http::withToken($this->token())
+                ->timeout((int) config('whatsapp.timeout', 15) * 2)
+                ->attach('file', $pdf, $filename, ['Content-Type' => 'application/pdf'])
+                ->post($base.'/media', ['messaging_product' => 'whatsapp', 'type' => 'application/pdf']);
+        } catch (\Throwable $e) {
+            report($e);
+            $this->lastError = 'WhatsApp did not answer.';
+
+            return false;
+        }
+        $mediaId = $upload->successful() ? (string) $upload->json('id') : '';
+        if ($mediaId === '') {
+            $this->lastError = 'The file was not uploaded: '.((string) ($upload->json('error.message') ?: Str::limit($upload->body(), 200)));
+
+            return false;
+        }
+
+        return $this->post($phoneE164, [
+            'name' => $template,
+            'language' => ['code' => $language],
+            'components' => [
+                ['type' => 'header', 'parameters' => [['type' => 'document', 'document' => ['id' => $mediaId, 'filename' => $filename]]]],
+                ['type' => 'body', 'parameters' => array_map(fn ($value) => ['type' => 'text', 'text' => (string) $value], array_values($bodyParams))],
+            ],
+        ]) === true;
+    }
+
     /** @return array<string,mixed> */
     private function template(string $code, string $shape): array
     {

@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProformaInvoice;
 use App\Models\Setting;
+use App\Services\Claims\NoteQueries;
 use App\Services\ProformaInvoices\PiAmounts;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
 use App\Support\Access\Visibility;
@@ -79,6 +80,8 @@ class ProformaInvoiceController extends Controller
         $revisions = $pi->revisionHistory();
         $totals = $pi->lineTotals();
         $paid = $pi->paidAmount();
+        // Credit notes settle part of the PI (spec §5.8): the balance due is total − paid − credited.
+        $credited = app(NoteQueries::class)->creditedForPiNumber($pi->pi_number, $pi->currency);
         $canEdit = $user->can('proforma_invoices.edit');
         $seeSuppliers = Visibility::canSeeSupplierPrices($user);
         $lineForms = $pi->isDraft() && $canEdit;
@@ -91,7 +94,8 @@ class ProformaInvoiceController extends Controller
             'pendingRevision' => $revisions->firstWhere('status', 'draft'),
             'paid' => $paid,
             'depositRequired' => PiAmounts::depositRequired($totals->amount, (string) $pi->deposit_percent),
-            'outstanding' => PiAmounts::subtract($totals->amount, $paid),
+            'credited' => $credited,
+            'outstanding' => PiAmounts::subtract(PiAmounts::subtract($totals->amount, $paid), $credited),
             'payments' => $user->can('payments.view')
                 ? Payment::query()->whereIn('proforma_invoice_id', $revisions->pluck('id'))->with(['moneyAccount', 'proformaInvoice'])
                     ->orderBy('paid_on')->orderBy('id')->get()

@@ -428,6 +428,53 @@ and its entry reversed; the month can then be run again. Payslips print per empl
 English with Chinese labels.
 
 
+### 5.8 Beyond phase 1 — what a full ERP adds
+
+Added 2026-11-18 at MASDAR's request ("build all of it"), ahead of answers to §11. Built like
+phase 1: what MASDAR has not decided is a setting, and a missing setting or credential is said
+on the screen, never guessed.
+
+**Profit per sales order and per container** (screen `profit`; it shows factories' prices, so it
+also needs supplier prices to be visible). Computed every time from the documents, in the book
+currency:
+
+- sales: the PI's lines (current revision) at the rate of its confirmation date, less its issued
+  credit notes;
+- goods cost: the supplier order lines carrying its lines (any revision, not released) at the
+  rate of each order's confirmation date, less the PI's share of those orders' issued debit
+  notes; a line on no order yet counts at its supplier price and the figure is marked estimated;
+  a line with neither is marked and not counted;
+- freight: each container's costs (its posted shipping bill, and the expenses paid against it)
+  split between the PIs loaded in it by CBM, weight, value or cartons — setting
+  `container_cost_split`, CBM to start (Q-C3);
+- other costs: expenses paid against the PI (an expense may now name a PI).
+
+A missing FX rate is said on the row, which stays out of the totals.
+
+**Ageing** (a financial report): receivables and payables per party and currency from posted
+lines on the posting rules' accounts; payments and credits settle the oldest invoices first; what
+is left is aged by its entry date into the buckets of `ageing_buckets` (30, 60, 90 to start);
+more paid than invoiced is an advance.
+
+**Claims and notes** (screen `claims`): a claim — short, defective, wrong, damaged, packing,
+late — against a factory (its purchase order) and/or with a client (their PI), with photos, its
+status a log (open → with the factory → agreed (with the amount) → closed; or rejected;
+reopening allowed). It is settled by notes: a **credit note** to the client (`CN-`, in the PI's
+currency) lowers what is due on the PI — "settled" on a PI is now paid + credited, in the PI's
+balance, the unpaid-before-shipping alert and the loading check; a **debit note** on the factory
+(`DN-`, in the order's currency, printed in English and Chinese) lowers what is still to pay —
+the order's payment steps compare paid with total − debited. A note is a draft, then issued by a
+manager (`claims.approve`, its number then), then posted from the accounting queue (credit note:
+Dr 4102 / Cr 1401; debit note: Dr 2201 / Cr 5102); voiding needs that entry reversed.
+
+**Documents by email and WhatsApp.** The PI, quotation, purchase contract, packing list,
+commercial invoice and the notes are made into a PDF from their own printed page (a headless
+Chromium in the server image), downloadable and sendable from the page: by email (a real mailer,
+`MAIL_*`; replies go to the sender) or by WhatsApp as MASDAR's approved document template
+(`WHATSAPP_DOCUMENT_TEMPLATE`, a document header and the reference and company name in its body).
+Sending needs the edit level of the document's screen; a draft is never sent. Every attempt is
+logged (`document_sends`), sent or failed with the reason.
+
 ## 6. Roles and permissions
 
 OPEN — proposed roles, from the jobs S2 and S3 imply. They replace the starter's `supervisor`
@@ -609,4 +656,8 @@ Decisions settled during the build from this spec (marked `INFERRED`) or with th
 | 2026-11-18 | INFERRED | Q-H2: the working week starts as Monday–Friday and the days a month as 21.75 (China's standard for a daily wage); leave types start with China's common statutory days (annual 5, marriage 3, maternity 158 and paternity 15 as in Zhejiang, bereavement 3). All editable. |
 | 2026-11-18 | INFERRED | A new `hr` role prepares; a manager approves leave and payroll; the accountant sees payroll to post and pay it. Salaries are visible only to those who see payroll. |
 | 2026-11-18 | INFERRED | §5.1's "read from the documents, never typed": the stages from "PI sent" on are refused when typed and are read from the client's latest live PI; a person sets lead, inquiry, dormant and any stage MASDAR adds. When both say something, the more recent signal wins, so a new inquiry from a client whose last order is at sea shows as an inquiry. |
+| 2026-11-18 | DECIDED | MASDAR asked for everything a full ERP adds (§5.8): profit, ageing, claims and notes, sending documents, factory quotes, analytics, bank reconciliation, FX revaluation, opening balances, expense claims, budgets, fixed assets, samples, service invoices, warehouse stock, tracking links, AI drafts and a client portal. Multi-company and fapiao stay out: the spec is one Hong Kong company until Q-A1 says otherwise. |
+| 2026-11-18 | INFERRED | Q-C3: a shared container's costs split by CBM loaded to start; weight, value or cartons is a setting. Its costs are its posted shipping bill plus the expenses paid against it; a payment to the forwarder settles the bill and is not counted again. |
+| 2026-11-18 | INFERRED | Credit notes count with receipts wherever a PI's settlement is checked; debit notes lower what a supplier order still needs paid. Issuing either needs a manager. |
+| 2026-11-18 | INFERRED | PHP writes times in `APP_TIMEZONE`; the PostgreSQL session now uses the same zone (`DB_TIMEZONE`). Times written before this fix read 8 hours late. |
 | 2026-11-18 | INFERRED | A confirmed PI is the sales order and a supplier order is the purchase order; the menu says so. New installations number purchase orders PO (an installation with orders keeps its prefix). Quotations, the bilingual purchase contract and the commercial invoice are built ahead of Q-P1 and Q-C4, every choice in them a setting. |

@@ -126,6 +126,16 @@ class MasdarReferenceSeeder extends Seeder
             ['paternity', 'Paternity leave', 'إجازة أبوة', '陪产假', ['days_per_year' => 15, 'paid' => 1]],
             ['bereavement', 'Bereavement leave', 'إجازة وفاة', '丧假', ['days_per_year' => 3, 'paid' => 1]],
         ],
+        // What a quality claim is about (spec §5.8).
+        'claim_type' => [
+            ['shortage', 'Short shipped or missing cartons', 'نقص في الكمية أو الكراتين', '短装或缺箱'],
+            ['defect', 'Defective goods', 'بضاعة معيبة', '质量缺陷'],
+            ['wrong_item', 'Wrong item, colour or size', 'صنف أو لون أو مقاس خطأ', '错货、错色或错码'],
+            ['damage', 'Damaged in transit or storage', 'تلف أثناء النقل أو التخزين', '运输或仓储损坏'],
+            ['packing', 'Packing or labels not as agreed', 'التغليف أو الملصقات مخالفة للاتفاق', '包装或标签不符'],
+            ['late_delivery', 'Late delivery', 'تأخر التسليم', '延迟交货'],
+            ['other', 'Other', 'أخرى', '其他'],
+        ],
     ];
 
     /** S2's columns, in S2's order: [code, English, Arabic, Chinese, kind, needs a file, due days before delivery]. */
@@ -194,6 +204,7 @@ class MasdarReferenceSeeder extends Seeder
         ['4', 'Income', 'الإيرادات', '收入', 'income', null, null],
         ['41', 'Sales of goods', 'مبيعات البضائع', '货物销售收入', 'income', '4', null],
         ['4101', 'Sales of goods', 'مبيعات البضائع', '货物销售收入', 'income', '41', null],
+        ['4102', 'Sales returns and allowances', 'مردودات ومسموحات المبيعات', '销售退回及折让', 'income', '41', null],
         ['42', 'Commission income', 'إيرادات العمولات', '佣金收入', 'income', '4', null],
         ['4201', 'Commission income', 'إيرادات العمولات', '佣金收入', 'income', '42', null],
         ['43', 'Service fees', 'رسوم الخدمات', '服务费收入', 'income', '4', null],
@@ -203,6 +214,7 @@ class MasdarReferenceSeeder extends Seeder
         ['5', 'Cost of sales', 'تكلفة المبيعات', '销售成本', 'expense', null, null],
         ['51', 'Purchases from suppliers', 'مشتريات من الموردين', '采购成本', 'expense', '5', null],
         ['5101', 'Purchases from suppliers', 'مشتريات من الموردين', '采购成本', 'expense', '51', null],
+        ['5102', 'Purchase returns and allowances', 'مردودات ومسموحات المشتريات', '采购退回及折让', 'expense', '51', null],
         ['52', 'Freight and port charges', 'الشحن ورسوم الموانئ', '运费及港杂费', 'expense', '5', null],
         ['5201', 'Freight and port charges', 'الشحن ورسوم الموانئ', '运费及港杂费', 'expense', '52', null],
         ['5202', 'Trucking to port', 'النقل إلى الميناء', '拖车费', 'expense', '52', null],
@@ -255,6 +267,9 @@ class MasdarReferenceSeeder extends Seeder
         'payroll_tax' => [null, '2404', 'Individual income tax withheld from salaries, owed to the tax bureau.'],
         'payroll_deductions' => [null, '1703', 'Other deductions from salaries, e.g. staff advances recovered.'],
         'salary_payment' => ['2402', null, 'Salaries paid to the staff.'],
+        // Claims (spec §5.8): what MASDAR gives back to a client, and claims back from a factory.
+        'credit_note' => ['4102', '1401', 'A credit note to a client: what the client owes goes down.'],
+        'debit_note' => ['2201', '5102', 'A debit note on a supplier: what MASDAR owes the factory goes down.'],
     ];
 
     public function run(): void
