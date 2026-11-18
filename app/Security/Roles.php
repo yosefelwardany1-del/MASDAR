@@ -80,12 +80,12 @@ final class Roles
             self::SALES => $grants([
                 'clients' => 'edit', 'crm' => 'edit', 'products' => 'edit', 'quotations' => 'edit',
                 'proforma_invoices' => 'edit', 'supplier_orders' => 'view', 'containers' => 'view',
-                'payments' => 'view', 'claims' => 'edit',
+                'payments' => 'view', 'claims' => 'edit', 'analytics' => 'view',
             ]),
             self::MERCHANDISER => $grants([
                 'clients' => 'view', 'suppliers' => 'edit', 'shipping_companies' => 'view', 'crm' => 'edit',
                 'products' => 'edit', 'quotations' => 'view', 'proforma_invoices' => 'view', 'supplier_orders' => 'edit',
-                'goods_receipts' => 'view', 'containers' => 'view', 'claims' => 'edit',
+                'goods_receipts' => 'view', 'containers' => 'view', 'claims' => 'edit', 'sourcing' => 'edit',
             ]),
             self::WAREHOUSE_QC => $grants([
                 'suppliers' => 'view', 'products' => 'view', 'supplier_orders' => 'view',
@@ -100,7 +100,7 @@ final class Roles
                 'clients' => 'view', 'suppliers' => 'view', 'shipping_companies' => 'view', 'products' => 'view',
                 'proforma_invoices' => 'view', 'supplier_orders' => 'view', 'goods_receipts' => 'view',
                 'containers' => 'view', 'payments' => 'edit', 'accounting' => 'edit', 'finance_reports' => 'view',
-                'payroll' => 'view', 'claims' => 'view', 'profit' => 'view',
+                'payroll' => 'view', 'claims' => 'view', 'profit' => 'view', 'analytics' => 'view',
             ]),
             self::HR => $grants([
                 'employees' => 'edit', 'leave' => 'edit', 'payroll' => 'edit',

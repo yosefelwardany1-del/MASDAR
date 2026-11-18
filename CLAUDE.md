@@ -225,6 +225,11 @@ renders through its own print action, so the print page's checks decide who sees
 `Documents\PdfRenderer` makes the PDF with Chromium (images inlined, network off). Printed pages
 must stay self-contained (inline CSS) for that.
 
+Factory quotes: `Sourcing\SourcingService` (sourcing_requests, supplier_quotes; a chosen quote goes
+onto a quotation through `QuotationService::addLine`). Analysis: `Reports\AnalyticsQueries`
+(read-only), charts in `resources/views/analytics/_bars` and `_columns`, styles in
+`resources/css/screens/analytics.css`.
+
 The PostgreSQL session's time zone is `APP_TIMEZONE` (`config/database.php`): PHP writes local
 times without an offset.
 

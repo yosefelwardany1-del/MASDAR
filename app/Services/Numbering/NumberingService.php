@@ -30,6 +30,7 @@ class NumberingService
         'claim' => 'claim_prefix',
         'credit_note' => 'credit_note_prefix',
         'debit_note' => 'debit_note_prefix',
+        'sourcing' => 'sourcing_prefix',
     ];
 
     /** Codes that run without a year. */

@@ -84,6 +84,27 @@ return [
         'signed_in' => false,
     ],
 
+    // Factory quotes compared before quoting the client (spec §5.8); names factories' prices.
+    'sourcing' => [
+        'label' => 'Factory quotes',
+        'route' => 'sourcing.index',
+        'group' => 'sales',
+        'icon' => 'bi-ui-checks-grid',
+        'levels' => ['view', 'edit'],
+        'active' => ['sourcing.*'],
+        'signed_in' => false,
+    ],
+    // Sales and purchase analysis (spec §5.8).
+    'analytics' => [
+        'label' => 'Analysis',
+        'route' => 'analytics.index',
+        'group' => 'overview',
+        'icon' => 'bi-bar-chart-line',
+        'levels' => ['view'],
+        'active' => ['analytics.*'],
+        'signed_in' => false,
+    ],
+
     // Operations: the two follow-ups (spec §5.3–§5.5).
     'supplier_orders' => [
         'label' => 'Purchase orders',

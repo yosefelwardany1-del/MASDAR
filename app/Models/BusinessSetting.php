@@ -57,6 +57,7 @@ class BusinessSetting extends Model
         'claim_prefix' => 'CL',
         'credit_note_prefix' => 'CN',
         'debit_note_prefix' => 'DN',
+        'sourcing_prefix' => 'RFQ',
     ];
 
     protected function casts(): array
