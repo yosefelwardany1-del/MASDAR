@@ -27,7 +27,11 @@ class ConfigurationController extends Controller
         'container_type' => ['cbm' => 'Usable CBM', 'max_kg' => 'Maximum KG'],
         'port' => ['side' => 'Loading or discharge'],
         'leave_type' => ['days_per_year' => 'Days a year (blank: not counted)', 'paid' => 'Paid'],
+        'client_stage' => ['from_documents' => 'Follows the documents', 'closed' => 'Not chased'],
     ];
+
+    /** Yes/no list fields, and the answer when none is stored. */
+    public const YES_NO_META = ['paid' => 1, 'from_documents' => 0, 'closed' => 0];
 
     public function index(Request $request)
     {
@@ -160,7 +164,7 @@ class ConfigurationController extends Controller
         foreach (array_keys(self::META[$list] ?? []) as $key) {
             $rules["meta_{$key}"] = match ($key) {
                 'side' => 'nullable|in:loading,discharge',
-                'paid' => 'nullable|in:0,1',
+                'paid', 'from_documents', 'closed' => 'nullable|in:0,1',
                 default => 'nullable|numeric|min:0',
             };
         }

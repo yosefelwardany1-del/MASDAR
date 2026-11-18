@@ -48,6 +48,7 @@ class BusinessSetting extends Model
         'hr_work_days' => '1,2,3,4,5',
         'payroll_days_per_month' => '21.75',
         'payroll_overtime_multiplier' => '1.50',
+        'crm_quiet_days' => 30,
     ];
 
     protected function casts(): array
@@ -63,6 +64,7 @@ class BusinessSetting extends Model
             'eta_warning_days' => 'integer',
             'whatsapp_container_updates' => 'boolean',
             'hr_document_warning_days' => 'integer',
+            'crm_quiet_days' => 'integer',
             'payroll_days_per_month' => 'decimal:2',
             'payroll_overtime_multiplier' => 'decimal:2',
             'si_employee_percent' => 'decimal:3',

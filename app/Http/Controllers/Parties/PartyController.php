@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Parties;
 
 use App\Http\Controllers\Controller;
 use App\Models\BusinessSetting;
+use App\Models\ClientStageChange;
 use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\PartyContact;
 use App\Models\Payment;
 use App\Models\ProformaInvoice;
 use App\Models\User;
+use App\Services\Crm\CrmQueries;
 use App\Services\Finance\PaymentQueries;
 use App\Services\Parties\PartyKind;
 use App\Services\Parties\PartyService;
@@ -125,6 +127,9 @@ abstract class PartyController extends Controller
             'channels' => Lookup::options('interaction_channel'),
             'users' => $user->can('crm.edit') ? $this->activeUsers() : collect(),
             'labels' => $this->lookupLabels(),
+            // The stage now (set by a person or read from the documents) and the stages a person set (spec §5.1).
+            'crmStage' => $party->is_client ? (app(CrmQueries::class)->stagesFor([$party->id])[$party->id] ?? null) : null,
+            'stageChanges' => $party->is_client ? ClientStageChange::query()->where('party_id', $party->id)->with('user:id,name')->orderByDesc('id')->limit(20)->get() : collect(),
         ]);
     }
 
@@ -137,7 +142,7 @@ abstract class PartyController extends Controller
     {
         $party = $this->find($request, $id);
         $data = $this->validated($request, $party);
-        $this->parties->update($party, $data);
+        $this->parties->update($party, $data, $request->user());
 
         return $this->redirectToParty($request, $party, __(':code saved.', ['code' => $party->code]));
     }
@@ -287,7 +292,10 @@ abstract class PartyController extends Controller
                 'country' => Lookup::options('country'),
                 'currency' => Lookup::options('currency'),
                 'party_source' => Lookup::options('party_source'),
-                'client_stage' => Lookup::options('client_stage'),
+                // Only the stages a person sets: those from "PI sent" on follow the documents (spec §5.1).
+                'client_stage' => Lookup::query()->ofList('client_stage')->where('active', true)->get()
+                    ->reject(fn (Lookup $l) => (int) ($l->meta['from_documents'] ?? 0) === 1)
+                    ->mapWithKeys(fn (Lookup $l) => [$l->code => $l->displayName()])->all(),
                 'shipping_company_kind' => Lookup::options('shipping_company_kind'),
             ],
             'users' => $this->activeUsers(),

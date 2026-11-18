@@ -155,7 +155,7 @@ tables through one service; the others only read them or call that service.
 
 | Module | Screens (route names) | Writers (`app/Services/…`) |
 |---|---|---|
-| Clients, suppliers, shipping companies, CRM | `clients.*`, `suppliers.*`, `shipping-companies.*`, `crm.*` | `Parties\PartyService`, `Crm\CrmService` |
+| Clients, suppliers, shipping companies, CRM | `clients.*`, `suppliers.*`, `shipping-companies.*`, `crm.*` (overview, `.pipeline`, `.activity`, `.tasks`) | `Parties\PartyService` (also client_stage_changes), `Crm\CrmService`; `Crm\CrmQueries` (read-only) |
 | Products | `products.*`, `products.photo` | `Products\ProductService` |
 | Proforma invoices | `proforma-invoices.*` (incl. `.print`, MASDAR's own layout, English) | `ProformaInvoices\ProformaInvoiceService` |
 | Order follow-up | `supplier-orders.*` (the board, `.evaluation`), `goods-receipts.*` | `SupplierOrders\{SupplierOrderService,OrderStepService,GoodsReceiptService}` |
@@ -203,6 +203,10 @@ postable accounts, outside a closed period, and never changes after.
   `SendContainerUpdates`, after commit, and logs to `whatsapp_messages`, append-only. It is
   switched by `BusinessSetting::whatsapp_container_updates` and its statuses.
   `WhatsAppClient::sendTemplate` sends approved templates only.
+- A client's stage: `Crm\CrmQueries::stagesFor` — the latest of the typed stage (logged in
+  `client_stage_changes` by `PartyService`) and the stage its latest PI reached in the
+  documents. Stages marked `from_documents` on the client_stage list are never typed
+  (`PartyService` refuses them); `closed` ones are not chased. Use this, not `parties.stage`.
 - Attention (home page and `masdar:daily-alerts`): `Dashboard\AttentionQueries` covers late and
   due steps, containers late or arriving soon, PIs booked to ship but not paid in full, and tasks.
 

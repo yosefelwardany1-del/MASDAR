@@ -34,6 +34,8 @@
     @endif
 </x-page-header>
 
+@include('crm._nav', ['active' => 'tasks'])
+
 <div class="app-tasks">
     <div class="app-tasks__main">
         <nav class="app-doc-chips" aria-label="{{ __('Filter') }}">

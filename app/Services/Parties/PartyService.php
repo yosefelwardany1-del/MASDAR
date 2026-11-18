@@ -2,12 +2,16 @@
 
 namespace App\Services\Parties;
 
+use App\Models\ClientStageChange;
+use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\PartyContact;
 use App\Models\User;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 /**
@@ -35,29 +39,45 @@ class PartyService
         $data = array_intersect_key($data, array_flip(self::FIELDS));
         $kind = PartyKind::firstOf($data) ?? throw new InvalidArgumentException('A party must be a client, a supplier or a shipping company.');
 
+        if (filled($data['stage'] ?? null)) {
+            $this->assertTypedStage($data['stage']);
+        }
+
         return DB::transaction(function () use ($data, $by, $kind) {
             $party = Party::create(array_merge($data, [
                 'code' => $this->numbers->next($kind->series()),
                 'created_by' => $by->id,
             ]));
             AuditTrail::record('created', $party, [], $this->auditable($party, array_merge(['code'], array_keys($data))));
+            if ($party->is_client && filled($party->stage)) {
+                $this->logStage($party, null, $party->stage, $by, null);
+            }
 
             return $party;
         });
     }
 
     /** @param array<string, mixed> $data validated party fields; the code is never among them */
-    public function update(Party $party, array $data): Party
+    public function update(Party $party, array $data, ?User $by = null): Party
     {
         $data = array_intersect_key($data, array_flip(self::FIELDS));
+        $stageChanges = array_key_exists('stage', $data) && (string) $data['stage'] !== (string) $party->stage;
+        if ($stageChanges && filled($data['stage'])) {
+            $this->assertTypedStage($data['stage']);
+        }
+        $by ??= Auth::user();
         $after = array_merge($party->only(['is_client', 'is_supplier', 'is_shipping']), $data);
         if (PartyKind::firstOf($after) === null) {
             throw new InvalidArgumentException('A party must be a client, a supplier or a shipping company.');
         }
 
-        return DB::transaction(function () use ($party, $data) {
+        return DB::transaction(function () use ($party, $data, $stageChanges, $by) {
             $old = $this->auditable($party, array_keys($data));
+            $fromStage = $party->stage;
             $party->update($data);
+            if ($stageChanges && $party->is_client && $by) {
+                $this->logStage($party, $fromStage, $party->stage, $by, null);
+            }
             $new = $this->auditable($party, array_keys($data));
             $changed = array_keys(array_diff_assoc(array_map('strval', $new), array_map('strval', $old)));
             if ($changed !== []) {
@@ -66,6 +86,50 @@ class PartyService
 
             return $party;
         });
+    }
+
+    /**
+     * Move a client to a stage a person sets (lead, inquiry, dormant …) from the pipeline
+     * (spec §5.1). The stages that follow the documents are refused: they come from the PI,
+     * the supplier orders and the containers.
+     */
+    public function moveStage(Party $party, string $stage, User $by, ?string $note = null): Party
+    {
+        if (! $party->is_client) {
+            throw ValidationException::withMessages(['stage' => __('Only a client has a stage.')]);
+        }
+        $this->assertTypedStage($stage);
+
+        return DB::transaction(function () use ($party, $stage, $by, $note) {
+            $party = Party::query()->lockForUpdate()->findOrFail($party->id);
+            $from = $party->stage;
+            $party->update(['stage' => $stage]);
+            $this->logStage($party, $from, $stage, $by, $note);
+            AuditTrail::record('updated', $party, ['stage' => $from], ['stage' => $stage]);
+
+            return $party;
+        });
+    }
+
+    /** The only writer of client_stage_changes. */
+    private function logStage(Party $party, ?string $from, ?string $to, User $by, ?string $note): void
+    {
+        ClientStageChange::create([
+            'party_id' => $party->id, 'from_stage' => $from, 'to_stage' => $to, 'user_id' => $by->id,
+            'note' => $note !== null && trim($note) !== '' ? mb_substr(trim($note), 0, 2000) : null,
+        ]);
+    }
+
+    /** A stage a person may set: on the list, active, and not one that follows the documents. */
+    private function assertTypedStage(string $stage): void
+    {
+        $row = Lookup::query()->where('list', 'client_stage')->where('code', $stage)->where('active', true)->first();
+        if (! $row) {
+            throw ValidationException::withMessages(['stage' => __('Choose a stage from the list.')]);
+        }
+        if ((int) ($row->meta['from_documents'] ?? 0) === 1) {
+            throw ValidationException::withMessages(['stage' => __(':stage follows the documents: it is reached by issuing, confirming and shipping the client\'s PI, not set by hand.', ['stage' => $row->displayName()])]);
+        }
     }
 
     public function deactivate(Party $party): Party
