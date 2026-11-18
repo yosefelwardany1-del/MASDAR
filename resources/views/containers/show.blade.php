@@ -62,6 +62,13 @@
                 </div>
             @endif
         @endcan
+        @php
+            $trackTemplate = $container->shipment?->shippingCompany?->tracking_url_template;
+            $trackUrl = $trackTemplate && $container->container_no ? strtr($trackTemplate, ['{container}' => rawurlencode($container->container_no), '{bl}' => rawurlencode((string) $container->shipment?->bl_number), '{booking}' => rawurlencode((string) $container->shipment?->booking_no)]) : null;
+        @endphp
+        @if($trackUrl)
+            <a href="{{ $trackUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-light"><i class="bi bi-geo-alt" aria-hidden="true"></i>{{ __('Track on the shipping line') }}</a>
+        @endif
         <div class="dropdown">
             <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-send" aria-hidden="true"></i>{{ __('Send') }}</button>
             <ul class="dropdown-menu">

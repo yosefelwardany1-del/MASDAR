@@ -137,6 +137,12 @@
             <div class="col-md-6">
                 @include('parties._select', ['name' => 'shipping_kind', 'label' => __('Kind of shipping company'), 'options' => $options['shipping_company_kind'], 'value' => $party?->shipping_kind])
             </div>
+            <div class="col-md-6">
+                <label class="form-label" for="tracking_url_template">{{ __('Tracking address') }}</label>
+                <input id="tracking_url_template" name="tracking_url_template" dir="ltr" class="form-control @error('tracking_url_template') is-invalid @enderror" value="{{ old('tracking_url_template', $party?->tracking_url_template) }}" placeholder="https://www.example-line.com/track/{container}">
+                <div class="form-text">{{ __('Its tracking page, with {container}, {bl} or {booking} where the number goes. A container then links to it.') }}</div>
+                @error('tracking_url_template')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
         </div>
     </fieldset>
 @endif

@@ -517,6 +517,34 @@ for all assets, straight-line, never below the residual value, in one entry (eve
 `depreciation`) whose lines are recorded per asset; cost, life and accounts freeze once
 depreciated; a disposed asset stops.
 
+**Samples** (screen `samples`): a sample (`SMP-`) for a client, from a factory, its steps a log —
+requested, being made, received in Yiwu, sent (courier and tracking number), approved or rejected
+by the client, cancelled — with photos.
+
+**Service invoices** (screen `service_invoices`): what MASDAR charges besides goods — sourcing
+commission, inspection, factory visits, samples, freight recharged (the `service_income` list,
+each kind naming its income account: 4201, 4301, 4401). Draft, issued by a manager (`INV-`),
+posted (1401 the client / each kind's account), voided once reversed. One on a PI counts in that
+PI's profit; it ages and is paid like any receivable. Sent as PDF like the other documents.
+(This is where commission is invoiced if MASDAR works as an agent, Q-A2.)
+
+**In the warehouse** (Goods receipt → In the warehouse): per order line, the cartons received
+less those loaded, with CBM, where and since when — what waits in Yiwu, computed.
+
+**Tracking links**: a shipping company has a tracking address with `{container}`, `{bl}` or
+`{booking}` in it; a container (and the client portal) links to it. Status updates still come from
+people; an automatic feed from a tracking service waits for which one MASDAR uses (§8).
+
+**AI drafts** (`config/ai.php`, on only with an AI key): a client's message read into proposed
+quotation lines — reviewed, priced and ticked before the quotation's writer adds them; a
+product's name and specification suggested in Chinese, to copy in. Nothing is saved by the AI.
+
+**Client portal** (Q-R2; off until switched on in Business options): a client's account,
+given from the client's page, linked to that one client and holding no role. It sees only that
+client's orders with paid and due, the PI as printed, their containers (status, ETA, their goods,
+the tracking link) and their statement — never a factory, a price MASDAR pays or another client.
+Every staff screen sends it back to the portal.
+
 **Analysis** (screen `analytics`): confirmed sales by month, by client, by product and by
 account manager; purchases by factory and by month; quotations written, sent, answered, won and
 turned into a PI — all in the book currency, each document at the rate of its date (one without
@@ -699,7 +727,8 @@ Decisions settled during the build from this spec (marked `INFERRED`) or with th
 | 2026-11-18 | INFERRED | A cancelled supplier order (only possible with nothing received) releases its PI lines, so they can be ordered from another factory. Reopening takes them back unless one was ordered elsewhere meanwhile. |
 | 2026-11-18 | INFERRED | Q-C4 is built as an option, off by default. When on, clients with goods in a container get MASDAR's approved WhatsApp template when it reaches one of the chosen statuses (on board and arrived to start). There is no update on a correction. Every attempt is logged. |
 | 2026-11-18 | INFERRED | §7 "Unpaid before shipping" goes in the morning summary to the account manager (their clients), the accountant and managers: a current PI booked on a shipment while its counted receipts fall short of its total. |
-| 2026-11-18 | INFERRED | Q-R2: phase 1 stays staff-only, as §5.1 proposes. Clients hear about their containers over WhatsApp (above) instead of signing in. Container tracking from shipping lines and AI drafting stay later phases (§8). |
+| 2026-11-18 | INFERRED | Q-R2, revisited at MASDAR's request for everything: a client portal is built, off until switched on; a portal account holds no role and sees only its own client's documents. |
+| 2026-11-18 | INFERRED | Q-R2 (earlier): phase 1 stays staff-only, as §5.1 proposes. Clients hear about their containers over WhatsApp (above) instead of signing in. Container tracking from shipping lines and AI drafting stay later phases (§8). |
 | 2026-11-18 | INFERRED | §5.7 HR is added at our proposal, before MASDAR has answered Q-H1–Q-H5. Every rate and allowance is a setting; social-insurance rates and public holidays start empty and the screens warn; income tax is entered per line, never computed. |
 | 2026-11-18 | INFERRED | Q-H2: the working week starts as Monday–Friday and the days a month as 21.75 (China's standard for a daily wage); leave types start with China's common statutory days (annual 5, marriage 3, maternity 158 and paternity 15 as in Zhejiang, bereavement 3). All editable. |
 | 2026-11-18 | INFERRED | A new `hr` role prepares; a manager approves leave and payroll; the accountant sees payroll to post and pay it. Salaries are visible only to those who see payroll. |

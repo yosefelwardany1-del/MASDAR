@@ -34,6 +34,7 @@ class User extends Authenticatable
         'approved_at',
         'approved_by',
         'locale',
+        'party_id',
     ];
 
     protected $hidden = [
@@ -55,6 +56,18 @@ class User extends Authenticatable
      * URL for this user's profile photo, or null when they have not uploaded one (the
      * caller falls back to initials). Streamed through a route, never a public URL.
      */
+    /** The client this account belongs to, for a client portal account (spec §5.8). */
+    public function portalParty()
+    {
+        return $this->belongsTo(Party::class, 'party_id');
+    }
+
+    /** A client's portal account: sees only the portal, never the staff screens. */
+    public function isPortalUser(): bool
+    {
+        return $this->party_id !== null;
+    }
+
     public function avatarUrl(): ?string
     {
         return $this->avatar ? route('profile.photo', $this) : null;

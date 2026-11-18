@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\EnsureAccountCanSignIn;
+use App\Http\Middleware\EnsurePortalUser;
+use App\Http\Middleware\EnsureStaffUser;
 use App\Http\Middleware\ProfileRequest;
 use App\Http\Middleware\SetUserLocale;
 use Illuminate\Foundation\Application;
@@ -30,7 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             EnsureAccountCanSignIn::class,
             SetUserLocale::class,
+            // A client's portal account never reaches a staff screen (spec §5.8).
+            EnsureStaffUser::class,
         ]);
+        $middleware->alias(['portal' => EnsurePortalUser::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

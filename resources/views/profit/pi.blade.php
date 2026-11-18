@@ -34,6 +34,7 @@
             <tbody>
                 <tr><th scope="row">{{ __('Sales: the PI\'s lines') }} <span class="small text-muted app-ltr">({{ \App\Services\ProformaInvoices\PiAmounts::money($r['sales_doc'], $pi->currency) }})</span></th><td class="app-figcell">{{ $fig($r['sales']) }}</td></tr>
                 @if(Decimal::isPositive($r['credited']))<tr><th scope="row">{{ __('less credit notes to the client') }}</th><td class="app-figcell">{{ $fig(Decimal::neg($r['credited']), true) }}</td></tr>@endif
+                @if(Decimal::isPositive($r['fees']))<tr><th scope="row">{{ __('plus service invoices on the PI') }}</th><td class="app-figcell">{{ $fig($r['fees']) }}</td></tr>@endif
                 <tr><th scope="row">{{ __('less goods cost: the factories\' prices') }} @if($r['estimated'])<x-status tone="due" icon="hourglass-split" class="ms-1">{{ __('Estimated: some lines are not ordered yet') }}</x-status>@endif</th><td class="app-figcell">{{ $fig(Decimal::neg($r['goods_cost']), true) }}</td></tr>
                 @if(Decimal::isPositive($r['debited']))<tr><th scope="row">{{ __('plus debit notes on the factories (this PI\'s part)') }}</th><td class="app-figcell">{{ $fig($r['debited']) }}</td></tr>@endif
                 <tr><th scope="row">{{ __('less its share of container costs') }}</th><td class="app-figcell">{{ $fig(Decimal::neg($r['container_cost']), true) }}</td></tr>

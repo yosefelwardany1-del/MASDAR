@@ -6,6 +6,7 @@ use App\Models\ExpenseClaim;
 use App\Models\Payment;
 use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
+use App\Models\ServiceInvoice;
 use App\Models\SupplierOrder;
 use App\Models\TradeNote;
 use Illuminate\Database\Query\Builder;
@@ -109,5 +110,15 @@ class PostingQueue
                 ->where('e.source_type', PostingService::SOURCE_EXPENSE_CLAIM)->whereColumn('e.source_id', 'expense_claims.id'))
             ->with(['user', 'latestDecision'])->withSum('lines', 'amount')
             ->orderBy('id')->get();
+    }
+
+    /** Issued service invoices with no entry yet (spec §5.8). */
+    public function serviceInvoices(): Collection
+    {
+        return ServiceInvoice::query()->where('status', 'issued')
+            ->whereNotExists(fn (Builder $q) => $q->selectRaw('1')->from('journal_entries as e')
+                ->where('e.source_type', PostingService::SOURCE_SERVICE_INVOICE)->whereColumn('e.source_id', 'service_invoices.id'))
+            ->with('client')->withSum('lines', 'amount')
+            ->orderBy('issued_on')->orderBy('id')->get();
     }
 }

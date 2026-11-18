@@ -40,3 +40,16 @@
     .app-hbars__track { grid-column: 1 / -1; grid-row: 2; }
     .app-cols__axis span:nth-child(even) { visibility: hidden; }
 }
+
+/* The client portal's shell (spec §5.8). */
+.app-portal { background: var(--app-bg); min-block-size: 100vh; }
+.app-portal__inner { max-inline-size: 1100px; margin-inline: auto; padding-inline: 1rem; }
+.app-portal__bar { background: var(--app-surface); border-block-end: 1px solid var(--app-line); }
+.app-portal__bar .app-portal__inner { display: flex; align-items: center; gap: 1.25rem; block-size: 64px; }
+.app-portal__brand img { block-size: 38px; inline-size: auto; }
+.app-portal__nav { display: flex; gap: 1rem; }
+.app-portal__nav a { color: var(--app-ink-soft); text-decoration: none; font-weight: 600; padding-block: .4rem; border-block-end: 2px solid transparent; }
+.app-portal__nav a.is-active, .app-portal__nav a:hover { color: var(--app-primary); border-block-end-color: var(--app-accent); }
+.app-portal__main { padding-block: 1.5rem 2rem; }
+.app-portal__foot { padding-block: 1rem 2rem; color: var(--app-muted); font-size: var(--app-fs-xs); }
+@media (max-width: 575.98px) { .app-portal__bar .app-portal__inner { gap: .6rem; } .app-portal__brand img { block-size: 28px; } .app-portal__nav { gap: .6rem; font-size: var(--app-fs-sm); } }

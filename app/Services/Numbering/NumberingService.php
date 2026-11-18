@@ -33,6 +33,8 @@ class NumberingService
         'sourcing' => 'sourcing_prefix',
         'expense_claim' => 'expense_claim_prefix',
         'asset' => 'asset_prefix',
+        'sample' => 'sample_prefix',
+        'service_invoice' => 'service_invoice_prefix',
     ];
 
     /** Codes that run without a year. */

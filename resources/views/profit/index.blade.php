@@ -35,7 +35,7 @@
 </form>
 
 <div class="row g-3 mb-4 app-kpis">
-    <div class="col-6 col-lg-3"><x-kpi :label="__('Sales (:book)', ['book' => $book])" :value="$fig(Decimal::sub($totals['sales'], $totals['credited']))" icon="receipt" /></div>
+    <div class="col-6 col-lg-3"><x-kpi :label="__('Sales (:book)', ['book' => $book])" :value="$fig(Decimal::add(Decimal::sub($totals['sales'], $totals['credited']), $totals['fees']))" icon="receipt" /></div>
     <div class="col-6 col-lg-3"><x-kpi :label="__('Costs (:book)', ['book' => $book])" :value="$fig($costs($totals))" icon="box-seam" /></div>
     <div class="col-6 col-lg-3"><x-kpi :label="__('Profit (:book)', ['book' => $book])" :value="$fig($totals['profit'], true)" icon="graph-up-arrow" :tone="Decimal::cmp($totals['profit'], '0') < 0 ? 'late' : 'gold'" /></div>
     <div class="col-6 col-lg-3"><x-kpi :label="__('Margin')" :value="$pct($totals['margin'])" icon="percent" /></div>
@@ -68,7 +68,7 @@
                     @if($r['error'])
                         <td colspan="6"><x-status tone="late" icon="exclamation-triangle">{{ $r['error'] }}</x-status></td>
                     @else
-                        <td class="app-figcell">{{ $fig(Decimal::sub($r['sales'], $r['credited'])) }}</td>
+                        <td class="app-figcell">{{ $fig(Decimal::add(Decimal::sub($r['sales'], $r['credited']), $r['fees'])) }}</td>
                         <td class="app-figcell">{{ $fig(Decimal::sub($r['goods_cost'], $r['debited'])) }}</td>
                         <td class="app-figcell">{{ $fig($r['container_cost']) }}</td>
                         <td class="app-figcell">{{ $fig($r['other_cost']) }}</td>

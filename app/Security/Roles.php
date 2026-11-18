@@ -80,12 +80,12 @@ final class Roles
             self::SALES => $grants([
                 'clients' => 'edit', 'crm' => 'edit', 'products' => 'edit', 'quotations' => 'edit',
                 'proforma_invoices' => 'edit', 'supplier_orders' => 'view', 'containers' => 'view',
-                'payments' => 'view', 'claims' => 'edit', 'analytics' => 'view',
+                'payments' => 'view', 'claims' => 'edit', 'analytics' => 'view', 'samples' => 'edit', 'service_invoices' => 'edit',
             ]),
             self::MERCHANDISER => $grants([
                 'clients' => 'view', 'suppliers' => 'edit', 'shipping_companies' => 'view', 'crm' => 'edit',
                 'products' => 'edit', 'quotations' => 'view', 'proforma_invoices' => 'view', 'supplier_orders' => 'edit',
-                'goods_receipts' => 'view', 'containers' => 'view', 'claims' => 'edit', 'sourcing' => 'edit',
+                'goods_receipts' => 'view', 'containers' => 'view', 'claims' => 'edit', 'sourcing' => 'edit', 'samples' => 'edit',
             ]),
             self::WAREHOUSE_QC => $grants([
                 'suppliers' => 'view', 'products' => 'view', 'supplier_orders' => 'view',
@@ -102,6 +102,7 @@ final class Roles
                 'containers' => 'view', 'payments' => 'edit', 'accounting' => 'edit', 'finance_reports' => 'view',
                 'payroll' => 'view', 'claims' => 'view', 'profit' => 'view', 'analytics' => 'view',
                 'bank_reconciliation' => 'edit', 'expense_claims' => 'edit', 'budgets' => 'view', 'fixed_assets' => 'edit',
+                'service_invoices' => 'edit',
             ]),
             self::HR => $grants([
                 'employees' => 'edit', 'leave' => 'edit', 'payroll' => 'edit',

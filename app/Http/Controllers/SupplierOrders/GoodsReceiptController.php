@@ -8,6 +8,7 @@ use App\Models\Party;
 use App\Models\SupplierOrder;
 use App\Models\SupplierOrderLine;
 use App\Models\User;
+use App\Services\Shipping\WarehouseStock;
 use App\Services\SupplierOrders\FollowUpBoard;
 use App\Services\SupplierOrders\GoodsReceiptService;
 use App\Services\SupplierOrders\Quantity;
@@ -114,5 +115,18 @@ class GoodsReceiptController extends Controller
     private function abortUnlessVisible(SupplierOrderLine $line, User $user): void
     {
         abort_unless($this->board->visibleTo($line->supplierOrder, $user), 404);
+    }
+
+    /** What waits in the warehouse: received, not yet loaded, by how long (spec §5.8). */
+    public function stock(Request $request, WarehouseStock $stock)
+    {
+        $lines = $stock->lines($request->user());
+
+        return view('goods-receipts.stock', [
+            'lines' => $lines,
+            'seesSuppliers' => Visibility::canSeeSupplierPrices($request->user()),
+            'cartons' => $lines->reduce(fn ($c, $l) => bcadd($c, $l->in_stock, 4), '0'),
+            'cbm' => $lines->reduce(fn ($c, $l) => bcadd($c, $l->cbm, 4), '0'),
+        ]);
     }
 }

@@ -5,6 +5,11 @@
 @section('content')
 <x-page-header :title="$product->name" :back="route('products.show', $product)" :back-label="$product->code.' · '.$product->name">
     <x-slot:meta><span class="app-doc-code">{{ $product->code }}</span></x-slot:meta>
+    @if(\App\Services\Ai\Drafts\TradeDrafts::enabled('translate_to_chinese'))
+        <x-slot:actions>
+            <form method="POST" action="{{ route('products.ai.chinese', $product) }}">@csrf<button class="btn btn-light"><i class="bi bi-stars" aria-hidden="true"></i>{{ __('Suggest the Chinese name') }}</button></form>
+        </x-slot:actions>
+    @endif
 </x-page-header>
 
 <form method="POST" action="{{ route('products.update', $product) }}" enctype="multipart/form-data" class="app-card app-docform app-docform--product">

@@ -5,12 +5,14 @@ namespace App\Services\Documents;
 use App\Http\Controllers\Claims\TradeNoteController;
 use App\Http\Controllers\ProformaInvoices\ProformaInvoiceController;
 use App\Http\Controllers\Quotations\QuotationController;
+use App\Http\Controllers\Samples\ServiceInvoiceController;
 use App\Http\Controllers\Shipping\ContainerController;
 use App\Http\Controllers\SupplierOrders\SupplierOrderController;
 use App\Models\Container;
 use App\Models\Party;
 use App\Models\ProformaInvoice;
 use App\Models\Quotation;
+use App\Models\ServiceInvoice;
 use App\Models\SupplierOrder;
 use App\Models\TradeNote;
 use App\Models\User;
@@ -36,6 +38,7 @@ class DocumentRegistry
         'commercial-invoice' => [Container::class, 'Commercial Invoice', 'containers'],
         'credit-note' => [TradeNote::class, 'Credit Note', 'claims'],
         'debit-note' => [TradeNote::class, 'Debit Note', 'claims'],
+        'service-invoice' => [ServiceInvoice::class, 'Invoice', 'service_invoices'],
     ];
 
     public function exists(string $type): bool
@@ -75,6 +78,7 @@ class DocumentRegistry
             'packing-list' => app(ContainerController::class)->packingList($request, $model),
             'commercial-invoice' => app(ContainerController::class)->commercialInvoice($request, $model),
             'credit-note', 'debit-note' => app(TradeNoteController::class)->print($request, $model),
+            'service-invoice' => app(ServiceInvoiceController::class)->print($request, $model),
         };
 
         return $view instanceof View ? $view->render() : (string) $view;
@@ -89,7 +93,7 @@ class DocumentRegistry
             'purchase-contract' => $model->number,
             'packing-list' => 'PL-'.($model->container_no ?: $model->id),
             'commercial-invoice' => 'CI-'.$model->shipment?->number.'-'.(Party::query()->find($request->integer('client'))?->code ?? ''),
-            'credit-note', 'debit-note' => $model->number,
+            'credit-note', 'debit-note', 'service-invoice' => $model->number,
         };
     }
 
@@ -100,6 +104,7 @@ class DocumentRegistry
             $model instanceof Quotation && $model->isDraft() => __('Mark the quotation as sent first: a draft is not sent to the client.'),
             $model instanceof ProformaInvoice && in_array($model->status, ['draft', 'cancelled', 'superseded'], true) => __('Only an issued PI is sent to the client.'),
             $model instanceof TradeNote && $model->status !== 'issued' => __('Only an issued note is sent.'),
+            $model instanceof ServiceInvoice && $model->status !== 'issued' => __('Only an issued invoice is sent.'),
             $model instanceof SupplierOrder && $model->status === 'cancelled' => __('This order is cancelled.'),
             default => null,
         };
@@ -113,6 +118,7 @@ class DocumentRegistry
             'purchase-contract' => $model->supplier,
             'commercial-invoice' => Party::query()->find($request->integer('client')),
             'credit-note', 'debit-note' => $model->party,
+            'service-invoice' => $model->client,
             default => null,
         };
     }
@@ -136,6 +142,7 @@ class DocumentRegistry
             'purchase-contract' => route('supplier-orders.show', $model),
             'packing-list', 'commercial-invoice' => route('containers.show', $model),
             'credit-note', 'debit-note' => route('trade-notes.show', $model),
+            'service-invoice' => route('service-invoices.show', $model),
         };
     }
 

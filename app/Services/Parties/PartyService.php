@@ -26,7 +26,7 @@ class PartyService
         'name', 'name_local', 'is_client', 'is_supplier', 'is_shipping', 'shipping_kind',
         'country', 'city', 'address', 'currency', 'account_manager_id', 'source', 'stage',
         'deposit_percent', 'default_destination', 'factory_address', 'products_note',
-        'bank_details', 'notes', 'active',
+        'bank_details', 'notes', 'active', 'tracking_url_template',
     ];
 
     public const CONTACT_FIELDS = ['name', 'role', 'phone', 'whatsapp', 'wechat', 'email', 'is_primary', 'notes'];

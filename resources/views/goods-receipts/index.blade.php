@@ -22,6 +22,7 @@
         <span class="app-pill"><i class="bi bi-box-seam" aria-hidden="true"></i>{{ trans_choice('{0} No line awaiting goods|{1} :count line awaiting goods|[2,*] :count lines awaiting goods', $awaiting->total(), ['count' => $awaiting->total()]) }}</span>
     </x-slot:meta>
     <x-slot:actions>
+        <a href="{{ route('goods-receipts.stock') }}" class="btn btn-light"><i class="bi bi-house-door" aria-hidden="true"></i>{{ __('In the warehouse') }}</a>
         @can('supplier_orders.view')
             <a href="{{ route('supplier-orders.index') }}" class="btn btn-light"><i class="bi bi-kanban" aria-hidden="true"></i>{{ __('Purchase orders') }}</a>
         @endcan

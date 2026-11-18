@@ -56,7 +56,7 @@
 <body>
 <div class="toolbar no-print">
     <button type="button" onclick="window.print()">Print</button>
-    <a href="{{ route('proforma-invoices.show', $pi) }}">Back</a>
+    <a href="{{ ($portal ?? false) ? route('portal.home') : route('proforma-invoices.show', $pi) }}">Back</a>
 </div>
 
 <div class="sheet">
