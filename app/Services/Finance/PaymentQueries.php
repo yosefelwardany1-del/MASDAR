@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\DB;
 class PaymentQueries
 {
     /** The kinds recorded on the payment form; transfers have their own form. */
-    public const RECORDABLE_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'other_in', 'other_out'];
+    public const RECORDABLE_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'other_in', 'other_out', 'salary_payment'];
 
     public function approvalRequired(): bool
     {
@@ -215,6 +215,10 @@ class PaymentQueries
         if (! Visibility::canSeeSupplierPrices($user)) {
             $query->where("{$table}.kind", '<>', 'supplier_payment');
         }
+        // Salaries are seen by whoever sees payroll (spec §5.7).
+        if (! $user->can('payroll.view')) {
+            $query->where("{$table}.kind", '<>', 'salary_payment');
+        }
 
         return $query;
     }
@@ -225,13 +229,14 @@ class PaymentQueries
             return $payment->kind === 'client_receipt' && $payment->party?->account_manager_id === $user->id;
         }
 
-        return $payment->kind !== 'supplier_payment' || Visibility::canSeeSupplierPrices($user);
+        return ($payment->kind !== 'supplier_payment' || Visibility::canSeeSupplierPrices($user))
+            && ($payment->kind !== 'salary_payment' || $user->can('payroll.view'));
     }
 
     /** True when no visibility rule hides a payment from $user (running balances need every row). */
     public function seesEveryPayment(User $user): bool
     {
-        return ! Visibility::ownClientsOnly($user) && Visibility::canSeeSupplierPrices($user);
+        return ! Visibility::ownClientsOnly($user) && Visibility::canSeeSupplierPrices($user) && $user->can('payroll.view');
     }
 
     /** The kinds $user may record: the same rules as what they may see. @return list<string> */
@@ -241,7 +246,11 @@ class PaymentQueries
             return ['client_receipt'];
         }
 
-        return array_values(array_filter(self::RECORDABLE_KINDS, fn ($kind) => $kind !== 'supplier_payment' || Visibility::canSeeSupplierPrices($user)));
+        return array_values(array_filter(self::RECORDABLE_KINDS, fn ($kind) => match ($kind) {
+            'supplier_payment' => Visibility::canSeeSupplierPrices($user),
+            'salary_payment' => $user->can('payroll.view'),
+            default => true,
+        }));
     }
 
     public function canTransfer(User $user): bool

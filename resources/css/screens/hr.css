@@ -1,0 +1,71 @@
+/*
+ * HR (spec §5.7): the employee file, leave, the attendance sheet, payroll.
+ * Prefix app-hr-. Colours are the theme's tokens; logical properties only.
+ */
+
+.app-hr-filter { padding: var(--app-sp-3) var(--app-sp-4); }
+
+/* A small form at the foot of a section (add a document, a salary, an allowance). */
+.app-hr-inlineform { padding: var(--app-sp-3) var(--app-sp-4) var(--app-sp-4); background: var(--app-surface-2); }
+.app-hr-inlineform__title { display: flex; align-items: center; gap: .4rem; font-size: var(--app-fs-sm); font-weight: 600; color: var(--app-ink); margin-block-end: var(--app-sp-2); }
+.app-hr-inlineform__title .bi { color: var(--app-accent); }
+.app-hr-inlineform summary { cursor: pointer; font-weight: 500; }
+.app-section__body .app-hr-inlineform { background: none; }
+
+/* Salary now. */
+.app-hr-salary { display: flex; align-items: baseline; gap: .4rem; margin-block-end: var(--app-sp-3); }
+.app-hr-salary__amount { font-size: var(--app-fs-2xl); font-weight: 700; color: var(--app-primary); letter-spacing: -.01em; }
+.app-row--current > * { background: color-mix(in srgb, var(--app-accent) 7%, transparent) !important; }
+
+/* Leave requests: the status and actions keep to the end of the row, and wrap on a phone. */
+.app-hr-request { align-items: flex-start; }
+.app-hr-request__side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--app-sp-2); flex: none; }
+.app-hr-request__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--app-sp-1); }
+.app-hr-request__actions form { margin: 0; }
+@media (max-width: 575.98px) {
+    .app-hr-request { flex-wrap: wrap; }
+    .app-hr-request__side { align-items: flex-start; inline-size: 100%; }
+    .app-hr-request__actions { justify-content: flex-start; }
+}
+
+.app-hr-balancegrid th[scope="row"] { font-weight: 500; white-space: nowrap; }
+.app-hr-balancegrid .app-unit { font-size: var(--app-fs-xs); }
+
+/* The attendance sheet: one row per employee, one narrow column per day. */
+.app-hr-legend { list-style: none; display: flex; flex-wrap: wrap; gap: var(--app-sp-2) var(--app-sp-4); margin: 0; padding: var(--app-sp-3) var(--app-sp-4); font-size: var(--app-fs-sm); color: var(--app-ink-soft); border-block-end: 1px solid var(--app-line); }
+.app-hr-legend li { display: inline-flex; align-items: center; gap: .4rem; }
+.app-hr-sheetwrap { contain: paint; }
+.app-hr-sheet { font-size: var(--app-fs-xs); border-collapse: separate; border-spacing: 0; }
+.app-hr-sheet th, .app-hr-sheet td { padding: .2rem .1rem !important; text-align: center; vertical-align: middle; border-block-end: 1px solid var(--app-line); }
+.app-hr-sheet thead th { font-weight: 600; color: var(--app-ink-soft); line-height: 1.15; min-inline-size: 1.75rem; }
+.app-hr-sheet thead th.is-off { color: var(--app-muted); background: var(--app-surface-2); }
+.app-hr-sheet thead th.is-today { color: var(--app-primary); box-shadow: inset 0 -2px 0 var(--app-accent); }
+.app-hr-sheet__dow { display: block; font-weight: 400; font-size: .68rem; text-transform: uppercase; }
+.app-hr-sheet__name { text-align: start !important; white-space: nowrap; padding-inline: var(--app-sp-3) var(--app-sp-2) !important; position: sticky; inset-inline-start: 0; background: var(--app-surface); z-index: 1; min-inline-size: 9rem; }
+.app-hr-sheet tbody th.app-hr-sheet__name { font-weight: 500; font-size: var(--app-fs-sm); }
+.app-hr-sheet td.text-end, .app-hr-sheet th.text-end { text-align: end !important; padding-inline: var(--app-sp-2) !important; white-space: nowrap; }
+
+.app-hr-cell {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    inline-size: 1.5rem; block-size: 1.5rem; border-radius: 5px; border: 1px solid transparent;
+    background: transparent; color: var(--app-muted); font-size: .72rem; padding: 0; line-height: 1;
+}
+button.app-hr-cell { cursor: pointer; transition: box-shadow var(--app-fast) var(--app-ease); }
+button.app-hr-cell:hover { box-shadow: 0 0 0 2px var(--app-accent); }
+button.app-hr-cell:focus-visible { outline: 2px solid var(--app-primary); outline-offset: 1px; }
+.app-hr-cell.is-present { background: var(--app-success-bg); border-color: var(--app-success-line); }
+.app-hr-cell.is-done { background: var(--app-success-bg); border-color: var(--app-success-line); color: var(--app-success); }
+.app-hr-cell.is-late { background: var(--app-danger-bg); border-color: var(--app-danger-line); color: var(--app-danger); }
+.app-hr-cell.is-due { background: var(--app-warning-bg); border-color: var(--app-warning-line); color: var(--app-warning); }
+.app-hr-cell.is-info { background: var(--app-info-bg); border-color: var(--app-info-line); color: var(--app-info); }
+.app-hr-cell.is-leave { background: var(--app-gold-soft); border-color: color-mix(in srgb, var(--app-accent) 45%, transparent); color: var(--app-accent-dark); }
+.app-hr-cell.is-off { background: repeating-linear-gradient(135deg, var(--app-surface-2) 0 4px, var(--app-surface-3) 4px 5px); }
+.app-hr-cell.is-out { opacity: .25; }
+.app-hr-cell__ot { position: absolute; inset-block-start: -.35rem; inset-inline-end: -.3rem; font-size: .7rem; font-weight: 700; color: var(--app-info); }
+
+/* Payroll lines: figures right-aligned, the total row set off; compact so the run fits its card. */
+.app-hr-payroll { font-size: var(--app-fs-sm); }
+.app-hr-payroll > :not(caption) > * > * { padding-inline: .45rem; }
+.app-hr-payroll th[scope="row"] { font-weight: 500; white-space: nowrap; }
+.app-hr-payroll td { white-space: nowrap; }
+.app-hr-payroll__total > * { font-weight: 700; background: var(--app-surface-2); border-block-start: 2px solid var(--app-line-strong); }

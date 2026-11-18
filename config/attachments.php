@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Container;
+use App\Models\Employee;
 use App\Models\JournalEntry;
 use App\Models\Party;
 use App\Models\Payment;
@@ -35,6 +36,7 @@ return [
         'containers' => Container::class,
         'payments' => Payment::class,
         'journal-entries' => JournalEntry::class,
+        'employees' => Employee::class,
     ],
 
 ];

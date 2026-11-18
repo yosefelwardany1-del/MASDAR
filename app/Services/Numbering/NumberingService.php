@@ -24,10 +24,12 @@ class NumberingService
         'shipment' => 'shipment_prefix',
         'payment' => 'payment_prefix',
         'journal' => 'journal_prefix',
+        'employee' => 'employee_prefix',
+        'payroll' => 'payroll_prefix',
     ];
 
     /** Codes that run without a year. */
-    private const YEARLESS = ['client', 'supplier', 'shipping_company', 'product'];
+    private const YEARLESS = ['client', 'supplier', 'shipping_company', 'product', 'employee'];
 
     /** The next number of $series; call inside the transaction that uses it. */
     public function next(string $series, ?\DateTimeInterface $on = null): string

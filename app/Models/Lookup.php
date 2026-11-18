@@ -27,6 +27,11 @@ class Lookup extends Model
         'client_stage' => 'Client stages',
         'interaction_channel' => 'Contact channels',
         'country' => 'Countries',
+        'department' => 'Departments',
+        'work_location' => 'Work locations',
+        'employment_type' => 'Employment types',
+        'employee_document' => 'Employee documents',
+        'leave_type' => 'Leave types',
     ];
 
     protected $guarded = ['id'];

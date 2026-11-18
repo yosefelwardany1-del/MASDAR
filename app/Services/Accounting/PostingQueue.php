@@ -3,6 +3,7 @@
 namespace App\Services\Accounting;
 
 use App\Models\Payment;
+use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use Illuminate\Database\Query\Builder;
@@ -49,6 +50,18 @@ class PostingQueue
             ->with('client')
             ->withSum('lines', 'amount')
             ->orderBy('confirmed_at')->orderBy('id')
+            ->get();
+    }
+
+    /** Approved payroll runs with no payroll entry yet (spec §5.7). */
+    public function payrolls(): Collection
+    {
+        return PayrollRun::query()->where('status', 'approved')
+            ->whereNotExists(fn (Builder $q) => $q->selectRaw('1')->from('journal_entries as e')
+                ->where('e.source_type', PostingService::SOURCE_PAYROLL)->where('e.event', 'payroll')
+                ->whereColumn('e.source_id', 'payroll_runs.id'))
+            ->withSum('lines', 'gross')->withSum('lines', 'net')
+            ->orderBy('period')->orderBy('id')
             ->get();
     }
 

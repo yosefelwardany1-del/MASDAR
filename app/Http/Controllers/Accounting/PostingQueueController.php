@@ -7,6 +7,7 @@ use App\Models\Container;
 use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\Payment;
+use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Services\Accounting\AccountingException;
@@ -31,6 +32,7 @@ class PostingQueueController extends Controller
             'awaitingApproval' => $queue->awaitingApproval(),
             'invoices' => $queue->invoices(),
             'bills' => $queue->bills(),
+            'payrolls' => $queue->payrolls(),
             'shippingCompanies' => Party::query()->shippingCompanies()->where('active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'containers' => Container::query()->orderByDesc('id')->limit(500)->get(['id', 'container_no', 'shipment_id']),
             'currencies' => array_keys(Lookup::options('currency')) ?: [$ledger->bookCurrency()],
@@ -70,6 +72,16 @@ class PostingQueueController extends Controller
     public function postAllBills(Request $request, PostingQueue $queue, PostingService $posting)
     {
         return $this->all($queue->bills(), fn (SupplierOrder $o) => $posting->postSupplierBill($o, $request->user()), fn (SupplierOrder $o) => $o->number);
+    }
+
+    public function postPayroll(Request $request, PayrollRun $run, PostingService $posting)
+    {
+        return $this->one(fn () => $posting->postPayroll($run, $request->user()));
+    }
+
+    public function postAllPayrolls(Request $request, PostingQueue $queue, PostingService $posting)
+    {
+        return $this->all($queue->payrolls(), fn (PayrollRun $run) => $posting->postPayroll($run, $request->user()), fn (PayrollRun $run) => $run->number);
     }
 
     public function postShippingBill(Request $request, PostingService $posting)

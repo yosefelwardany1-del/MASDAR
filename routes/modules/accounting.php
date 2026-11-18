@@ -45,6 +45,8 @@ Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::post('invoices/{pi}', [PostingQueueController::class, 'postInvoice'])->whereNumber('pi')->name('invoice');
         Route::post('bills', [PostingQueueController::class, 'postAllBills'])->name('bills');
         Route::post('bills/{order}', [PostingQueueController::class, 'postBill'])->whereNumber('order')->name('bill');
+        Route::post('payrolls', [PostingQueueController::class, 'postAllPayrolls'])->name('payrolls');
+        Route::post('payrolls/{run}', [PostingQueueController::class, 'postPayroll'])->whereNumber('run')->name('payroll');
         Route::post('shipping-bill', [PostingQueueController::class, 'postShippingBill'])->name('shipping-bill');
     });
 });

@@ -5,7 +5,7 @@
 
     $user = auth()->user();
     $setting = \App\Models\Setting::current();
-    $groupLabels = ['overview' => __('Overview'), 'crm' => __('Clients & partners'), 'sales' => __('Sales'), 'operations' => __('Operations'), 'finance' => __('Finance'), 'admin' => __('Administration')];
+    $groupLabels = ['overview' => __('Overview'), 'crm' => __('Clients & partners'), 'sales' => __('Sales'), 'operations' => __('Operations'), 'finance' => __('Finance'), 'hr' => __('HR'), 'admin' => __('Administration')];
     $sections = collect(Screens::visibleFor($user))->groupBy('group');
     $link = fn (array $item) => Route::has($item['route']) ? route($item['route']) : '#';
     $isActive = fn (array $item) => request()->routeIs($item['route'], Str::beforeLast($item['route'], '.').'.*', ...($item['active'] ?? []));
@@ -75,6 +75,9 @@
                     <li class="dropdown-item-text small text-muted"><span class="app-ltr">{{ $user->email }}</span></li>
                     @if(Route::has('profile'))
                         <li><a class="dropdown-item" href="{{ route('profile') }}"><i class="bi bi-person me-2"></i>{{ __('My profile') }}</a></li>
+                        @if(\App\Models\Employee::query()->where('user_id', $user->id)->exists())
+                            <li><a class="dropdown-item" href="{{ route('my-leave.index') }}"><i class="bi bi-calendar-check me-2"></i>{{ __('My leave') }}</a></li>
+                        @endif
                     @endif
                     <li><hr class="dropdown-divider"></li>
                     <li class="dropdown-item-text small text-muted"><i class="bi bi-translate me-2"></i>{{ __('Language') }}</li>

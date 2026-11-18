@@ -21,8 +21,11 @@ class NoLeftoversTest extends TestCase
 
     private const DIRS = ['app', 'config', 'routes', 'resources', 'lang', 'database', 'tests'];
 
-    /** Removed code, matched case-sensitively. */
-    private const REMOVED = '/CompanyScope|BelongsToCompany|CompanyContext|Employee|Village|Foundry|App\\\\Ats|Convo|Gate::before/';
+    /**
+     * Removed code, matched case-sensitively. "Employee" is no longer listed: MASDAR's own HR
+     * module (spec §5.7, App\\Models\\Employee) brings employees back, built afresh.
+     */
+    private const REMOVED = '/CompanyScope|BelongsToCompany|CompanyContext|Village|Foundry|App\\\\Ats|Convo|Gate::before/';
 
     /** @return iterable<string, string> path => contents */
     private function sources(): iterable

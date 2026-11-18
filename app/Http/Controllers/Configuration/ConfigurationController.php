@@ -12,6 +12,7 @@ use App\Services\Configuration\OrderStepDefinitionService;
 use App\Services\Numbering\NumberingService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Lists & options: where MASDAR answers the spec's OPEN questions themselves — the business
@@ -25,6 +26,7 @@ class ConfigurationController extends Controller
     private const META = [
         'container_type' => ['cbm' => 'Usable CBM', 'max_kg' => 'Maximum KG'],
         'port' => ['side' => 'Loading or discharge'],
+        'leave_type' => ['days_per_year' => 'Days a year (blank: not counted)', 'paid' => 'Paid'],
     ];
 
     public function index(Request $request)
@@ -49,7 +51,8 @@ class ConfigurationController extends Controller
     public function updateOptions(Request $request, BusinessSettingsService $service)
     {
         $currencies = array_keys(Lookup::options('currency'));
-        $prefix = ['required', 'string', 'max:10', 'regex:/^[A-Za-z0-9]+$/'];
+        $prefix = ['sometimes', 'required', 'string', 'max:10', 'regex:/^[A-Za-z0-9]+$/'];
+        $percent = ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'];
         $data = $request->validate([
             'company_address' => 'nullable|string|max:500',
             'company_phone' => 'nullable|string|max:120',
@@ -60,7 +63,30 @@ class ConfigurationController extends Controller
             'pi_terms_template' => 'required|string|max:255',
             'step_warning_days' => 'required|integer|min:0|max:90',
             'eta_warning_days' => 'required|integer|min:0|max:90',
+            // HR and payroll (spec §5.7); rates and bases stay empty until MASDAR gives them (Q-H3).
+            'payroll_currency' => ['sometimes', 'required', Rule::in($currencies)],
+            'hr_document_warning_days' => 'sometimes|required|integer|min:0|max:365',
+            'payroll_days_per_month' => 'sometimes|required|numeric|min:1|max:31',
+            'payroll_overtime_multiplier' => 'sometimes|required|numeric|min:1|max:5',
+            'si_employee_percent' => $percent, 'si_employer_percent' => $percent,
+            'hf_employee_percent' => $percent, 'hf_employer_percent' => $percent,
+            'si_base_min' => 'sometimes|nullable|numeric|min:0',
+            'si_base_max' => 'sometimes|nullable|numeric|min:0|gte:si_base_min',
         ] + array_fill_keys(array_values(NumberingService::SERIES), $prefix));
+        foreach (['si_employee_percent', 'si_employer_percent', 'hf_employee_percent', 'hf_employer_percent', 'si_base_min', 'si_base_max'] as $optional) {
+            if (array_key_exists($optional, $data) && ($data[$optional] === null || $data[$optional] === '')) {
+                $data[$optional] = null;
+            }
+        }
+        // The working week: the ticked ISO weekdays (the form sends one empty value so that none can be ticked).
+        if ($request->has('hr_work_days')) {
+            $days = array_values(array_unique(array_filter(array_map('intval', (array) $request->input('hr_work_days')), fn (int $d) => $d >= 1 && $d <= 7)));
+            sort($days);
+            if ($days === []) {
+                throw ValidationException::withMessages(['hr_work_days' => __('Tick at least one working day.')]);
+            }
+            $data['hr_work_days'] = implode(',', $days);
+        }
 
         foreach (['pi_issue_requires_approval', 'payments_out_require_approval', 'sales_see_supplier_prices', 'sales_own_clients_only', 'block_loading_unpaid', 'whatsapp_container_updates'] as $flag) {
             $data[$flag] = $request->boolean($flag);
@@ -132,7 +158,11 @@ class ConfigurationController extends Controller
             'sort' => 'required|integer|min:0|max:100000',
         ];
         foreach (array_keys(self::META[$list] ?? []) as $key) {
-            $rules["meta_{$key}"] = $key === 'side' ? 'nullable|in:loading,discharge' : 'nullable|numeric|min:0';
+            $rules["meta_{$key}"] = match ($key) {
+                'side' => 'nullable|in:loading,discharge',
+                'paid' => 'nullable|in:0,1',
+                default => 'nullable|numeric|min:0',
+            };
         }
 
         return $rules;

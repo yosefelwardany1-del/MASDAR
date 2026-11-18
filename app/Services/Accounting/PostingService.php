@@ -8,10 +8,12 @@ use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\Party;
 use App\Models\Payment;
+use App\Models\PayrollRun;
 use App\Models\PostingRule;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
+use App\Services\Hr\PayrollQueries;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -42,6 +44,8 @@ class PostingService
 
     public const SOURCE_CONTAINER = 'container';
 
+    public const SOURCE_PAYROLL = 'payroll_run';
+
     /**
      * The sides of each posting rule that the rule sets. For payments the other side is the
      * money account's own ledger account; events not listed here set both sides.
@@ -56,6 +60,11 @@ class PostingService
         'transfer_out' => ['debit'],
         'transfer_in' => ['credit'],
         'fx_difference' => ['debit', 'credit'],
+        'payroll' => ['debit', 'credit'],
+        'payroll_contributions' => ['debit', 'credit'],
+        'payroll_tax' => ['credit'],
+        'payroll_deductions' => ['credit'],
+        'salary_payment' => ['debit'],
     ];
 
     /** English names of the posting events, shown through __(). */
@@ -72,6 +81,11 @@ class PostingService
         'transfer_out' => 'Transfer out',
         'transfer_in' => 'Transfer in',
         'fx_difference' => 'Exchange difference',
+        'payroll' => 'Payroll',
+        'payroll_contributions' => 'Social insurance and housing fund',
+        'payroll_tax' => 'Income tax withheld',
+        'payroll_deductions' => 'Other salary deductions',
+        'salary_payment' => 'Salary payment',
     ];
 
     public function __construct(private NumberingService $numbers, private Ledger $ledger) {}
@@ -330,6 +344,67 @@ class PostingService
     }
 
     /**
+     * Book an approved payroll run (spec §5.7, event payroll and its companions), on the last day
+     * of its month at that day's rate:
+     *   Dr 6201 Salaries (gross)              Cr 2402 Salaries payable (net)
+     *   Dr 6203 Employer contributions        Cr 2403 Social insurance and housing fund (both shares)
+     *                                         Cr 2404 Income tax withheld
+     *                                         Cr 1703 Other deductions
+     * Each account comes from its posting rule. Salaries payable takes the rounding, so the
+     * entry balances in the book currency to the last unit.
+     */
+    public function postPayroll(PayrollRun $run, User $by): JournalEntry
+    {
+        $this->authorize($by, 'accounting.edit');
+        $this->authorize($by, 'payroll.view');
+        $run = PayrollRun::query()->findOrFail($run->id);
+        if ($run->status !== 'approved') {
+            throw new AccountingException(__('Only an approved payroll run is posted; :number is not.', ['number' => $run->number]));
+        }
+        if ($posted = $this->ledger->postingOf(self::SOURCE_PAYROLL, $run->id, 'payroll')) {
+            throw new AccountingException(__('Payroll run :number is already posted (:entry).', ['number' => $run->number, 'entry' => $posted->number]));
+        }
+
+        $t = app(PayrollQueries::class)->totals($run);
+        $date = $run->periodEnd();
+        $rate = $run->currency === $this->ledger->bookCurrency() ? '1.000000' : $this->ledger->rateOn($run->currency, $date);
+        $employer = Decimal::add($t['social_insurance_employer'], $t['housing_fund_employer']);
+        $contributions = Decimal::sum([$t['social_insurance_employee'], $t['housing_fund_employee'], $employer]);
+        $memo = $run->number;
+        $book = fn (string $amount) => Decimal::mul($amount, $rate);
+
+        $lines = [];
+        $credits = '0';
+        $add = function (string $event, string $side, string $amount) use (&$lines, &$credits, $book, $run, $rate, $memo) {
+            if (! Decimal::isPositive($amount)) {
+                return;
+            }
+            $lines[] = $this->line($this->ruleAccount($event, $side), $side, $book($amount), $run->currency, $amount, $rate, null, $memo);
+            if ($side === 'credit') {
+                $credits = Decimal::add($credits, $book($amount));
+            }
+        };
+        $add('payroll', 'debit', $t['gross']);
+        $add('payroll_contributions', 'debit', $employer);
+        $add('payroll_contributions', 'credit', $contributions);
+        $add('payroll_tax', 'credit', $t['income_tax']);
+        $add('payroll_deductions', 'credit', $t['other_deductions']);
+        if (Decimal::isPositive($t['net'])) {
+            $debits = Decimal::add($book($t['gross']), Decimal::isPositive($employer) ? $book($employer) : '0');
+            $lines[] = $this->line($this->ruleAccount('payroll', 'credit'), 'credit', Decimal::sub($debits, $credits), $run->currency, $t['net'], $rate, null, $memo);
+        }
+        if ($lines === []) {
+            throw new AccountingException(__('Payroll run :number has no amount to post.', ['number' => $run->number]));
+        }
+
+        return $this->postNew([
+            'entry_date' => $date, 'event' => 'payroll',
+            'source_type' => self::SOURCE_PAYROLL, 'source_id' => $run->id,
+            'description' => $this->stored('Payroll :number for :month', ['number' => $run->number, 'month' => $run->period->locale('en')->isoFormat('MMMM YYYY')]),
+        ], $lines, $by);
+    }
+
+    /**
      * A shipping company's bill (event shipping_bill): Dr the rule's debit (5201) / Cr the
      * rule's credit (2301, party = the company). Its source is the container, when one is
      * named; a container takes one shipping bill (the one-posting-per-source index).
@@ -410,6 +485,7 @@ class PostingService
             'other_in' => [$line($money, 'debit'), $line($counter(), 'credit', $payment->party_id)],
             'transfer_out' => [$line($this->ruleAccount('transfer_out', 'debit'), 'debit'), $line($money, 'credit')],
             'transfer_in' => [$line($money, 'debit'), $line($this->ruleAccount('transfer_in', 'credit'), 'credit')],
+            'salary_payment' => [$line($this->ruleAccount('salary_payment', 'debit'), 'debit'), $line($money, 'credit')],
             default => throw new AccountingException(__('Payments of kind :kind have no posting.', ['kind' => $payment->kind])),
         };
     }

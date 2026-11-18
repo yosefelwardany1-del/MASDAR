@@ -4,6 +4,7 @@ namespace App\Services\Dashboard;
 
 use App\Models\BusinessSetting;
 use App\Services\Finance\PaymentQueries;
+use App\Services\Hr\LeaveQueries;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -131,6 +132,38 @@ class AttentionQueries
             ->whereDate('due_on', '<=', Carbon::today())
             ->orderBy('due_on')->limit($limit)
             ->get(['crm_tasks.id', 'crm_tasks.title', 'crm_tasks.due_on', 'parties.name as party_name']);
+    }
+
+    /**
+     * Employee documents that matter now (spec §5.7): the current document of each kind (the
+     * newest; a renewal supersedes) of an employee still on the staff, expired or expiring
+     * within the warning days.
+     */
+    public function expiringDocuments(int $limit = 50): Collection
+    {
+        $days = BusinessSetting::current()->hr_document_warning_days;
+        $until = Carbon::today()->addDays($days)->toDateString();
+
+        return collect(DB::select(<<<'SQL'
+            SELECT d.id, d.kind, d.number, d.expires_on, e.id AS employee_id, e.code, e.name,
+                   (d.expires_on - CURRENT_DATE) AS days_left
+            FROM employee_documents d
+            JOIN employees e ON e.id = d.employee_id
+            WHERE d.expires_on IS NOT NULL AND d.expires_on <= ?
+              AND (e.left_on IS NULL OR e.left_on >= CURRENT_DATE)
+              AND NOT EXISTS (
+                  SELECT 1 FROM employee_documents n
+                  WHERE n.employee_id = d.employee_id AND n.kind = d.kind
+                    AND (COALESCE(n.issued_on, DATE '0001-01-01'), n.id) > (COALESCE(d.issued_on, DATE '0001-01-01'), d.id))
+            ORDER BY d.expires_on, e.code
+            LIMIT ?
+        SQL, [$until, $limit]));
+    }
+
+    /** Leave requests waiting for a decision. */
+    public function pendingLeave(int $limit = 20): Collection
+    {
+        return app(LeaveQueries::class)->pending($limit);
     }
 
     /** Headline counts for the home page. */

@@ -3,13 +3,17 @@
 namespace Tests\Feature\Integration;
 
 use App\Models\Container;
+use App\Models\Employee;
 use App\Models\JournalEntry;
 use App\Models\MoneyAccount;
 use App\Models\Payment;
+use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
+use App\Services\Dashboard\AttentionQueries;
 use App\Services\Finance\PaymentQueries;
+use App\Services\Hr\PayrollQueries;
 use Database\Seeders\DemoUsersSeeder;
 use Database\Seeders\MasdarDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,7 +38,12 @@ class DemoDataTest extends TestCase
         $this->assertSame(2, SupplierOrder::count());
         $this->assertSame('on_board', Container::sole()->latestEvent->status);
 
-        $this->assertSame(6, JournalEntry::where('status', 'posted')->count(), 'invoice, bill, deposit, both legs of the transfer, factory deposit');
+        // Invoice, bill, deposit, two transfers (two legs each), factory deposit, owners' funds, payroll, salaries.
+        $this->assertSame(11, JournalEntry::where('status', 'posted')->count());
+        $this->assertSame(5, Employee::count());
+        $run = PayrollRun::where('status', 'approved')->sole();
+        $this->assertSame(0, bccomp('0', app(PayrollQueries::class)->unpaid($run), 4), 'last month\'s salaries are paid');
+        $this->assertCount(2, app(AttentionQueries::class)->expiringDocuments(), 'a residence permit and a contract expire within the warning days');
         $totals = DB::table('journal_lines')->selectRaw('SUM(debit) AS dr, SUM(credit) AS cr')->first();
         $this->assertSame(0, bccomp((string) $totals->dr, (string) $totals->cr, 4), 'the journal balances');
 

@@ -92,6 +92,36 @@ class MasdarReferenceSeeder extends Seeder
             ['MA', 'Morocco', 'المغرب', '摩洛哥'], ['TN', 'Tunisia', 'تونس', '突尼斯'], ['SD', 'Sudan', 'السودان', '苏丹'],
             ['LB', 'Lebanon', 'لبنان', '黎巴嫩'], ['SY', 'Syria', 'سوريا', '叙利亚'], ['PS', 'Palestine', 'فلسطين', '巴勒斯坦'],
         ],
+        // HR (spec §5.7): starting points for Q-H1–Q-H2, all editable.
+        'department' => [
+            ['management', 'Management', 'الإدارة', '管理层'], ['sales', 'Sales', 'المبيعات', '销售部'],
+            ['merchandising', 'Merchandising (order follow-up)', 'متابعة الطلبات', '跟单部'], ['quality', 'Warehouse & inspection', 'المستودع والفحص', '仓库及质检'],
+            ['logistics', 'Logistics', 'الشحن', '物流部'], ['finance', 'Finance', 'المالية', '财务部'], ['admin', 'Administration', 'الشؤون الإدارية', '行政部'],
+        ],
+        'work_location' => [
+            ['yiwu_office', 'Yiwu office', 'مكتب ييوو', '义乌办公室'], ['warehouse', 'Warehouse', 'المستودع', '仓库'],
+            ['hong_kong', 'Hong Kong', 'هونج كونج', '香港'], ['remote', 'Remote', 'عن بُعد', '远程'],
+        ],
+        'employment_type' => [
+            ['full_time', 'Full time', 'دوام كامل', '全职'], ['part_time', 'Part time', 'دوام جزئي', '兼职'],
+            ['intern', 'Intern', 'متدرب', '实习生'], ['contractor', 'Contractor', 'متعاقد', '外包'],
+        ],
+        'employee_document' => [
+            ['passport', 'Passport', 'جواز السفر', '护照'], ['residence_permit', 'Residence permit', 'الإقامة', '居留许可'],
+            ['work_permit', 'Work permit', 'تصريح العمل', '工作许可'], ['visa', 'Visa', 'التأشيرة', '签证'],
+            ['national_id', 'National ID card', 'البطاقة الشخصية', '身份证'], ['contract', 'Labour contract', 'عقد العمل', '劳动合同'],
+            ['health_check', 'Health check', 'الفحص الطبي', '体检'], ['other', 'Other', 'أخرى', '其他'],
+        ],
+        // days_per_year: blank = not counted; paid: 0 = unpaid (payroll deducts the days).
+        'leave_type' => [
+            ['annual', 'Annual leave', 'إجازة سنوية', '年假', ['days_per_year' => 5, 'paid' => 1]],
+            ['sick', 'Sick leave', 'إجازة مرضية', '病假', ['paid' => 1]],
+            ['unpaid', 'Unpaid leave', 'إجازة بدون أجر', '事假', ['paid' => 0]],
+            ['marriage', 'Marriage leave', 'إجازة زواج', '婚假', ['days_per_year' => 3, 'paid' => 1]],
+            ['maternity', 'Maternity leave', 'إجازة أمومة', '产假', ['days_per_year' => 158, 'paid' => 1]],
+            ['paternity', 'Paternity leave', 'إجازة أبوة', '陪产假', ['days_per_year' => 15, 'paid' => 1]],
+            ['bereavement', 'Bereavement leave', 'إجازة وفاة', '丧假', ['days_per_year' => 3, 'paid' => 1]],
+        ],
     ];
 
     /** S2's columns, in S2's order: [code, English, Arabic, Chinese, kind, needs a file, due days before delivery]. */
@@ -145,6 +175,9 @@ class MasdarReferenceSeeder extends Seeder
         ['2301', 'Shipping company payables', 'ذمم شركات الشحن', '应付货代款', 'liability', '23', null],
         ['24', 'Accrued expenses', 'مصروفات مستحقة', '应计费用', 'liability', '2', null],
         ['2401', 'Accrued expenses', 'مصروفات مستحقة', '应计费用', 'liability', '24', null],
+        ['2402', 'Salaries payable', 'رواتب مستحقة', '应付工资', 'liability', '24', null],
+        ['2403', 'Social insurance and housing fund payable', 'تأمينات اجتماعية وصندوق إسكان مستحقة', '应付社保及公积金', 'liability', '24', null],
+        ['2404', 'Individual income tax withheld', 'ضريبة دخل الأفراد المستقطعة', '代扣个人所得税', 'liability', '24', null],
         ['25', "Directors' current accounts", 'جاري الشركاء', '董事往来', 'liability', '2', null],
         ['2501', "Directors' current accounts", 'جاري الشركاء', '董事往来', 'liability', '25', null],
         ['26', 'Hong Kong profits tax payable', 'ضريبة أرباح هونج كونج المستحقة', '应交香港利得税', 'liability', '2', null],
@@ -179,6 +212,7 @@ class MasdarReferenceSeeder extends Seeder
         ['62', 'Staff', 'الموظفون', '员工', 'expense', '6', null],
         ['6201', 'Salaries', 'الرواتب', '工资', 'expense', '62', null],
         ['6202', 'Staff visas and residence permits', 'تأشيرات وإقامات الموظفين', '员工签证及居留', 'expense', '62', null],
+        ['6203', 'Employer social insurance and housing fund', 'حصة صاحب العمل في التأمينات وصندوق الإسكان', '单位社保及公积金', 'expense', '62', null],
         ['63', 'Company and compliance', 'الشركة والالتزام', '公司及合规', 'expense', '6', null],
         ['6301', 'Hong Kong company secretary and registered office', 'سكرتارية الشركة والعنوان المسجل في هونج كونج', '香港公司秘书及注册地址', 'expense', '63', null],
         ['6302', 'Audit and accounting', 'المراجعة والمحاسبة', '审计及会计', 'expense', '63', null],
@@ -211,6 +245,12 @@ class MasdarReferenceSeeder extends Seeder
         'transfer_out' => ['1301', null, 'Money leaving one of MASDAR\'s own accounts for another.'],
         'transfer_in' => [null, '1301', 'Money arriving in one of MASDAR\'s own accounts from another.'],
         'fx_difference' => ['7101', '7101', 'Exchange differences.'],
+        // Payroll (spec §5.7): an approved run, then the salaries paid against it.
+        'payroll' => ['6201', '2402', 'A month\'s payroll: gross salaries owed to the staff, net of what is withheld.'],
+        'payroll_contributions' => ['6203', '2403', 'Social insurance and housing fund: the employer\'s share as a cost, both shares owed.'],
+        'payroll_tax' => [null, '2404', 'Individual income tax withheld from salaries, owed to the tax bureau.'],
+        'payroll_deductions' => [null, '1703', 'Other deductions from salaries, e.g. staff advances recovered.'],
+        'salary_payment' => ['2402', null, 'Salaries paid to the staff.'],
     ];
 
     public function run(): void

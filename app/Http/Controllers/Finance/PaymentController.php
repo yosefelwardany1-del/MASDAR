@@ -9,6 +9,7 @@ use App\Models\Container;
 use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\Payment;
+use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
@@ -30,7 +31,7 @@ class PaymentController extends Controller
     private const PAGE = 25;
 
     /** Every kind, in the order the filter lists them. */
-    private const ALL_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'other_in', 'other_out', 'transfer_out', 'transfer_in'];
+    private const ALL_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'salary_payment', 'other_in', 'other_out', 'transfer_out', 'transfer_in'];
 
     public function __construct(private PaymentService $payments, private PaymentQueries $queries) {}
 
@@ -85,6 +86,7 @@ class PaymentController extends Controller
             'proforma_invoice_id' => $request->integer('pi') ?: null,
             'supplier_order_id' => $request->integer('order') ?: null,
             'container_id' => $request->integer('container') ?: null,
+            'payroll_run_id' => $request->integer('payroll') ?: null,
         ];
         if ($preset['proforma_invoice_id'] && ! $preset['party_id']) {
             $preset['party_id'] = ProformaInvoice::query()->whereKey($preset['proforma_invoice_id'])->value('client_id');
@@ -102,6 +104,9 @@ class PaymentController extends Controller
             'pis' => $kind === 'client_receipt' ? $this->piOptions($user, $preset) : collect(),
             'orders' => in_array($kind, ['supplier_payment', 'expense'], true) ? $this->orderOptions($kind, $preset) : collect(),
             'containers' => in_array($kind, ['shipping_payment', 'expense'], true) ? $this->containerOptions($preset) : collect(),
+            'payrollRuns' => $kind === 'salary_payment'
+                ? PayrollRun::query()->where('status', 'approved')->orderByDesc('period')->limit(24)->get(['id', 'number', 'period', 'currency'])
+                : collect(),
             'counterAccounts' => in_array($kind, ['expense', 'other_in', 'other_out'], true)
                 ? Account::query()->where('is_postable', true)->where('active', true)->orderBy('code')->get()
                 : collect(),
@@ -124,6 +129,7 @@ class PaymentController extends Controller
             'proforma_invoice_id' => ['nullable', 'integer'],
             'supplier_order_id' => ['nullable', 'integer'],
             'container_id' => ['nullable', 'integer'],
+            'payroll_run_id' => ['nullable', 'integer'],
             'counter_account_id' => ['nullable', 'integer'],
             'reference' => ['nullable', 'string', 'max:120'],
             'note' => ['nullable', 'string', 'max:2000'],
@@ -260,7 +266,11 @@ class PaymentController extends Controller
             return ['client_receipt'];
         }
 
-        return array_values(array_filter(self::ALL_KINDS, fn ($kind) => $kind !== 'supplier_payment' || Visibility::canSeeSupplierPrices($user)));
+        return array_values(array_filter(self::ALL_KINDS, fn ($kind) => match ($kind) {
+            'supplier_payment' => Visibility::canSeeSupplierPrices($user),
+            'salary_payment' => $user->can('payroll.view'),
+            default => true,
+        }));
     }
 
     /**
