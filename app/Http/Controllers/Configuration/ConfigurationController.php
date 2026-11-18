@@ -25,6 +25,7 @@ class ConfigurationController extends Controller
     private const META = [
         'container_type' => ['cbm' => 'Usable CBM', 'max_kg' => 'Maximum KG'],
         'port' => ['side' => 'Loading or discharge'],
+        'leave_type' => ['days_per_year' => 'Days a year (blank: not counted)', 'paid' => 'Paid'],
     ];
 
     public function index(Request $request)
@@ -132,7 +133,11 @@ class ConfigurationController extends Controller
             'sort' => 'required|integer|min:0|max:100000',
         ];
         foreach (array_keys(self::META[$list] ?? []) as $key) {
-            $rules["meta_{$key}"] = $key === 'side' ? 'nullable|in:loading,discharge' : 'nullable|numeric|min:0';
+            $rules["meta_{$key}"] = match ($key) {
+                'side' => 'nullable|in:loading,discharge',
+                'paid' => 'nullable|in:0,1',
+                default => 'nullable|numeric|min:0',
+            };
         }
 
         return $rules;

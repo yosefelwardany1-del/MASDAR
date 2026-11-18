@@ -333,6 +333,73 @@ Reports from the ledger: trial balance, profit and loss and balance sheet, in th
 and per currency; client, supplier and shipping-company statements; cash position per account
 and currency.
 
+### 5.7 HR — employees, leave, attendance and payroll
+
+Added 2026-11-18 at our proposal: S3 does not ask for it, and MASDAR has not yet said what its
+HR work looks like (Q-H1). Built like phase 1: every choice MASDAR has not made is a setting
+or an editable list, and the screen says so where a missing setting matters.
+
+**Employee file.** Code (`EMP-0001`, never changes), name and local (Chinese) name, job title,
+department, work location (Yiwu office, Hong Kong, warehouse …), employment type, nationality,
+contact details, emergency contact, ID or passport number, salary bank details, joining date
+and leaving date. An employee may be linked to one user account, which lets them request
+their own leave. ID numbers and bank details are shown only to HR and payroll.
+
+- **Salary history**, append-only: base salary and fixed monthly allowances, in a currency,
+  from a date. The salary in effect on a date is the latest row on or before it; a change or a
+  correction is a new row. Seen only by those who see payroll.
+- **Documents**, append-only: passport, residence permit, work permit, visa, labour contract,
+  health check … each with its number, issue and expiry dates and the scan. A renewal is a new
+  row of the same kind; the newest is current. A current document of an employee still on the
+  staff that expires within N days (setting, proposed 60) or has expired is on the home page
+  and in the morning summary of HR and managers. For foreign staff in Yiwu the residence
+  permit is the one that matters most.
+
+**Leave.** Leave types are a list (annual, sick, unpaid, marriage, maternity, paternity,
+bereavement to start), each with its days a year (blank: not counted) and whether it is
+paid. An employee's allowance for a year can be set apart from the type's (e.g. statutory annual
+leave of 5, 10 or 15 days by years worked). A request (employee, type, from, to, days — half
+days allowed) is append-only; its decisions (approved, rejected, cancelled) are rows of their
+own, and its status is the latest. Balance = allowance − approved days that year, computed.
+A request beyond the balance is refused. Nobody decides their own request. Approvers are told
+of a new request; the employee is told of the decision.
+
+**Attendance.** A monthly sheet per employee and day. Nothing recorded on a working day means
+present; HR records absences, half days, late arrivals, remote days and overtime hours.
+Records are append-only; the latest for a day counts. The working week and the public
+holidays (including China's make-up working days) are settings and a list — the holidays are
+not guessed: the sheet warns while the year has none.
+
+**Payroll.** A monthly run per currency (`PR-2026-0001`): draft → approved → (void). Preparing
+a draft makes one line per employee on the staff that month with a salary in that currency:
+
+| Line | From |
+|---|---|
+| Base salary, allowances | the salary in effect at the month end, prorated by working days for a joiner or leaver |
+| Overtime pay | overtime hours × base ÷ (days a month × 8) × the overtime multiplier (setting, proposed 1.5) |
+| Unpaid days | approved leave of unpaid types and recorded absences (a half day counts ½) in the month |
+| Deduction for unpaid days | unpaid days × base ÷ days a month (setting, proposed 21.75, China's standard) |
+| Social insurance and housing fund | employee and employer shares at the rates set, on the base salary within the bases set — OPEN (Q-H3): no rate is assumed; a run warns while they are not set |
+| Individual income tax | entered per line — OPEN (Q-H4): withheld as the tax bureau's system computes it |
+| Bonus, other deductions | entered per line |
+
+Gross = base + allowances + overtime + bonus − deduction; net = gross − employee shares − tax
+− other deductions. Both are computed by PostgreSQL. A draft's lines can be edited; approving
+needs a manager and freezes the run. An approved run posts from the accounting queue:
+
+| Dr | Cr |
+|---|---|
+| 6201 Salaries (gross) | 2402 Salaries payable (net) |
+| 6203 Employer social insurance and housing fund | 2403 Social insurance and housing fund payable (both shares) |
+| | 2404 Individual income tax withheld |
+| | 1703 Staff advances (other deductions) |
+
+Salaries are paid as payments of kind "salary payment" against the run (Dr 2402 / Cr the money
+account); the run shows paid against net. A run is voided only with no salary payment counting
+and its entry reversed; the month can then be run again. Payslips print per employee, in
+English with Chinese labels.
+
+
 ## 6. Roles and permissions
 
 OPEN — proposed roles, from the jobs S2 and S3 imply. They replace the starter's `supervisor`
@@ -346,6 +413,7 @@ and `staff`; `manager` and `system_admin` stay as the starter defines them.
 | `warehouse_qc` | receiving and inspecting goods (step 8), loading |
 | `logistics` | bookings, containers, shipping companies |
 | `accountant` | payments, FX, ledger, statements |
+| `hr` | HR and administration (§5.7): the employee file, leave, attendance, preparing payroll |
 | `system_admin` | the vendor's support: users, roles, settings, audit log — no business data |
 
 Proposed grants (`view` ⊂ `edit` ⊂ `approve`; — = none):
@@ -362,6 +430,12 @@ Proposed grants (`view` ⊂ `edit` ⊂ `approve`; — = none):
 | Containers | approve | view | view | edit | edit | view |
 | Payments | approve | view | — | — | — | edit |
 | Accounting | approve | — | — | — | — | edit |
+| Employees (§5.7) | edit | — | — | — | — | — |
+| Leave & attendance | approve | — | — | — | — | — |
+| Payroll | approve | — | — | — | — | view |
+
+The `hr` role: Employees edit, Leave & attendance edit, Payroll edit (preparing; a manager
+approves). Everybody linked to an employee file requests their own leave ("My leave").
 
 Screen grants cannot hide a column or a row. Two rules are built into the screens themselves:
 hiding supplier identities and prices from a role that may see a screen showing them, and
@@ -389,6 +463,8 @@ limiting a sales user to their own clients. OPEN, each with a proposal (Q-R1):
 | Supplier evaluation | on-time %, sample rounds, inspection failures | manager, merchandisers | monthly (OPEN) |
 | Cash position | balance per account and currency | manager, accountant | screen |
 | Financial statements | trial balance, profit and loss, balance sheet | manager, accountant, auditor | on demand |
+| Employee documents expiring | a current residence permit, visa, passport or contract expiring within N days or expired | HR, manager | in-app, daily |
+| Leave to decide | leave requests waiting for a decision | those who approve leave | in-app, on request and daily |
 
 OPEN (Q-C4): which status changes a client is told of, through which channel (WhatsApp, email)
 and in which language.
@@ -432,6 +508,7 @@ and none of the accounting questions block them.
 | 4 | Bookings, containers, loads and the container board; status updates to clients | Q-C1–Q-C4 |
 | 5 | Money accounts, payments and FX; then the chart of accounts, the ledger and the financial reports | Q-A1–Q-A6 |
 | 6 | Migration of open orders and containers, opening balances, go-live | Q-M1, Q-M2 |
+| 7 | HR: employee file and documents, leave, attendance, payroll (§5.7) | Q-H1–Q-H5 |
 
 ## 11. Open questions
 
@@ -465,6 +542,11 @@ Grouped by the sub-project they block (§10); the first group is needed first.
 | Q-A6 | I9: is loading blocked until the client has paid in full, with manager exceptions? | MASDAR | 5 |
 | Q-M1 | The system used today ("update in the system", S2) and what moves from it and from the Excel sheets | MASDAR | 6 |
 | Q-M2 | Cut-over dates; the opening-balance date | MASDAR and its accountant | 6 |
+| Q-H1 | Does MASDAR want HR in the system? How many staff, where (Yiwu, Hong Kong), which nationalities; who does HR today | MASDAR | 7 |
+| Q-H2 | Leave: the types and days a year; the working week (Monday–Friday or –Saturday); who approves | MASDAR | 7 |
+| Q-H3 | Social insurance and housing fund: are staff enrolled (foreign staff too)? The rates and the contribution bases for Yiwu | MASDAR's accountant or payroll agent | 7 |
+| Q-H4 | Individual income tax: who computes it today; any staff paid from Hong Kong (MPF)? | MASDAR's accountant | 7 |
+| Q-H5 | Pay day; paid from which account; overtime rules; how payslips reach staff | MASDAR | 7 |
 
 ## 12. Readings
 
@@ -495,3 +577,6 @@ Decisions settled during the build from this spec (marked `INFERRED`) or with th
 | 2026-11-18 | INFERRED | Q-C4 is built as an option, off by default. When on, clients with goods in a container get MASDAR's approved WhatsApp template when it reaches one of the chosen statuses (on board and arrived to start). There is no update on a correction. Every attempt is logged. |
 | 2026-11-18 | INFERRED | §7 "Unpaid before shipping" goes in the morning summary to the account manager (their clients), the accountant and managers: a current PI booked on a shipment while its counted receipts fall short of its total. |
 | 2026-11-18 | INFERRED | Q-R2: phase 1 stays staff-only, as §5.1 proposes. Clients hear about their containers over WhatsApp (above) instead of signing in. Container tracking from shipping lines and AI drafting stay later phases (§8). |
+| 2026-11-18 | INFERRED | §5.7 HR is added at our proposal, before MASDAR has answered Q-H1–Q-H5. Every rate and allowance is a setting; social-insurance rates and public holidays start empty and the screens warn; income tax is entered per line, never computed. |
+| 2026-11-18 | INFERRED | Q-H2: the working week starts as Monday–Friday and the days a month as 21.75 (China's standard for a daily wage); leave types start with China's common statutory days (annual 5, marriage 3, maternity 158 and paternity 15 as in Zhejiang, bereavement 3). All editable. |
+| 2026-11-18 | INFERRED | A new `hr` role prepares; a manager approves leave and payroll; the accountant sees payroll to post and pay it. Salaries are visible only to those who see payroll. |

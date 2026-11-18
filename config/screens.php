@@ -132,6 +132,35 @@ return [
         'signed_in' => false,
     ],
 
+    // HR (spec §5.7): the employee file, leave and attendance, payroll.
+    'employees' => [
+        'label' => 'Employees',
+        'route' => 'employees.index',
+        'group' => 'hr',
+        'icon' => 'bi-person-vcard',
+        'levels' => ['view', 'edit'],
+        'active' => ['employees.*'],
+        'signed_in' => false,
+    ],
+    'leave' => [
+        'label' => 'Leave & attendance',
+        'route' => 'leave.index',
+        'group' => 'hr',
+        'icon' => 'bi-calendar-check',
+        'levels' => ['view', 'edit', 'approve'],
+        'active' => ['leave.*', 'attendance.*'],
+        'signed_in' => false,
+    ],
+    'payroll' => [
+        'label' => 'Payroll',
+        'route' => 'payroll.index',
+        'group' => 'hr',
+        'icon' => 'bi-wallet2',
+        'levels' => ['view', 'edit', 'approve'],
+        'active' => ['payroll.*'],
+        'signed_in' => false,
+    ],
+
     // Administration.
     'configuration' => [
         'label' => 'Lists & options',

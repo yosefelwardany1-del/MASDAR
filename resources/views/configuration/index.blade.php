@@ -176,6 +176,11 @@
                                             <option value="loading" @selected(($entry->meta['side'] ?? null) === 'loading')>{{ __('Loading') }}</option>
                                             <option value="discharge" @selected(($entry->meta['side'] ?? null) === 'discharge')>{{ __('Discharge') }}</option>
                                         </select>
+                                    @elseif($key === 'paid')
+                                        <select form="{{ $f }}" name="meta_paid" aria-label="{{ __($label) }}" class="form-select form-select-sm" @disabled(! $editable)>
+                                            <option value="1" @selected(($entry->meta['paid'] ?? 1) == 1)>{{ __('Yes') }}</option>
+                                            <option value="0" @selected(($entry->meta['paid'] ?? 1) == 0)>{{ __('No') }}</option>
+                                        </select>
                                     @else
                                         <input form="{{ $f }}" name="meta_{{ $key }}" aria-label="{{ __($label) }}" type="number" step="0.01" min="0" class="form-control form-control-sm" style="max-inline-size:110px" value="{{ $entry->meta[$key] ?? '' }}" @disabled(! $editable)>
                                     @endif
@@ -197,6 +202,8 @@
                                 <td>
                                     @if($key === 'side')
                                         <select form="{{ $f }}" name="meta_side" aria-label="{{ __($label) }}" class="form-select form-select-sm"><option value=""></option><option value="loading">{{ __('Loading') }}</option><option value="discharge">{{ __('Discharge') }}</option></select>
+                                    @elseif($key === 'paid')
+                                        <select form="{{ $f }}" name="meta_paid" aria-label="{{ __($label) }}" class="form-select form-select-sm"><option value="1">{{ __('Yes') }}</option><option value="0">{{ __('No') }}</option></select>
                                     @else
                                         <input form="{{ $f }}" name="meta_{{ $key }}" aria-label="{{ __($label) }}" type="number" step="0.01" min="0" class="form-control form-control-sm" style="max-inline-size:110px">
                                     @endif

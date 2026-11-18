@@ -151,9 +151,66 @@
                 </section>
             </div>
         @endcan
+
+        @can('employees.edit')
+            <div class="col-xl-6">
+                <section class="app-card h-100" aria-labelledby="docs-head">
+                    <div class="app-card__head border-bottom" id="docs-head">
+                        <i class="bi bi-passport" aria-hidden="true"></i>{{ __('Employee documents expiring') }}
+                        <a href="{{ route('employees.index', ['documents' => 'expiring']) }}" class="ms-auto small fw-medium">{{ __('Open the employee file') }}</a>
+                    </div>
+                    @if($documents->isEmpty())
+                        <div class="app-panel-empty"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('No residence permit, visa, passport or contract needs renewing soon.') }}</div>
+                    @else
+                        <ul class="app-list">
+                            @foreach($documents as $doc)
+                                @php $expired = $doc->days_left < 0; @endphp
+                                <li class="app-list__row">
+                                    <div class="app-list__main">
+                                        <a href="{{ route('employees.show', $doc->employee_id) }}#documents" class="app-list__title">{{ $doc->name }}</a>
+                                        <div class="app-list__sub">{{ \App\Models\Lookup::label('employee_document', $doc->kind) }}@if($doc->number) · <span class="app-ltr">{{ $doc->number }}</span>@endif</div>
+                                    </div>
+                                    <span class="app-pill {{ $expired ? 'app-pill--late' : 'app-pill--due' }}">
+                                        <i class="bi {{ $expired ? 'bi-exclamation-triangle' : 'bi-hourglass-split' }}" aria-hidden="true"></i>
+                                        {{ $expired ? __('Expired') : trans_choice('{0} Expires today|{1} Expires tomorrow|[2,*] Expires in :count days', $doc->days_left, ['count' => $doc->days_left]) }}
+                                        · <span class="app-num">{{ substr($doc->expires_on, 0, 10) }}</span>
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </section>
+            </div>
+        @endcan
+
+        @can('leave.approve')
+            <div class="col-xl-6">
+                <section class="app-card h-100" aria-labelledby="leave-head">
+                    <div class="app-card__head border-bottom" id="leave-head">
+                        <i class="bi bi-calendar-check" aria-hidden="true"></i>{{ __('Leave to decide') }}
+                        <a href="{{ route('leave.index', ['tab' => 'requests']) }}" class="ms-auto small fw-medium">{{ __('All leave requests') }}</a>
+                    </div>
+                    @if($pendingLeave->isEmpty())
+                        <div class="app-panel-empty"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('No leave request is waiting for you.') }}</div>
+                    @else
+                        <ul class="app-list">
+                            @foreach($pendingLeave as $request)
+                                <li class="app-list__row">
+                                    <div class="app-list__main">
+                                        <span class="app-list__title">{{ $request->employee?->name }}</span>
+                                        <div class="app-list__sub">{{ \App\Models\Lookup::label('leave_type', $request->leave_type) }} · <span class="app-num">{{ $request->starts_on->format('Y-m-d') }}</span> → <span class="app-num">{{ $request->ends_on->format('Y-m-d') }}</span></div>
+                                    </div>
+                                    <span class="app-pill app-pill--due"><span class="app-num">{{ rtrim(rtrim((string) $request->days, '0'), '.') }}</span>&nbsp;{{ __('days') }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </section>
+            </div>
+        @endcan
     </div>
 
-    @if(! $counts && ! $seesOrders && ! $seesContainers && ! $user->can('crm.view'))
+    @if(! $counts && ! $seesOrders && ! $seesContainers && ! $user->can('crm.view') && ! $user->can('employees.edit') && ! $user->can('leave.approve'))
         <div class="app-card app-empty">
             <i class="bi bi-person-lock" aria-hidden="true"></i>
             <p class="mb-0">{{ __('Nothing here yet. Ask a manager to give you a role, and your screens will appear in the menu.') }}</p>

@@ -93,6 +93,19 @@
     @endphp
     <x-section :title="__('Who and what it is for')" icon="link-45deg">
         <div class="row g-3">
+            @if($kind === 'salary_payment')
+                <div class="col-md-6">
+                    <label class="form-label" for="pay-payroll">{{ __('Payroll run') }}<span class="app-req" aria-hidden="true">*</span></label>
+                    <select name="payroll_run_id" id="pay-payroll" class="form-select @error('payroll_run_id') is-invalid @enderror" required aria-describedby="pay-payroll-help">
+                        <option value="">{{ __('Choose…') }}</option>
+                        @foreach($payrollRuns as $run)
+                            <option value="{{ $run->id }}" @selected((int) old('payroll_run_id', $preset['payroll_run_id']) === $run->id)>{{ $run->number }} · {{ $run->periodLabel() }} · {{ $run->currency }}</option>
+                        @endforeach
+                    </select>
+                    @error('payroll_run_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-text" id="pay-payroll-help">{{ __('Only approved runs. Pay from an account in the run\'s currency.') }}</div>
+                </div>
+            @else
             <div class="col-md-6">
                 <label class="form-label" for="pay-party">{{ $partyLabel }}@if($partyRequired)<span class="app-req" aria-hidden="true">*</span>@endif</label>
                 <select name="party_id" id="pay-party" class="form-select @error('party_id') is-invalid @enderror" @required($partyRequired)>
@@ -103,6 +116,7 @@
                 </select>
                 @error('party_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+            @endif
 
             @if($kind === 'client_receipt')
                 <div class="col-md-6">

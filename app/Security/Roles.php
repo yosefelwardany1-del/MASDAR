@@ -23,6 +23,8 @@ final class Roles
 
     public const ACCOUNTANT = 'accountant';
 
+    public const HR = 'hr';
+
     public const STAFF = 'staff';
 
     public const SYSTEM_ADMIN = 'system_admin';
@@ -34,6 +36,7 @@ final class Roles
         self::WAREHOUSE_QC,
         self::LOGISTICS,
         self::ACCOUNTANT,
+        self::HR,
         self::STAFF,
         self::SYSTEM_ADMIN,
     ];
@@ -46,6 +49,7 @@ final class Roles
         self::WAREHOUSE_QC => 'Warehouse & inspection',
         self::LOGISTICS => 'Logistics',
         self::ACCOUNTANT => 'Accountant',
+        self::HR => 'HR & administration',
         self::STAFF => 'Staff',
         self::SYSTEM_ADMIN => 'System administrator',
     ];
@@ -96,6 +100,10 @@ final class Roles
                 'clients' => 'view', 'suppliers' => 'view', 'shipping_companies' => 'view', 'products' => 'view',
                 'proforma_invoices' => 'view', 'supplier_orders' => 'view', 'goods_receipts' => 'view',
                 'containers' => 'view', 'payments' => 'edit', 'accounting' => 'edit', 'finance_reports' => 'view',
+                'payroll' => 'view',
+            ]),
+            self::HR => $grants([
+                'employees' => 'edit', 'leave' => 'edit', 'payroll' => 'edit',
             ]),
             self::SYSTEM_ADMIN => $grants([
                 'users' => 'edit', 'roles' => 'edit', 'settings' => 'edit', 'audit_log' => 'view',

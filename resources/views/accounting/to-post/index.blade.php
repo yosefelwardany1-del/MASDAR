@@ -5,7 +5,8 @@
 @section('content')
 @php
     $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v);
-    $waiting = $payments->count() + $invoices->count() + $bills->count();
+    $waiting = $payments->count() + $invoices->count() + $bills->count() + $payrolls->count();
+    $seesPayroll = auth()->user()->can('payroll.view');
 @endphp
 <x-page-header :title="__('To post')" :eyebrow="__('Accounting')"
                :subtitle="__('Documents and payments waiting for their journal entry. Each posts once, by its posting rule; if a rule, a money account or an FX rate is missing, the message says what to set.')" />
@@ -114,6 +115,40 @@
         </table>
     </div>
 </x-section>
+
+{{-- Payroll (spec §5.7): salaries are seen by whoever sees payroll. --}}
+@if($payrolls->isNotEmpty() || $seesPayroll)
+<x-section :title="__('Payroll to post')" icon="wallet2" flush class="mb-4 app-section--wrap">
+    @if($payrolls->isNotEmpty() && $seesPayroll)
+        <x-slot:actions>
+            <form method="POST" action="{{ route('accounting.to-post.payrolls') }}">@csrf <button class="btn btn-sm btn-primary"><i class="bi bi-check2-all" aria-hidden="true"></i>{{ __('Post all') }}</button></form>
+        </x-slot:actions>
+    @endif
+    <p class="app-note mx-3 mt-3 mb-0"><i class="bi bi-info-circle" aria-hidden="true"></i><span>{{ __('Approved payroll runs, booked on the last day of their month: salaries, employer contributions, tax withheld and net pay owed.') }}</span></p>
+    @if($seesPayroll)
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th scope="col">{{ __('Payroll run') }}</th><th scope="col">{{ __('Month') }}</th><th scope="col" class="text-end">{{ __('Gross') }}</th><th scope="col" class="text-end">{{ __('Net pay') }}</th><th scope="col"><span class="visually-hidden">{{ __('Post') }}</span></th></tr></thead>
+            <tbody>
+            @forelse($payrolls as $run)
+                <tr>
+                    <td class="text-nowrap"><a href="{{ route('payroll.show', $run) }}" class="app-ltr fw-semibold">{{ $run->number }}</a></td>
+                    <td>{{ $run->periodLabel() }}</td>
+                    <td class="app-figcell"><span class="app-num app-fig">{{ $fmt($run->lines_sum_gross) }}</span><span class="app-unit">{{ $run->currency }}</span></td>
+                    <td class="app-figcell"><span class="app-num app-fig">{{ $fmt($run->lines_sum_net) }}</span><span class="app-unit">{{ $run->currency }}</span></td>
+                    <td class="text-end"><form method="POST" action="{{ route('accounting.to-post.payroll', $run) }}">@csrf <button class="btn btn-sm btn-light">{{ __('Post') }}</button></form></td>
+                </tr>
+            @empty
+                <tr><td colspan="5" class="p-0"><div class="app-panel-empty"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('No approved payroll run is waiting to be posted.') }}</div></td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+    @else
+        <div class="app-panel-empty"><i class="bi bi-lock" aria-hidden="true"></i>{{ trans_choice('{1} One payroll run is waiting; posting it needs access to payroll.|[2,*] :count payroll runs are waiting; posting them needs access to payroll.', $payrolls->count(), ['count' => $payrolls->count()]) }}</div>
+    @endif
+</x-section>
+@endif
 
 {{-- Shipping company bill --}}
 <form method="POST" action="{{ route('accounting.to-post.shipping-bill') }}" class="app-form">

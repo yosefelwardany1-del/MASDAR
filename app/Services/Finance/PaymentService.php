@@ -10,6 +10,7 @@ use App\Models\OrderStepDefinition;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\PaymentApproval;
+use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
@@ -43,6 +44,7 @@ class PaymentService
         'proforma_invoice_id' => ['client_receipt'],
         'supplier_order_id' => ['supplier_payment', 'expense'],
         'container_id' => ['shipping_payment', 'expense'],
+        'payroll_run_id' => ['salary_payment'],
     ];
 
     public function __construct(
@@ -229,7 +231,7 @@ class PaymentService
                     'user_id' => $by->id,
                 ] + $leg->only([
                     'kind', 'direction', 'money_account_id', 'currency', 'amount', 'rate', 'party_id', 'proforma_invoice_id',
-                    'supplier_order_id', 'container_id', 'counter_account_id', 'transfer_group', 'reference',
+                    'supplier_order_id', 'container_id', 'payroll_run_id', 'counter_account_id', 'transfer_group', 'reference',
                 ]));
                 AuditTrail::record('created', $reversal, [], $this->audited($reversal));
                 AuditTrail::record('reversed', $leg, [], ['number' => $leg->number, 'reversal' => $reversal->number, 'reason' => $reason]);
@@ -291,6 +293,7 @@ class PaymentService
             'proforma_invoice_id' => $id('proforma_invoice_id'),
             'supplier_order_id' => $id('supplier_order_id'),
             'container_id' => $id('container_id'),
+            'payroll_run_id' => $id('payroll_run_id'),
             'counter_account_id' => in_array($kind, self::NEEDS_COUNTER_ACCOUNT, true) ? $id('counter_account_id') : null,
         ];
         $errors = [];
@@ -330,6 +333,17 @@ class PaymentService
         }
         if ($links['container_id'] !== null && ! isset($errors['container_id']) && ! Container::query()->whereKey($links['container_id'])->exists()) {
             $errors['container_id'] = __('That container does not exist.');
+        }
+
+        // Salaries are paid against an approved payroll run, from an account in its currency (spec §5.7).
+        if ($kind === 'salary_payment' && ! isset($errors['payroll_run_id'])) {
+            $run = $links['payroll_run_id'] !== null ? PayrollRun::query()->find($links['payroll_run_id']) : null;
+            $account = MoneyAccount::query()->find($data['money_account_id'] ?? null);
+            if (! $run || $run->status !== 'approved') {
+                $errors['payroll_run_id'] = __('Choose the approved payroll run the salaries are paid for.');
+            } elseif ($account && $account->currency !== $run->currency) {
+                $errors['money_account_id'] = __('Payroll run :number is in :currency: pay it from an account in :currency.', ['number' => $run->number, 'currency' => $run->currency]);
+            }
         }
 
         if (in_array($kind, self::NEEDS_COUNTER_ACCOUNT, true)) {
@@ -441,7 +455,7 @@ class PaymentService
     {
         return $payment->only([
             'number', 'paid_on', 'kind', 'direction', 'money_account_id', 'currency', 'amount', 'rate', 'party_id', 'proforma_invoice_id',
-            'supplier_order_id', 'container_id', 'counter_account_id', 'transfer_group', 'reverses_payment_id', 'reference', 'note',
+            'supplier_order_id', 'container_id', 'payroll_run_id', 'counter_account_id', 'transfer_group', 'reverses_payment_id', 'reference', 'note',
         ]);
     }
 }

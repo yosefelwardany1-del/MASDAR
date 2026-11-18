@@ -41,6 +41,13 @@ class BusinessSetting extends Model
         'journal_prefix' => 'JE',
         'whatsapp_container_updates' => false,
         'whatsapp_update_statuses' => 'on_board,arrived',
+        'employee_prefix' => 'EMP',
+        'payroll_prefix' => 'PR',
+        'payroll_currency' => 'CNY',
+        'hr_document_warning_days' => 60,
+        'hr_work_days' => '1,2,3,4,5',
+        'payroll_days_per_month' => '21.75',
+        'payroll_overtime_multiplier' => '1.50',
     ];
 
     protected function casts(): array
@@ -55,6 +62,15 @@ class BusinessSetting extends Model
             'step_warning_days' => 'integer',
             'eta_warning_days' => 'integer',
             'whatsapp_container_updates' => 'boolean',
+            'hr_document_warning_days' => 'integer',
+            'payroll_days_per_month' => 'decimal:2',
+            'payroll_overtime_multiplier' => 'decimal:2',
+            'si_employee_percent' => 'decimal:3',
+            'si_employer_percent' => 'decimal:3',
+            'hf_employee_percent' => 'decimal:3',
+            'hf_employer_percent' => 'decimal:3',
+            'si_base_min' => 'decimal:4',
+            'si_base_max' => 'decimal:4',
         ];
     }
 
@@ -62,6 +78,19 @@ class BusinessSetting extends Model
     public function whatsappUpdateStatuses(): array
     {
         return array_values(array_filter(array_map('trim', explode(',', (string) $this->whatsapp_update_statuses))));
+    }
+
+    /** ISO weekdays (1 = Monday … 7 = Sunday) that are working days. @return list<int> */
+    public function workDays(): array
+    {
+        return array_values(array_unique(array_filter(array_map('intval', explode(',', (string) $this->hr_work_days)), fn (int $d) => $d >= 1 && $d <= 7)));
+    }
+
+    /** True while no social insurance or housing fund rate is set (spec Q-H3): payroll warns. */
+    public function contributionRatesMissing(): bool
+    {
+        return $this->si_employee_percent === null && $this->si_employer_percent === null
+            && $this->hf_employee_percent === null && $this->hf_employer_percent === null;
     }
 
     public static function current(): self

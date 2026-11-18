@@ -21,7 +21,7 @@ class Payment extends Model
 
     public const KINDS_IN = ['client_receipt', 'transfer_in', 'other_in'];
 
-    public const KINDS_OUT = ['supplier_payment', 'shipping_payment', 'expense', 'transfer_out', 'other_out'];
+    public const KINDS_OUT = ['supplier_payment', 'shipping_payment', 'expense', 'transfer_out', 'other_out', 'salary_payment'];
 
     protected $guarded = ['id', 'book_amount', 'signed_amount', 'signed_book_amount'];
 
@@ -48,6 +48,11 @@ class Payment extends Model
         $needs = ['view' => 'payments.view', 'edit' => 'payments.edit', 'delete' => 'payments.approve'][$level] ?? null;
 
         return $needs !== null && $user->can($needs) && app(PaymentQueries::class)->canSee($this, $user);
+    }
+
+    public function payrollRun(): BelongsTo
+    {
+        return $this->belongsTo(PayrollRun::class);
     }
 
     public function moneyAccount(): BelongsTo
@@ -112,6 +117,7 @@ class Payment extends Model
             'other_out' => __('Other money out'),
             'transfer_out' => __('Transfer out'),
             'transfer_in' => __('Transfer in'),
+            'salary_payment' => __('Salary payment'),
             default => $kind,
         };
     }

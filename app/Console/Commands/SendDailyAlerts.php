@@ -18,14 +18,20 @@ class SendDailyAlerts extends Command
 {
     protected $signature = 'masdar:daily-alerts';
 
-    protected $description = 'Send each user a summary of late order steps, arriving containers and tasks due';
+    protected $description = 'Send each user a summary of late order steps, arriving containers, tasks due, employee documents to renew and leave to decide';
 
     public function handle(AttentionQueries $attention, NotificationService $notifications): int
     {
         $sent = 0;
         $managers = User::role(Roles::MANAGER)->where('status', 'active')->get();
 
+        $documents = $attention->expiringDocuments(1000);
+        $pendingLeave = $attention->pendingLeave(1000);
+        $default = app()->getLocale();
+
         foreach (User::where('status', 'active')->get() as $user) {
+            // Each summary is stored as text: write it in its reader's language.
+            app()->setLocale($user->locale ?: $default);
             $lines = [];
 
             if ($user->can('supplier_orders.view')) {
@@ -60,6 +66,19 @@ class SendDailyAlerts extends Command
                 }
             }
 
+            // HR (spec §5.7): documents to renew for those who keep the employee file; leave to decide.
+            if ($user->can('employees.edit') && $documents->isNotEmpty()) {
+                if ($expired = $documents->where('days_left', '<', 0)->count()) {
+                    $lines[] = trans_choice('{1} One employee document has expired.|[2,*] :count employee documents have expired.', $expired, ['count' => $expired]);
+                }
+                if ($soon = $documents->where('days_left', '>=', 0)->count()) {
+                    $lines[] = trans_choice('{1} One employee document expires soon.|[2,*] :count employee documents expire soon.', $soon, ['count' => $soon]);
+                }
+            }
+            if ($user->can('leave.approve') && ($leave = $pendingLeave->reject(fn ($r) => $r->employee?->user_id === $user->id)->count())) {
+                $lines[] = trans_choice('{1} One leave request waits for a decision.|[2,*] :count leave requests wait for a decision.', $leave, ['count' => $leave]);
+            }
+
             if ($user->can('crm.view') && ($tasks = $attention->tasks($user->id, 1000)->count())) {
                 $lines[] = trans_choice('{1} One task is due.|[2,*] :count tasks are due.', $tasks, ['count' => $tasks]);
             }
@@ -72,6 +91,7 @@ class SendDailyAlerts extends Command
             }
         }
 
+        app()->setLocale($default);
         $this->info("Daily alerts sent to {$sent} users.");
 
         return self::SUCCESS;
