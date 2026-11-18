@@ -23,6 +23,8 @@ Route::post('shipments/{shipment}/containers', [ContainerController::class, 'sto
     ->whereNumber('shipment')->middleware('can:containers.edit')->name('containers.store');
 Route::get('containers/{container}/packing-list', [ContainerController::class, 'packingList'])
     ->whereNumber('container')->middleware('can:containers.view')->name('containers.packing-list');
+Route::get('containers/{container}/commercial-invoice', [ContainerController::class, 'commercialInvoice'])
+    ->whereNumber('container')->middleware(['can:containers.view', 'can:proforma_invoices.view'])->name('containers.commercial-invoice');
 
 // Status events and loads: append-only rows (I2, I6, I8).
 Route::post('containers/{container}/events', [ContainerTrackingController::class, 'storeEvent'])

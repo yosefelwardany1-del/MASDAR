@@ -21,7 +21,7 @@
 
     $tiles = [
         ['open_pis', __('Open proforma invoices'), 'proforma-invoices.index', 'proforma_invoices.view', 'bi-receipt', ''],
-        ['open_orders', __('Open supplier orders'), 'supplier-orders.index', 'supplier_orders.view', 'bi-kanban', ''],
+        ['open_orders', __('Open purchase orders'), 'supplier-orders.index', 'supplier_orders.view', 'bi-kanban', ''],
         ['late_steps', __('Late order steps'), 'supplier-orders.index', 'supplier_orders.view', 'bi-exclamation-triangle', 'alert'],
         ['containers_moving', __('Containers on the way'), 'containers.index', 'containers.view', 'bi-boxes', 'gold'],
         ['awaiting_approval', __('Payments awaiting approval'), 'payments.index', 'payments.approve', 'bi-hourglass-split', 'alert'],

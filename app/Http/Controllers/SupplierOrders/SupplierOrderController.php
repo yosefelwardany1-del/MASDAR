@@ -9,6 +9,7 @@ use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\ProformaInvoice;
+use App\Models\Setting;
 use App\Models\SupplierOrder;
 use App\Models\SupplierOrderLine;
 use App\Models\User;
@@ -122,6 +123,32 @@ class SupplierOrderController extends Controller
         }
 
         return redirect()->route('supplier-orders.index')->with('success', __('Supplier orders created: :numbers', ['numbers' => $created->pluck('number')->join(', ')]));
+    }
+
+    /**
+     * The purchase contract for the factory (spec §5.3, S2 step 1 "order contract confirmation &
+     * stamp"): English and Chinese, MASDAR as the buyer, the factory's prices — and never the
+     * client's name or price. Only for whoever sees supplier prices.
+     */
+    public function contract(Request $request, SupplierOrder $supplierOrder)
+    {
+        abort_unless(Visibility::canSeeSupplierPrices($request->user()), 403);
+        $supplierOrder->load(['supplier.contacts', 'lines.piLine.product']);
+        $setting = Setting::current();
+        $business = BusinessSetting::current();
+        $lines = $supplierOrder->lines->filter(fn (SupplierOrderLine $l) => $l->released_at === null)->values();
+
+        return view('supplier-orders.contract', [
+            'order' => $supplierOrder,
+            'lines' => $lines,
+            'companyName' => $setting->company_name,
+            'logoUrl' => $setting->logo ? route('settings.logo') : asset('images/masdar-logo.png'),
+            'address' => $business->company_address,
+            'phone' => $business->company_phone,
+            'terms' => $business->purchaseContractTerms(),
+            'units' => Lookup::query()->where('list', 'unit')->get(['code', 'name', 'name_zh'])->keyBy('code'),
+            'contact' => $supplierOrder->supplier?->primaryContact(),
+        ]);
     }
 
     public function show(Request $request, SupplierOrder $supplierOrder)

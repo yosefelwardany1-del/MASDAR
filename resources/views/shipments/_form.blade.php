@@ -34,6 +34,12 @@
             <input id="sh-bl" type="text" name="bl_number" dir="ltr" class="form-control {{ $field('bl_number') }}" value="{{ old('bl_number', $shipment?->bl_number) }}" maxlength="80">
             @error('bl_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
+        <div class="col-md-6">
+            <label class="form-label" for="sh-incoterm">{{ __('Incoterm') }}</label>
+            <input id="sh-incoterm" type="text" name="incoterm" dir="ltr" class="form-control {{ $field('incoterm') }}" value="{{ old('incoterm', $shipment?->incoterm) }}" maxlength="60" placeholder="{{ \App\Models\BusinessSetting::current()->default_incoterm }} Ningbo" aria-describedby="sh-incoterm-help">
+            @error('incoterm')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            <div class="form-text" id="sh-incoterm-help">{{ __('Printed on the commercial invoice. Empty: the business default.') }}</div>
+        </div>
     </div>
 </x-section>
 

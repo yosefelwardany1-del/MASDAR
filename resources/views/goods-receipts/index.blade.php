@@ -23,7 +23,7 @@
     </x-slot:meta>
     <x-slot:actions>
         @can('supplier_orders.view')
-            <a href="{{ route('supplier-orders.index') }}" class="btn btn-light"><i class="bi bi-kanban" aria-hidden="true"></i>{{ __('Order follow-up') }}</a>
+            <a href="{{ route('supplier-orders.index') }}" class="btn btn-light"><i class="bi bi-kanban" aria-hidden="true"></i>{{ __('Purchase orders') }}</a>
         @endcan
     </x-slot:actions>
 </x-page-header>

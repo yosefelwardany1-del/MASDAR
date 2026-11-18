@@ -8,7 +8,7 @@
 @endphp
 
 <x-page-header :title="__('Supplier evaluation')" :subtitle="__('How each supplier keeps its promises, over its orders that are not cancelled.')"
-               :back="route('supplier-orders.index')" :back-label="__('Order follow-up')" />
+               :back="route('supplier-orders.index')" :back-label="__('Purchase orders')" />
 
 <form method="GET" class="d-flex flex-wrap gap-2 mb-3 align-items-end app-fu-filters" aria-label="{{ __('Filter') }}">
     <div>

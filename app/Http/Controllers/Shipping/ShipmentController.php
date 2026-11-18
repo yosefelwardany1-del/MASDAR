@@ -172,6 +172,7 @@ class ShipmentController extends Controller
             'vessel' => 'nullable|string|max:120',
             'voyage' => 'nullable|string|max:60',
             'bl_number' => 'nullable|string|max:80',
+            'incoterm' => 'nullable|string|max:60',
             'notes' => 'nullable|string|max:5000',
         ];
     }

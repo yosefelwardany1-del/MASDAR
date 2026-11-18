@@ -66,8 +66,17 @@ return [
         'levels' => ['view', 'edit'],
         'signed_in' => false,
     ],
+    'quotations' => [
+        'label' => 'Quotations',
+        'route' => 'quotations.index',
+        'group' => 'sales',
+        'icon' => 'bi-chat-square-quote',
+        'levels' => ['view', 'edit'],
+        'active' => ['quotations.*'],
+        'signed_in' => false,
+    ],
     'proforma_invoices' => [
-        'label' => 'Proforma invoices',
+        'label' => 'Sales orders (PI)',
         'route' => 'proforma-invoices.index',
         'group' => 'sales',
         'icon' => 'bi-receipt',
@@ -77,7 +86,7 @@ return [
 
     // Operations: the two follow-ups (spec §5.3–§5.5).
     'supplier_orders' => [
-        'label' => 'Order follow-up',
+        'label' => 'Purchase orders',
         'route' => 'supplier-orders.index',
         'group' => 'operations',
         'icon' => 'bi-kanban',

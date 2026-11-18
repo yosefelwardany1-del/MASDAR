@@ -238,8 +238,22 @@ address and phone, the title "Proforma Invoice (PI)".
 - OPEN (Q-P1, Q-P3): is "PO NO" the client's purchase-order number or MASDAR's own number? Is
   there a quotation before the PI? Are freight and other charges on the PI or invoiced
   separately?
+- A confirmed PI is MASDAR's sales order; the menu calls the PIs "Sales orders (PI)".
+- Quotations (built 2026-11-18, ahead of Q-P1's answer): a price offer before the PI —
+  client, currency, incoterm, validity (setting, proposed 30 days), terms, and lines (a product
+  or free text, unit, packing, MOQ, price, an optional quantity; supplier and cost seen only by
+  who sees supplier prices). Draft → sent (numbered `QT-…`, never changed after; a revision is a
+  copy) → accepted or declined; past its date unanswered it shows as expired. An accepted
+  quotation becomes one draft PI with its lines. Printed in English in MASDAR's layout.
 
 ### 5.3 Supplier orders and the order follow-up (essential need 1)
+
+A supplier order is MASDAR's purchase order to the factory; the menu calls them "Purchase
+orders", numbered `PO-…` on a new installation (the prefix is a setting). It prints as a
+**purchase contract** (采购合同) in English and Chinese for S2's first step, "order contract
+confirmation & stamp": MASDAR as the buyer, the factory as the seller, the factory's prices,
+delivery date, payment and MASDAR's terms (a setting; standard terms until MASDAR writes its
+own), with places to sign and stamp. It never shows the client or MASDAR's selling price.
 
 A supplier order is one factory or supplier's part of a client order — one row of S2. Its lines
 are PI lines, so a PI bought from five suppliers gives five supplier orders. OPEN: can one
@@ -287,6 +301,12 @@ hand is received − loaded per order line, computed and never stored. OPEN: doe
 stock of its own for sale?
 
 ### 5.5 Shipping and the container follow-up (essential need 2)
+
+A **commercial invoice** prints per client per container (built 2026-11-18, ahead of Q-C4): MASDAR
+as the seller, the client as the buyer, the goods loaded at the PI's prices with their HS codes,
+quantities, CBM and gross weight; the container, seal, vessel, B/L, ports and country of origin;
+the shipment's incoterm (else the default setting) and MASDAR's bank details when set. Numbered
+`CI-{shipment}-{client code}`.
 
 - Booking: shipping company, mode (§3.4), booking no, port of loading, port of discharge, ETD,
   ETA, vessel and voyage, B/L no.
@@ -589,3 +609,4 @@ Decisions settled during the build from this spec (marked `INFERRED`) or with th
 | 2026-11-18 | INFERRED | Q-H2: the working week starts as Monday–Friday and the days a month as 21.75 (China's standard for a daily wage); leave types start with China's common statutory days (annual 5, marriage 3, maternity 158 and paternity 15 as in Zhejiang, bereavement 3). All editable. |
 | 2026-11-18 | INFERRED | A new `hr` role prepares; a manager approves leave and payroll; the accountant sees payroll to post and pay it. Salaries are visible only to those who see payroll. |
 | 2026-11-18 | INFERRED | §5.1's "read from the documents, never typed": the stages from "PI sent" on are refused when typed and are read from the client's latest live PI; a person sets lead, inquiry, dormant and any stage MASDAR adds. When both say something, the more recent signal wins, so a new inquiry from a client whose last order is at sea shows as an inquiry. |
+| 2026-11-18 | INFERRED | A confirmed PI is the sales order and a supplier order is the purchase order; the menu says so. New installations number purchase orders PO (an installation with orders keeps its prefix). Quotations, the bilingual purchase contract and the commercial invoice are built ahead of Q-P1 and Q-C4, every choice in them a setting. |

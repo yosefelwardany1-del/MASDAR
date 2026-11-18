@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\User;
 use App\Security\Roles;
 use App\Services\Accounting\PostingService;
@@ -20,7 +21,9 @@ use App\Services\Hr\LeaveService;
 use App\Services\Hr\PayrollQueries;
 use App\Services\Hr\PayrollService;
 use App\Services\Parties\PartyService;
+use App\Services\Products\ProductService;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
+use App\Services\Quotations\QuotationService;
 use App\Services\Shipping\ContainerTrackingService;
 use App\Services\Shipping\ShipmentService;
 use App\Services\SupplierOrders\GoodsReceiptService;
@@ -107,7 +110,7 @@ class MasdarDemoSeeder extends Seeder
         foreach ($orders[0]->lines as $line) {
             app(GoodsReceiptService::class)->receive($line, ['received_on' => now()->subDays(4)->toDateString(), 'cartons' => (string) $line->cartons, 'inspection_result' => 'pass'], $manager);
         }
-        $shipment = app(ShipmentService::class)->create(['shipping_company_id' => $forwarder->id, 'mode' => 'sea_fcl', 'booking_no' => 'NGB-55831', 'port_of_loading' => 'NGB', 'port_of_discharge' => 'JEA', 'etd' => now()->subDays(2)->toDateString(), 'eta' => now()->addDays(2)->toDateString(), 'vessel' => 'MSC AURORA', 'voyage' => '246W'], $manager);
+        $shipment = app(ShipmentService::class)->create(['shipping_company_id' => $forwarder->id, 'mode' => 'sea_fcl', 'booking_no' => 'NGB-55831', 'port_of_loading' => 'NGB', 'port_of_discharge' => 'JEA', 'etd' => now()->subDays(2)->toDateString(), 'eta' => now()->addDays(2)->toDateString(), 'vessel' => 'MSC AURORA', 'voyage' => '246W', 'incoterm' => 'FOB Ningbo'], $manager);
         $container = app(ShipmentService::class)->addContainer($shipment, ['container_no' => 'MSKU7712345', 'container_type' => '40HQ', 'seal_no' => 'ML-449120'], $manager);
         app(ShipmentService::class)->bookOrder($shipment, $orders[0], $manager);
         foreach ($orders[0]->lines as $line) {
@@ -155,6 +158,23 @@ class MasdarDemoSeeder extends Seeder
         $contact($leads[1], 'email', 45, 'Inquiry for plastic hangers, 2 × 40HQ. Waiting for their target price.');
         $contact($factory, 'factory_visit', 8, 'Checked the final samples of the 1L jar; lids fit well. Packing photos promised by Friday.');
         $contact($forwarder, 'wechat', 3, 'Confirmed MSC AURORA ETD and the free days at Jebel Ali.');
+
+        // HS codes for customs, and two quotations: one sent to the new lead, one being drafted.
+        $products = app(ProductService::class);
+        foreach (['Glass storage jar 500ml' => '7013.49', 'Glass storage jar 1L' => '7013.49', 'Stainless steel lunch box' => '7323.93', 'Ceramic mug 350ml' => '6912.00'] as $name => $hs) {
+            if ($product = Product::where('name', $name)->first()) {
+                $products->update($product, ['hs_code' => $hs]);
+            }
+        }
+        $quotations = app(QuotationService::class);
+        $sent = $quotations->create(['client_id' => $leads[0]->id, 'currency' => 'USD', 'incoterm' => 'FOB Ningbo',
+            'terms' => '30% deposit, 70% before shipping. Prices for the quantities quoted.'], $sales);
+        $quotations->addLine($sent, ['product_id' => Product::where('name', 'Glass storage jar 500ml')->value('id'), 'unit_price' => '0.92', 'moq' => '2400'], $sales);
+        $quotations->addLine($sent, ['description' => "Bamboo lid storage canister 1.2L\nBorosilicate glass, bamboo lid with silicone ring", 'unit' => 'pcs',
+            'qty_per_carton' => '24', 'unit_price' => '1.35', 'moq' => '1200', 'cbm_per_carton' => '0.0900', 'kg_per_carton' => '12'], $sales);
+        $quotations->send($sent, $sales);
+        $draft = $quotations->create(['client_id' => $leads[1]->id, 'currency' => 'USD'], $sales);
+        $quotations->addLine($draft, ['description' => 'Plastic hanger, 42 cm, non-slip', 'unit' => 'pcs', 'qty_per_carton' => '200', 'unit_price' => '0.085', 'cartons' => '600'], $sales);
     }
 
     /**

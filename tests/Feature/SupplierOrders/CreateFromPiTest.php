@@ -48,7 +48,7 @@ class CreateFromPiTest extends TestCase
 
         $year = now()->format('Y');
         $orders = SupplierOrder::with('lines')->orderBy('number')->get();
-        $this->assertSame(["SO-{$year}-0001", "SO-{$year}-0002"], $orders->pluck('number')->all());
+        $this->assertSame(["PO-{$year}-0001", "PO-{$year}-0002"], $orders->pluck('number')->all());
 
         [$first, $second] = $orders->all();
         $this->assertSame($alpha->id, $first->supplier_id); // numbered in the PI's line order

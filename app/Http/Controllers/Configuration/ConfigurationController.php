@@ -76,6 +76,11 @@ class ConfigurationController extends Controller
             'hf_employee_percent' => $percent, 'hf_employer_percent' => $percent,
             'si_base_min' => 'sometimes|nullable|numeric|min:0',
             'si_base_max' => 'sometimes|nullable|numeric|min:0|gte:si_base_min',
+            // The documents around the PI: quotations, the purchase contract, the commercial invoice.
+            'quotation_valid_days' => 'sometimes|required|integer|min:1|max:365',
+            'default_incoterm' => 'sometimes|required|string|max:60',
+            'invoice_bank_details' => 'sometimes|nullable|string|max:2000',
+            'purchase_contract_terms' => 'sometimes|nullable|string|max:10000',
         ] + array_fill_keys(array_values(NumberingService::SERIES), $prefix));
         foreach (['si_employee_percent', 'si_employer_percent', 'hf_employee_percent', 'hf_employer_percent', 'si_base_min', 'si_base_max'] as $optional) {
             if (array_key_exists($optional, $data) && ($data[$optional] === null || $data[$optional] === '')) {

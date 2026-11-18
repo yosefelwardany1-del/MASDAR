@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('Order follow-up'))
+@section('title', __('Purchase orders'))
 
 @section('content')
 @php
@@ -54,7 +54,7 @@
     };
 @endphp
 
-<x-page-header :title="__('Order follow-up')" :subtitle="__('Orders management, observation, and evaluation: one row per supplier order, one column per step. Late rows come first.')">
+<x-page-header :title="__('Purchase orders')" :subtitle="__('One purchase order per factory, made from a confirmed PI, followed step by step: one row per order, one column per step. Late rows come first.')">
     <x-slot:meta>
         <span class="app-pill"><i class="bi bi-kanban" aria-hidden="true"></i>{{ trans_choice('{0} No orders|{1} :count order|[2,*] :count orders', $orders->total(), ['count' => $orders->total()]) }}</span>
         @if($lateCount > 0)
@@ -171,7 +171,7 @@
     <div class="app-card d-none d-md-block">
         <div class="table-responsive app-board app-fu-board">
             <table class="table table-sm table-hover align-middle mb-0">
-                <caption class="visually-hidden">{{ __('Order follow-up') }}</caption>
+                <caption class="visually-hidden">{{ __('Purchase orders') }}</caption>
                 <thead><tr>
                     <th scope="col" class="app-fu-ordercell">{{ __('Order no.') }} · {{ __('Factory / supplier') }}</th>
                     <th scope="col" class="app-fu-progresscell">{{ __('Delivery date') }} · {{ __('Progress') }}</th>

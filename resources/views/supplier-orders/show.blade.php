@@ -49,11 +49,11 @@
     $openStep = (int) old('step_id');
     $openAction = old('action');
     $dateFormFailed = old('delivery_date') !== null;
-    $pageTitle = new HtmlString('<span class="app-ltr">'.e($order->number).'</span>');
+    $pageTitle = new HtmlString(e(__('Purchase order')).' <span class="app-ltr">'.e($order->number).'</span>');
 @endphp
 
 <x-page-header :title="$pageTitle"
-               :back="route('supplier-orders.index')" :back-label="__('Order follow-up')"
+               :back="route('supplier-orders.index')" :back-label="__('Purchase orders')"
                :subtitle="collect([$seeSuppliers ? $order->supplier?->name : null, $clientNames ?: null])->filter()->join(' · ') ?: null">
     <x-slot:meta>
         @include('supplier-orders._status', ['status' => $order->status])
@@ -66,6 +66,9 @@
     <x-slot:actions>
         @if($order->isOpen() && auth()->user()->can('goods_receipts.view') && Route::has('goods-receipts.index'))
             <a href="{{ route('goods-receipts.index', ['order' => $order->id]) }}" class="btn btn-light"><i class="bi bi-clipboard-check" aria-hidden="true"></i>{{ __('Receive goods') }}</a>
+        @endif
+        @if(\App\Support\Access\Visibility::canSeeSupplierPrices(auth()->user()))
+            <a href="{{ route('supplier-orders.contract', $order) }}" target="_blank" class="btn btn-light"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>{{ __('Purchase contract') }}</a>
         @endif
         <a href="#steps" class="btn btn-light d-xl-none"><i class="bi bi-list-check" aria-hidden="true"></i>{{ __('Steps') }}</a>
     </x-slot:actions>
