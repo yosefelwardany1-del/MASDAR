@@ -108,8 +108,8 @@ Single company: there is no multi-company layer (a guard test fails on a `compan
 - Permissions are `{screen}.{level}`, levels cumulative: `view` ⊂ `edit` ⊂ `approve`
   (`App\Security\Screens::grantsFor`). Screens marked `signed_in` need sign-in only.
 - MASDAR's roles (`App\Security\Roles`, spec §6): `manager` (every screen), `sales`,
-  `merchandiser` (order follow-up), `warehouse_qc`, `logistics`, `accountant`, `staff` (nothing
-  until granted) and `system_admin`. `Roles::defaultGrants` gives each its screens when the role
+  `merchandiser` (order follow-up), `warehouse_qc`, `logistics`, `accountant`, `hr` (HR &
+  administration), `staff` (nothing until granted) and `system_admin`. `Roles::defaultGrants` gives each its screens when the role
   is created. A user may hold several: the union applies. **There is no `Gate::before` and no bypass role.** `system_admin` is the
   vendor's support staff: users, roles, settings, audit log — never business data or approvals.
 - `RolesAndPermissionsSeeder` runs on every deploy: it creates what is missing and grants a
@@ -206,11 +206,39 @@ postable accounts, outside a closed period, and never changes after.
 - Attention (home page and `masdar:daily-alerts`): `Dashboard\AttentionQueries` covers late and
   due steps, containers late or arriving soon, PIs booked to ship but not paid in full, and tasks.
 
+## HR (spec §5.7)
+
+Added 2026-11-18. Screens `employees.*`, `leave.*` (with `attendance.*`) and `payroll.*`, plus
+`my-leave.*` (sign-in only: the caller's own employee file). Writers (`app/Services/Hr/…`):
+`EmployeeService` (employees, employee_salaries, employee_documents), `LeaveService`
+(leave_requests, leave_decisions, leave_allowances), `AttendanceService` (attendance_records,
+public_holidays), `PayrollService` (payroll_runs, payroll_lines). Read side: `LeaveQueries`,
+`AttendanceQueries`, `PayrollQueries`, `HrCalendar` (working days: the working week setting,
+holidays and make-up working days).
+
+- **Append-only:** salaries, documents, allowances, leave requests and their decisions,
+  attendance. A salary on a date is the latest row on or before it; the newest document of a kind
+  is current; a request's status is its latest decision; the latest attendance record of a day
+  counts. PostgreSQL refuses a decision out of order and anyone deciding their own request.
+- **Payroll:** draft (numbered `DRAFT-…`) → approved (gets its `PR-` number then, gapless) →
+  void. Lines change only in a draft; gross and net are generated columns. A run posts from the
+  accounting queue (`PostingService::postPayroll`, rules `payroll`, `payroll_contributions`,
+  `payroll_tax`, `payroll_deductions`) and is paid with payments of kind `salary_payment`
+  (rule `salary_payment`). Voiding needs its payments reversed and its entry reversed
+  (trigger). Nothing about social insurance or tax is assumed: rates are settings, tax is typed.
+- **Who sees what:** salaries and salary payments only with `payroll.view`; ID numbers, birth
+  dates, addresses and bank details with `employees.edit` or `payroll.view`; document scans
+  (attachments of the employee) with `employees.edit`. The audit log stores those private fields
+  as a fingerprint, never the value.
+- **Alerts:** `AttentionQueries::expiringDocuments` (current documents of staff still employed,
+  within `hr_document_warning_days`) and `pendingLeave`, on the home page and in the morning
+  summary. Notifications are written in their reader's language.
+
 UI: the design system is `resources/css/theme.css`, built with the UI/UX Pro Max skill
 (Swiss/minimal, dense, in MASDAR's navy and gold). Its shared page components are in
 `resources/views/components/`: `x-page-header`, `x-status`, `x-stepper`, `x-progress`,
 `x-detail-list`, `x-kpi`, `x-section` and `x-empty`. Each area's own styles are in
-`resources/css/screens/*.css`. Build new screens from these; keep colours as tokens, use logical
+`resources/css/screens/*.css` (`hr.css` for HR). Build new screens from these; keep colours as tokens, use logical
 properties, and keep text contrast at 4.5:1.
 
 `tests/Feature/Integration/` holds the cross-module tests. `OrderToCashTest` runs one order

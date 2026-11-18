@@ -19,17 +19,17 @@
             </select>
             @error('leave_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
-        <div class="col-6 col-md-4">
+        <div class="col-6">
             <label class="form-label" for="lv-from">{{ __('First day') }}<span class="app-req" aria-hidden="true">*</span></label>
             <input type="date" name="starts_on" id="lv-from" class="form-control @error('starts_on') is-invalid @enderror" value="{{ old('starts_on') }}" required>
             @error('starts_on')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
-        <div class="col-6 col-md-4">
+        <div class="col-6">
             <label class="form-label" for="lv-to">{{ __('Last day') }}<span class="app-req" aria-hidden="true">*</span></label>
             <input type="date" name="ends_on" id="lv-to" class="form-control @error('ends_on') is-invalid @enderror" value="{{ old('ends_on') }}" required>
             @error('ends_on')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
-        <div class="col-md-4">
+        <div class="col-12">
             <label class="form-label" for="lv-days">{{ __('Days') }}</label>
             <input name="days" id="lv-days" inputmode="decimal" dir="ltr" class="form-control app-num @error('days') is-invalid @enderror" value="{{ old('days') }}" aria-describedby="lv-days-help">
             @error('days')<div class="invalid-feedback">{{ $message }}</div>@enderror

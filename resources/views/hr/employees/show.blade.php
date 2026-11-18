@@ -12,7 +12,7 @@
     $words = preg_split('/\s+/u', trim($employee->name)) ?: [];
     $initials = mb_strtoupper(mb_substr($words[0] ?? '?', 0, 1).(count($words) > 1 ? mb_substr(end($words), 0, 1) : ''));
     $expiringNow = $current->filter(fn ($d) => $d->expires_on && $d->daysLeft() <= $warningDays);
-    $tabs = ['documents' => ['passport', __('Documents'), $current->count()]];
+    $tabs = ['documents' => ['passport', __('Personal documents'), $current->count()]];
     if ($seesSalary) { $tabs['salary'] = ['cash-stack', __('Salary'), null]; }
     $tabs['leave'] = ['calendar-check', __('Leave'), $requests->where('status', 'pending')->count() ?: null];
     $tabs['attendance'] = ['clock-history', __('Attendance'), null];
@@ -29,7 +29,7 @@
             <div class="app-profile__titlerow">
                 <h1 class="app-profile__name" id="employee-name"><bdi>{{ $employee->name }}</bdi></h1>
                 @if($left)
-                    <span class="app-pill app-pill--skip"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>{{ __('Left') }} <span class="app-num">{{ $employee->left_on->format('Y-m-d') }}</span></span>
+                    <span class="app-pill app-pill--skip"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>{{ __('Left the company') }} <span class="app-num">{{ $employee->left_on->format('Y-m-d') }}</span></span>
                 @else
                     <span class="app-pill app-pill--done"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('On the staff') }}</span>
                 @endif

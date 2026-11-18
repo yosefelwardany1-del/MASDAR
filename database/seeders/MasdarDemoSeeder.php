@@ -12,14 +12,21 @@ use App\Services\Finance\FxRateService;
 use App\Services\Finance\MoneyAccountService;
 use App\Services\Finance\PaymentQueries;
 use App\Services\Finance\PaymentService;
+use App\Services\Hr\AttendanceService;
+use App\Services\Hr\EmployeeService;
+use App\Services\Hr\LeaveService;
+use App\Services\Hr\PayrollQueries;
+use App\Services\Hr\PayrollService;
 use App\Services\Parties\PartyService;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
 use App\Services\Shipping\ContainerTrackingService;
 use App\Services\Shipping\ShipmentService;
 use App\Services\SupplierOrders\GoodsReceiptService;
 use App\Services\SupplierOrders\SupplierOrderService;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
@@ -81,7 +88,7 @@ class MasdarDemoSeeder extends Seeder
             ?? $accounts->create(['name' => 'HSBC Hong Kong — USD', 'kind' => 'bank', 'currency' => 'USD', 'location' => 'hong_kong', 'ledger_account_id' => Account::where('code', '1101')->value('id'), 'active' => true]);
         $rmb = MoneyAccount::where('name', 'Yiwu bank — RMB')->first()
             ?? $accounts->create(['name' => 'Yiwu bank — RMB', 'kind' => 'bank', 'currency' => 'CNY', 'location' => 'mainland', 'ledger_account_id' => Account::where('code', '1201')->value('id'), 'active' => true]);
-        app(FxRateService::class)->set('CNY', now()->subDays(20)->toDateString(), '0.140000', $manager);
+        app(FxRateService::class)->set('CNY', now()->subMonthsNoOverflow(2)->startOfMonth()->toDateString(), '0.140000', $manager);
 
         $payments = app(PaymentService::class);
         // The client's 30% deposit (of 10,728.00 USD), then RMB for the factories: 1,400 USD → 10,000 CNY at 0.14.
@@ -114,5 +121,92 @@ class MasdarDemoSeeder extends Seeder
         $posting->postClientInvoice($pi1->fresh(), $manager);
         $posting->postSupplierBill($orders[0]->fresh(), $manager);
         Payment::query()->orderBy('id')->get()->each(fn (Payment $payment) => $posting->postPayment($payment, $manager));
+
+        $this->hr($manager, $usd, $rmb);
+    }
+
+    /**
+     * HR (spec §5.7): the Yiwu office's staff linked to the demo users, their documents (one
+     * residence permit about to expire), leave and attendance, and last month's payroll
+     * approved, posted and paid from RMB that the owners put in.
+     */
+    private function hr(User $manager, MoneyAccount $usd, MoneyAccount $rmb): void
+    {
+        $hrUser = User::role(Roles::HR)->first() ?? $manager;
+        $accountant = User::role(Roles::ACCOUNTANT)->first() ?? $manager;
+        $people = app(EmployeeService::class);
+        $staff = [];
+        foreach ([
+            ['Omar Haddad', null, 'sales', 'yiwu_office', 'EG', 'Account manager', '2024-03-01', '9800', '600', 'sales@example.test'],
+            ['Lin Mei', '林梅', 'merchandising', 'yiwu_office', 'CN', 'Merchandiser', '2023-09-15', '7200', '500', 'merchandiser@example.test'],
+            ['Zhang Wei', '张伟', 'quality', 'warehouse', 'CN', 'QC inspector', '2025-02-10', '6000', '300', 'warehouse_qc@example.test'],
+            ['Wang Fang', '王芳', 'logistics', 'yiwu_office', 'CN', 'Logistics coordinator', '2024-06-03', '6800', '400', 'logistics@example.test'],
+            ['Sara Nabil', null, 'finance', 'yiwu_office', 'EG', 'Accountant', '2024-01-08', '9000', '500', 'accountant@example.test'],
+        ] as [$name, $local, $department, $location, $country, $job, $joined, $base, $allowances, $email]) {
+            $employee = $people->create([
+                'name' => $name, 'name_local' => $local, 'department' => $department, 'work_location' => $location, 'nationality' => $country,
+                'job_title' => $job, 'joined_on' => $joined, 'employment_type' => 'full_time', 'salary_currency' => 'CNY',
+                'user_id' => User::where('email', $email)->value('id'), 'phone' => '+86 138 0000 '.str_pad((string) (count($staff) + 1), 4, '0', STR_PAD_LEFT),
+            ], $hrUser);
+            $people->addSalary($employee, ['effective_from' => $joined, 'base_salary' => $base, 'allowances' => $allowances, 'note' => 'Starting salary'], $manager);
+            $staff[$name] = $employee;
+        }
+        $people->addSalary($staff['Lin Mei'], ['effective_from' => '2025-01-01', 'base_salary' => '7800', 'allowances' => '500', 'note' => 'Yearly raise'], $manager);
+
+        $people->addDocument($staff['Omar Haddad'], ['kind' => 'passport', 'number' => 'A29384756', 'issued_on' => '2022-05-10', 'expires_on' => '2029-05-09'], $hrUser);
+        $people->addDocument($staff['Omar Haddad'], ['kind' => 'residence_permit', 'number' => 'ZJ-0045821', 'issued_on' => now()->subYear()->addDays(25)->toDateString(), 'expires_on' => now()->addDays(25)->toDateString()], $hrUser);
+        $people->addDocument($staff['Sara Nabil'], ['kind' => 'residence_permit', 'number' => 'ZJ-0039117', 'issued_on' => now()->subMonths(5)->toDateString(), 'expires_on' => now()->addMonths(7)->toDateString()], $hrUser);
+        $people->addDocument($staff['Lin Mei'], ['kind' => 'contract', 'number' => 'MS-HR-2023-07', 'issued_on' => now()->subYears(2)->addDays(40)->toDateString(), 'expires_on' => now()->addDays(40)->toDateString()], $hrUser);
+
+        // Last month: approved leave (one day of it unpaid), an absence and some overtime.
+        $leave = app(LeaveService::class);
+        $attendance = app(AttendanceService::class);
+        $lastMonth = now()->subMonthNoOverflow()->startOfMonth();
+        $monday = $lastMonth->copy()->next(Carbon::MONDAY)->addWeek();
+        $leave->approve($leave->request($staff['Wang Fang'], ['leave_type' => 'annual', 'starts_on' => $monday->toDateString(), 'ends_on' => $monday->copy()->addDay()->toDateString(), 'reason' => 'Family visit'], $staff['Wang Fang']->user ?? $hrUser), $manager);
+        $wednesday = $monday->copy()->addDays(2);
+        $leave->approve($leave->request($staff['Zhang Wei'], ['leave_type' => 'unpaid', 'starts_on' => $wednesday->toDateString(), 'ends_on' => $wednesday->toDateString(), 'reason' => 'Personal'], $hrUser), $manager);
+        $attendance->record($staff['Zhang Wei'], ['work_date' => $monday->copy()->addWeek()->toDateString(), 'status' => 'present', 'overtime_hours' => '6', 'note' => 'Container loading'], $hrUser);
+        $attendance->record($staff['Lin Mei'], ['work_date' => $monday->copy()->addWeek()->addDay()->toDateString(), 'status' => 'half_day'], $hrUser);
+        // This month: a late arrival, and a request waiting for a decision.
+        $today = now()->startOfDay();
+        $lateDay = $today->copy()->startOfMonth();
+        while (! $lateDay->isWeekday()) {
+            $lateDay->addDay();
+        }
+        if ($lateDay->lte($today)) {
+            $attendance->record($staff['Omar Haddad'], ['work_date' => $lateDay->toDateString(), 'status' => 'late', 'note' => 'Traffic'], $hrUser);
+        }
+        $next = $today->copy()->next(Carbon::MONDAY)->addWeek();
+        $leave->request($staff['Lin Mei'], ['leave_type' => 'annual', 'starts_on' => $next->toDateString(), 'ends_on' => $next->copy()->addDay()->toDateString(), 'reason' => 'Trip home'], $staff['Lin Mei']->user ?? $hrUser);
+
+        // Last month's payroll: prepared by HR, tax entered, approved by the manager, posted by the accountant.
+        $payroll = app(PayrollService::class);
+        $run = $payroll->prepare(['period' => $lastMonth->format('Y-m'), 'currency' => 'CNY', 'pay_date' => $today->copy()->startOfMonth()->addDays(9)->toDateString()], $hrUser);
+        foreach (['Omar Haddad' => '312.50', 'Sara Nabil' => '265.00', 'Lin Mei' => '118.40'] as $name => $tax) {
+            $payroll->updateLine($run->lines()->where('employee_id', $staff[$name]->id)->sole(), ['income_tax' => $tax], $hrUser);
+        }
+        $run = $payroll->approve($run, $manager);
+        $posting = app(PostingService::class);
+        $posting->postPayroll($run, $accountant);
+
+        // The owners put in USD; part of it is changed to RMB; the salaries are paid from RMB.
+        $payments = app(PaymentService::class);
+        $inject = $payments->record(['kind' => 'other_in', 'paid_on' => $lastMonth->toDateString(), 'money_account_id' => $usd->id, 'amount' => '10000.00',
+            'counter_account_id' => Account::where('code', '2501')->value('id'), 'reference' => 'Owners\' funds'], $manager);
+        ['out' => $out] = $payments->transfer(['from_account_id' => $usd->id, 'to_account_id' => $rmb->id, 'paid_on' => $lastMonth->copy()->addDays(2)->toDateString(),
+            'amount' => '6300.00', 'in_amount' => '45000.00', 'reference' => 'RMB for salaries'], $manager);
+        if (! app(PaymentQueries::class)->isEffective($out->fresh())) {
+            $payments->approve($out->fresh(), $manager);
+        }
+        $net = app(PayrollQueries::class)->totals($run)['net'];
+        $salaries = $payments->record(['kind' => 'salary_payment', 'paid_on' => min($today->toDateString(), $run->pay_date->toDateString()), 'money_account_id' => $rmb->id,
+            'amount' => $net, 'payroll_run_id' => $run->id, 'reference' => 'Salaries '.$lastMonth->format('Y-m')], $manager);
+        if (! app(PaymentQueries::class)->isEffective($salaries->fresh())) {
+            $payments->approve($salaries->fresh(), $manager);
+        }
+        foreach (Payment::query()->whereNotIn('id', DB::table('journal_entries')->where('source_type', PostingService::SOURCE_PAYMENT)->select('source_id'))->orderBy('id')->get() as $payment) {
+            $posting->postPayment($payment, $manager);
+        }
     }
 }

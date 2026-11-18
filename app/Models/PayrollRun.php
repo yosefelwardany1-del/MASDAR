@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Hr\HrCalendar;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -58,7 +59,7 @@ class PayrollRun extends Model
     /** "November 2026" in the reader's language. */
     public function periodLabel(): string
     {
-        return $this->period->locale(app()->getLocale())->isoFormat('MMMM YYYY');
+        return HrCalendar::monthLabel($this->period);
     }
 
     /** The last day of the month: the date the payroll is booked on. */

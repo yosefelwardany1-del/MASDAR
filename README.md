@@ -4,10 +4,12 @@ MASDAR's ERP. It starts as a copy of the starter ERP
 ([Empty-ERP](https://github.com/yosefelwardany1-del/Empty-ERP) at `88da6fd`): the platform
 layer (sign-in, roles and screen permissions, audit log, settings, attachments, notifications,
 AI and WhatsApp clients, import/export, backups) behind an Arabic RTL shell, single company.
-MASDAR's business modules are built on it to MASDAR's spec.
+MASDAR's business is built on it to MASDAR's spec: clients, suppliers and shipping companies
+with their CRM log, products, Proforma Invoices, the order and container follow-ups, payments
+and the accounts, and HR (employees, leave and attendance, payroll).
 
-- **What to build:** `docs/spec/PROJECT.md` (MASDAR's build spec — the authority; still to be
-  written). `CLAUDE.md` § Starting a client lists what is set and what is still open.
+- **What to build:** `docs/spec/PROJECT.md` (MASDAR's build spec — the authority; draft 0.1,
+  not yet signed off). `CLAUDE.md` § Starting a client lists what is set and what is still open.
 - **How the code is organised and the rules it follows:** `CLAUDE.md`.
 - **Designs and build plans:** `docs/superpowers/`.
 
@@ -102,6 +104,25 @@ number is stored only by its last four digits.
 **Reaching it from China:** the staff in Yiwu open the site from mainland China. Check early that
 the `onrender.com` address loads there at a usable speed. If it doesn't, a custom domain helps
 (and a domain on a CDN in front of it helps more).
+
+### HR and payroll
+
+Nothing has to be set for HR to work, but four things make it right for MASDAR (spec §5.7):
+
+1. **Lists & options → Business options → HR and payroll:** the working week, the payroll
+   currency, and — once MASDAR's accountant gives them — the social insurance and housing fund
+   rates and bases. Until they are set, payroll deducts none and every run says so.
+2. **Leave & attendance → Attendance sheet → Public holidays:** each year's holidays and China's
+   make-up working days. Until a year has some, every weekday counts as a working day, and the
+   sheet says so.
+3. **Lists & options → Lists → Leave types:** the days a year of each kind of leave, and whether
+   it is paid (annual leave starts at 5 days, China's minimum; give an employee more on their page).
+4. **Employees:** link each employee to their user account so they can request their own leave
+   ("My leave" in the user menu), and set their salary (only those who see payroll can).
+
+The new `hr` role ("HR & administration") is created on the next deploy, and the accountant gains
+read access to payroll. Income tax is entered on each payroll line, as the tax bureau's system
+computes it; the system never computes it.
 
 ## Backups
 

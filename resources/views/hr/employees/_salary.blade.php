@@ -33,7 +33,7 @@
                                 <td class="app-figcell"><span class="app-num app-fig">{{ Decimal::format($s->base_salary) }}</span><span class="app-unit">{{ $s->currency }}</span></td>
                                 <td class="app-figcell"><span class="app-num app-fig">{{ Decimal::format($s->allowances) }}</span><span class="app-unit">{{ $s->currency }}</span></td>
                                 <td class="small" dir="auto">{{ $s->note }}</td>
-                                <td class="small">{{ $s->creator?->name }}</td>
+                                <td class="small"><bdi>{{ $s->creator?->name }}</bdi></td>
                             </tr>
                         @endforeach
                         </tbody>

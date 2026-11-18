@@ -133,6 +133,11 @@ class PayrollController extends Controller
             abort_if($lines->isEmpty(), 404);
         }
 
-        return view('hr.payroll.payslips', ['run' => $run, 'lines' => $lines, 'company' => Setting::current()]);
+        $setting = Setting::current();
+
+        return view('hr.payroll.payslips', [
+            'run' => $run, 'lines' => $lines, 'companyName' => $setting->company_name,
+            'logoUrl' => $setting->logo ? route('settings.logo') : asset('images/masdar-logo.png'),
+        ]);
     }
 }

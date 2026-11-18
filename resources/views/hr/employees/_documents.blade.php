@@ -1,12 +1,12 @@
 @php use App\Models\Lookup; @endphp
-<x-section :title="__('Documents')" icon="passport" :subtitle="__('Passport, residence permit, visa, contract … The newest of each kind is current; a renewal is added as a new one.')" flush>
-    <h2 class="visually-hidden" id="documents-head">{{ __('Documents') }}</h2>
+<x-section :title="__('Personal documents')" icon="passport" :subtitle="__('Passport, residence permit, visa, contract … The newest of each kind is current; a renewal is added as a new one.')" flush>
+    <h2 class="visually-hidden" id="documents-head">{{ __('Personal documents') }}</h2>
     @if($employee->documents->isEmpty())
         <x-empty icon="passport" :title="__('No documents yet.')" :text="__('Add the residence permit and passport first: they are watched for expiry.')" />
     @else
         <div class="table-responsive">
             <table class="table align-middle mb-0">
-                <thead><tr><th scope="col">{{ __('Document') }}</th><th scope="col">{{ __('Number') }}</th><th scope="col">{{ __('Issued') }}</th><th scope="col">{{ __('Expires') }}</th><th scope="col">{{ __('Status') }}</th></tr></thead>
+                <thead><tr><th scope="col">{{ __('Document') }}</th><th scope="col">{{ __('Number') }}</th><th scope="col">{{ __('Issued on') }}</th><th scope="col">{{ __('Expires') }}</th><th scope="col">{{ __('Status') }}</th></tr></thead>
                 <tbody>
                 @foreach($employee->documents as $doc)
                     @php
@@ -56,7 +56,7 @@
                     <input name="number" id="doc-number" dir="ltr" class="form-control" value="{{ old('number') }}" maxlength="80">
                 </div>
                 <div class="col-6 col-md-3">
-                    <label class="form-label small" for="doc-issued">{{ __('Issued') }}</label>
+                    <label class="form-label small" for="doc-issued">{{ __('Issued on') }}</label>
                     <input type="date" name="issued_on" id="doc-issued" class="form-control" value="{{ old('issued_on') }}">
                 </div>
                 <div class="col-6 col-md-3">

@@ -2,6 +2,10 @@
 
 namespace Tests\Feature\Guards;
 
+use App\Http\Controllers\Configuration\ConfigurationController;
+use App\Models\Lookup;
+use App\Security\Roles;
+use App\Services\Accounting\PostingService;
 use Symfony\Component\Finder\Finder;
 use Tests\TestCase;
 
@@ -27,6 +31,22 @@ class TranslationsTest extends TestCase
                 }
             }
             $this->assertSame([], $missing, "Translate these in lang/{$locale}.json");
+        }
+    }
+
+    /** Labels kept as English in code and shown through __($label): screens, lists, roles, posting events, list fields. */
+    public function test_labels_kept_in_code_are_translated(): void
+    {
+        $labels = array_merge(
+            array_column(config('screens'), 'label'),
+            array_values(Lookup::LISTS),
+            array_values((new \ReflectionClassConstant(Roles::class, 'LABELS'))->getValue()),
+            array_values(PostingService::EVENT_LABELS),
+            array_merge(...array_values(array_map('array_values', (new \ReflectionClassConstant(ConfigurationController::class, 'META'))->getValue()))),
+        );
+        foreach (self::LOCALES as $locale) {
+            $dictionary = $this->dictionary($locale);
+            $this->assertSame([], array_values(array_unique(array_filter($labels, fn ($l) => ! array_key_exists($l, $dictionary)))), "Translate these in lang/{$locale}.json");
         }
     }
 

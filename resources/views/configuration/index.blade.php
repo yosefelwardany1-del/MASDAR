@@ -118,12 +118,66 @@
                 </fieldset>
             </x-section>
 
+            <x-section :title="__('HR and payroll')" icon="people" id="hr-payroll">
+                <p class="form-text mt-0 mb-3">{{ __('Rates and bases are left empty until MASDAR\'s accountant gives them: payroll then deducts nothing and says so. Leave types and their days a year are under Lists.') }}</p>
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label" for="payroll_currency">{{ __('Payroll currency') }}</label>
+                        <select id="payroll_currency" name="payroll_currency" class="form-select">
+                            @foreach($currencies as $code => $name)<option value="{{ $code }}" @selected(old('payroll_currency', $setting->payroll_currency) === $code)>{{ $code }} · {{ $name }}</option>@endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label" for="payroll_days_per_month">{{ __('Working days a month (daily rate)') }}</label>
+                        <input id="payroll_days_per_month" name="payroll_days_per_month" inputmode="decimal" dir="ltr" class="form-control app-num @error('payroll_days_per_month') is-invalid @enderror" value="{{ old('payroll_days_per_month', $setting->payroll_days_per_month) }}">
+                        @error('payroll_days_per_month')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label" for="payroll_overtime_multiplier">{{ __('Overtime pay multiplier') }}</label>
+                        <input id="payroll_overtime_multiplier" name="payroll_overtime_multiplier" inputmode="decimal" dir="ltr" class="form-control app-num @error('payroll_overtime_multiplier') is-invalid @enderror" value="{{ old('payroll_overtime_multiplier', $setting->payroll_overtime_multiplier) }}">
+                        @error('payroll_overtime_multiplier')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label" for="hr_document_warning_days">{{ __('Warn this many days before a document expires') }}</label>
+                        <input id="hr_document_warning_days" name="hr_document_warning_days" type="number" min="0" max="365" class="form-control app-num @error('hr_document_warning_days') is-invalid @enderror" value="{{ old('hr_document_warning_days', $setting->hr_document_warning_days) }}">
+                        @error('hr_document_warning_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-12">
+                        <fieldset>
+                            <legend class="form-label">{{ __('Working days of the week') }}</legend>
+                            <div class="d-flex flex-wrap gap-3">
+                                @foreach(range(1, 7) as $dow)
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="wd-{{ $dow }}" name="hr_work_days[]" value="{{ $dow }}" @checked(in_array($dow, $setting->workDays(), true))>
+                                        <label class="form-check-label" for="wd-{{ $dow }}">{{ \Carbon\Carbon::now()->locale(app()->getLocale())->startOfWeek(\Carbon\Carbon::MONDAY)->addDays($dow - 1)->isoFormat('dddd') }}</label>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <input type="hidden" name="hr_work_days[]" value="">
+                            @error('hr_work_days')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        </fieldset>
+                    </div>
+                    @foreach([
+                        'si_employee_percent' => __('Social insurance, employee %'), 'si_employer_percent' => __('Social insurance, employer %'),
+                        'hf_employee_percent' => __('Housing fund, employee %'), 'hf_employer_percent' => __('Housing fund, employer %'),
+                        'si_base_min' => __('Lowest contribution base'), 'si_base_max' => __('Highest contribution base'),
+                    ] as $field => $label)
+                        <div class="col-md-6 col-lg-4 col-xl-2">
+                            <label class="form-label" for="{{ $field }}">{{ $label }}</label>
+                            <input id="{{ $field }}" name="{{ $field }}" inputmode="decimal" dir="ltr" class="form-control app-num @error($field) is-invalid @enderror" value="{{ old($field, $setting->{$field} === null ? '' : rtrim(rtrim((string) $setting->{$field}, '0'), '.')) }}" placeholder="{{ __('Not set') }}">
+                            @error($field)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    @endforeach
+                </div>
+            </x-section>
+
             <x-section :title="__('Number prefixes')" icon="hash">
                 <div class="row g-3">
                     @foreach([
                         'client_prefix' => __('Clients'), 'supplier_prefix' => __('Suppliers'), 'shipping_company_prefix' => __('Shipping companies'),
                         'product_prefix' => __('Products'), 'pi_prefix' => __('Proforma invoices'), 'supplier_order_prefix' => __('Supplier orders'),
                         'shipment_prefix' => __('Shipments'), 'payment_prefix' => __('Payments'), 'journal_prefix' => __('Journal entries'),
+                        'employee_prefix' => __('Employees'), 'payroll_prefix' => __('Payroll runs'),
                     ] as $field => $label)
                         <div class="col-6 col-md-4 col-xl-2">
                             <label class="form-label" for="{{ $field }}">{{ $label }}</label>

@@ -140,7 +140,7 @@ class PayrollFlowTest extends TestCase
             app(PayrollService::class)->void($run, $this->manager, 'Wrong month');
             $this->fail('a paid run must not be voided');
         } catch (ValidationException $e) {
-            $this->assertStringContainsString('Reverse the salary payments', implode(' ', $e->errors()['run']));
+            $this->assertSame(__('Reverse the salary payments of :number first (on the Payments screen).', ['number' => $run->number]), $e->errors()['run'][0]);
         }
     }
 

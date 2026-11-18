@@ -11,7 +11,7 @@
                 $own = $r->employee?->user_id === $me->id;
                 $mayDecide = $status === 'pending' && ! $own && $me->can('leave.approve') && ! $selfService;
                 $mayCancel = in_array($status, ['pending', 'approved'], true)
-                    && ($selfService ? ($status === 'pending' || $r->starts_on->toDateString() > $today) : $me->can('leave.edit'));
+                    && ($selfService ? ($status === 'pending' || $r->starts_on->toDateString() > $today) : ($me->can('leave.edit') && ($status === 'pending' || $r->ends_on->toDateString() >= $today)));
                 $days = rtrim(rtrim((string) $r->days, '0'), '.');
             @endphp
             <li class="app-list__row app-hr-request" id="leave-{{ $r->id }}">
@@ -25,7 +25,7 @@
                         @if($r->reason) · <span dir="auto">{{ $r->reason }}</span>@endif
                     </div>
                     @if($r->latestDecision)
-                        <div class="app-list__sub small">{{ LeaveRequest::statusLabel($status) }} · {{ $r->latestDecision->decider?->name }} · <span class="app-num">{{ $r->latestDecision->created_at->format('Y-m-d') }}</span>@if($r->latestDecision->note) · <span dir="auto">{{ $r->latestDecision->note }}</span>@endif</div>
+                        <div class="app-list__sub small">{{ LeaveRequest::statusLabel($status) }} · <bdi>{{ $r->latestDecision->decider?->name }}</bdi> · <span class="app-num">{{ $r->latestDecision->created_at->format('Y-m-d') }}</span>@if($r->latestDecision->note) · <span dir="auto">{{ $r->latestDecision->note }}</span>@endif</div>
                     @endif
                 </div>
                 <div class="app-hr-request__side">

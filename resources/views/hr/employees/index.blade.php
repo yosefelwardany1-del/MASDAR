@@ -23,7 +23,7 @@
     @endif
 </div>
 
-<form method="GET" class="app-card app-filterbar mb-3" role="search">
+<form method="GET" class="app-card app-hr-filter mb-3" role="search">
     <div class="row g-2 align-items-end">
         <div class="col-md-4">
             <label class="form-label small" for="q">{{ __('Search') }}</label>
@@ -40,7 +40,7 @@
             <label class="form-label small" for="status">{{ __('Who') }}</label>
             <select name="status" id="status" class="form-select">
                 <option value="current" @selected($filters['status'] === 'current')>{{ __('On the staff') }}</option>
-                <option value="left" @selected($filters['status'] === 'left')>{{ __('Left') }}</option>
+                <option value="left" @selected($filters['status'] === 'left')>{{ __('Left the company') }}</option>
                 <option value="all" @selected($filters['status'] === 'all')>{{ __('Everyone') }}</option>
             </select>
         </div>
@@ -87,7 +87,7 @@
                         <td>
                             <div class="d-flex flex-wrap gap-1">
                                 @if($left)
-                                    <x-status tone="skip" icon="box-arrow-right">{{ __('Left') }} <span class="app-num">{{ $e->left_on->format('Y-m-d') }}</span></x-status>
+                                    <x-status tone="skip" icon="box-arrow-right">{{ __('Left the company') }} <span class="app-num">{{ $e->left_on->format('Y-m-d') }}</span></x-status>
                                 @elseif($onLeaveToday->contains($e->id))
                                     <x-status tone="info" icon="calendar-x">{{ __('On leave') }}</x-status>
                                 @else

@@ -5,6 +5,7 @@ namespace App\Services\Hr;
 use App\Models\BusinessSetting;
 use App\Models\PublicHoliday;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Carbon\CarbonPeriod;
 
 /**
@@ -68,6 +69,14 @@ class HrCalendar
         $this->loadYear((int) substr($date, 0, 4));
 
         return $this->holidays[$date] ?? null;
+    }
+
+    /** A month in the reader's language: "October 2026", "أكتوبر 2026", "2026年10月". */
+    public static function monthLabel(CarbonInterface $month, ?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+
+        return str_starts_with($locale, 'zh') ? $month->format('Y').'年'.$month->format('n').'月' : $month->locale($locale)->isoFormat('MMMM YYYY');
     }
 
     /** False while no public holiday is entered for the year: the sheet and payroll warn (spec §5.7). */
