@@ -174,6 +174,44 @@ return [
         'signed_in' => false,
     ],
 
+    // Batch C (spec §5.8): what complete books need.
+    'bank_reconciliation' => [
+        'label' => 'Bank reconciliation',
+        'route' => 'bank-reconciliation.index',
+        'group' => 'finance',
+        'icon' => 'bi-bank2',
+        'levels' => ['view', 'edit'],
+        'active' => ['bank-reconciliation.*'],
+        'signed_in' => false,
+    ],
+    'expense_claims' => [
+        'label' => 'Expense claims',
+        'route' => 'expense-claims.index',
+        'group' => 'finance',
+        'icon' => 'bi-receipt-cutoff',
+        'levels' => ['view', 'edit', 'approve'],
+        'active' => ['expense-claims.*'],
+        'signed_in' => false,
+    ],
+    'budgets' => [
+        'label' => 'Budgets',
+        'route' => 'budgets.index',
+        'group' => 'finance',
+        'icon' => 'bi-clipboard-data',
+        'levels' => ['view', 'edit'],
+        'active' => ['budgets.*'],
+        'signed_in' => false,
+    ],
+    'fixed_assets' => [
+        'label' => 'Fixed assets',
+        'route' => 'fixed-assets.index',
+        'group' => 'finance',
+        'icon' => 'bi-pc-display',
+        'levels' => ['view', 'edit'],
+        'active' => ['fixed-assets.*'],
+        'signed_in' => false,
+    ],
+
     // Profit per sales order and per container (spec §5.8); names factories' prices.
     'profit' => [
         'label' => 'Profit',

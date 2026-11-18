@@ -484,6 +484,39 @@ and puts it on a draft quotation line through the quotation's own writer: the fa
 and packing, and the selling price given there. A request can be closed without choosing, and
 reopened until it is on a quotation.
 
+**Bank reconciliation** (screen `bank_reconciliation`): a bank's CSV statement is imported for a
+money account (the columns and date format chosen on import); its lines never change. Each line
+is matched to the payment it is — same account, same signed amount (PostgreSQL) — by hand or all
+at once where exactly one payment that counts, unmatched, of that amount lies within a week. A
+line with no payment (a bank charge) is recorded as a payment from the line. The page shows the
+bank's closing balance against the system's, and the payments of those dates on no line.
+
+**Exchange revaluation** (Accounting → Revaluation, posted by a manager): at a date, every asset
+and liability balance in another currency — per account, party and currency — is restated at
+that day's rate; the difference posts to the rule `fx_revaluation` (7101). The lines say which
+currency they revalue, so the next revaluation carries on from them; one can be reversed.
+
+**Opening balances** (Accounting → Opening balances): a CSV of balances — date, account, party,
+currency, amount (+ debit, − credit), rate, memo. Each date becomes one draft manual entry
+(event `opening_balance`) balanced against 3901 Opening balance equity; open invoices dated as
+the invoice age right. A manager posts the drafts.
+
+**Expense claims** (screen `expense_claims`, and "My expenses" for everyone): a claim with its
+receipts (date, kind from the `expense_category` list — each kind names its account — amount, the
+PI or container it was for), submitted, then approved, rejected or returned by someone else
+(never one's own; decisions in order — PostgreSQL). An approved claim is posted (each kind's
+account / 2405 Staff expense claims payable) and paid back with a payment of kind
+`claim_payment` (2405 / the money account), only once approved and in its currency.
+
+**Budgets** (screen `budgets`): an amount per income or expense account and month; against it,
+the actual from posted lines, to a month of the year.
+
+**Fixed assets** (screen `fixed_assets`): cost, residual value, life in months, the month
+depreciation starts and three accounts (1801, 1802, 6601 to start). A month is depreciated once
+for all assets, straight-line, never below the residual value, in one entry (event
+`depreciation`) whose lines are recorded per asset; cost, life and accounts freeze once
+depreciated; a disposed asset stops.
+
 **Analysis** (screen `analytics`): confirmed sales by month, by client, by product and by
 account manager; purchases by factory and by month; quotations written, sent, answered, won and
 turned into a PI — all in the book currency, each document at the rate of its date (one without

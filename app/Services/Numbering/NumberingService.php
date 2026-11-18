@@ -31,10 +31,12 @@ class NumberingService
         'credit_note' => 'credit_note_prefix',
         'debit_note' => 'debit_note_prefix',
         'sourcing' => 'sourcing_prefix',
+        'expense_claim' => 'expense_claim_prefix',
+        'asset' => 'asset_prefix',
     ];
 
     /** Codes that run without a year. */
-    private const YEARLESS = ['client', 'supplier', 'shipping_company', 'product', 'employee'];
+    private const YEARLESS = ['client', 'supplier', 'shipping_company', 'product', 'employee', 'asset'];
 
     /** The next number of $series; call inside the transaction that uses it. */
     public function next(string $series, ?\DateTimeInterface $on = null): string

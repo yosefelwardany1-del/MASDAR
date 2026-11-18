@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Models\ExpenseClaim;
 use App\Models\Payment;
 use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
@@ -97,5 +98,16 @@ class PostingQueue
             ->withSum('lines', 'amount')
             ->orderBy('issued_on')->orderBy('id')
             ->get();
+    }
+
+    /** Approved expense claims with no entry yet (spec §5.8). */
+    public function expenseClaims(): Collection
+    {
+        return ExpenseClaim::query()
+            ->whereHas('latestDecision', fn ($q) => $q->where('decision', 'approved'))
+            ->whereNotExists(fn (Builder $q) => $q->selectRaw('1')->from('journal_entries as e')
+                ->where('e.source_type', PostingService::SOURCE_EXPENSE_CLAIM)->whereColumn('e.source_id', 'expense_claims.id'))
+            ->with(['user', 'latestDecision'])->withSum('lines', 'amount')
+            ->orderBy('id')->get();
     }
 }

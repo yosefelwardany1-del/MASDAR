@@ -41,7 +41,7 @@
         <div class="row g-3">
             <div class="col-md-4">
                 <label class="form-label" for="pay-date">{{ __('Date') }}<span class="app-req" aria-hidden="true">*</span></label>
-                <input type="date" name="paid_on" id="pay-date" class="form-control @error('paid_on') is-invalid @enderror" value="{{ old('paid_on', now()->toDateString()) }}" required>
+                <input type="date" name="paid_on" id="pay-date" class="form-control @error('paid_on') is-invalid @enderror" value="{{ old('paid_on', $preset['paid_on'] ?? now()->toDateString()) }}" required>
                 @error('paid_on')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-md-8">
@@ -49,7 +49,7 @@
                 <select name="money_account_id" id="pay-account" class="form-select @error('money_account_id') is-invalid @enderror" required>
                     <option value="">{{ __('Choose…') }}</option>
                     @foreach($accounts as $a)
-                        <option value="{{ $a->id }}" data-currency="{{ $a->currency }}" @selected((int) old('money_account_id') === $a->id)>{{ $a->label() }} — {{ \App\Models\MoneyAccount::locationLabel($a->location) }}</option>
+                        <option value="{{ $a->id }}" data-currency="{{ $a->currency }}" @selected((int) old('money_account_id', $preset['money_account_id'] ?? null) === $a->id)>{{ $a->label() }} — {{ \App\Models\MoneyAccount::locationLabel($a->location) }}</option>
                     @endforeach
                 </select>
                 @error('money_account_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -61,7 +61,7 @@
             <div class="col-md-4">
                 <label class="form-label" for="pay-amount">{{ __('Amount') }}<span class="app-req" aria-hidden="true">*</span></label>
                 <div class="input-group has-validation">
-                    <input type="text" name="amount" id="pay-amount" inputmode="decimal" dir="ltr" class="form-control app-num @error('amount') is-invalid @enderror" value="{{ old('amount') }}" required aria-describedby="pay-amount-help">
+                    <input type="text" name="amount" id="pay-amount" inputmode="decimal" dir="ltr" class="form-control app-num @error('amount') is-invalid @enderror" value="{{ old('amount', $preset['amount'] ?? null) }}" required aria-describedby="pay-amount-help">
                     <span class="input-group-text app-num" data-amount-currency>—</span>
                     @error('amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -75,7 +75,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label" for="pay-reference">{{ __('Reference') }}</label>
-                <input type="text" name="reference" id="pay-reference" maxlength="120" dir="ltr" class="form-control @error('reference') is-invalid @enderror" value="{{ old('reference') }}" placeholder="{{ __('Bank or transaction reference') }}">
+                <input type="text" name="reference" id="pay-reference" maxlength="120" dir="ltr" class="form-control @error('reference') is-invalid @enderror" value="{{ old('reference', $preset['reference'] ?? null) }}" placeholder="{{ __('Bank or transaction reference') }}">
                 @error('reference')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
@@ -93,7 +93,19 @@
     @endphp
     <x-section :title="__('Who and what it is for')" icon="link-45deg">
         <div class="row g-3">
-            @if($kind === 'salary_payment')
+            @if($kind === 'claim_payment')
+                <div class="col-md-6">
+                    <label class="form-label" for="pay-claim">{{ __('Expense claim') }}<span class="app-req" aria-hidden="true">*</span></label>
+                    <select name="expense_claim_id" id="pay-claim" class="form-select @error('expense_claim_id') is-invalid @enderror" required>
+                        <option value="">{{ __('Choose…') }}</option>
+                        @foreach($claims as $claim)
+                            <option value="{{ $claim->id }}" @selected((int) old('expense_claim_id', $preset['expense_claim_id']) === $claim->id)>{{ $claim->number }} · {{ $claim->user?->name }} · {{ \App\Services\Accounting\Decimal::format($claim->total()) }} {{ $claim->currency }}</option>
+                        @endforeach
+                    </select>
+                    @error('expense_claim_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-text">{{ __('Only approved claims not yet paid back. Pay from an account in the claim\'s currency.') }}</div>
+                </div>
+            @elseif($kind === 'salary_payment')
                 <div class="col-md-6">
                     <label class="form-label" for="pay-payroll">{{ __('Payroll run') }}<span class="app-req" aria-hidden="true">*</span></label>
                     <select name="payroll_run_id" id="pay-payroll" class="form-select @error('payroll_run_id') is-invalid @enderror" required aria-describedby="pay-payroll-help">

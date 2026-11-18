@@ -223,7 +223,7 @@
                         'product_prefix' => __('Products'), 'pi_prefix' => __('Proforma invoices'), 'supplier_order_prefix' => __('Supplier orders'),
                         'shipment_prefix' => __('Shipments'), 'payment_prefix' => __('Payments'), 'journal_prefix' => __('Journal entries'),
                         'employee_prefix' => __('Employees'), 'payroll_prefix' => __('Payroll runs'), 'quotation_prefix' => __('Quotations'),
-                        'claim_prefix' => __('Claims'), 'credit_note_prefix' => __('Credit notes'), 'debit_note_prefix' => __('Debit notes'), 'sourcing_prefix' => __('Factory quotes'),
+                        'claim_prefix' => __('Claims'), 'credit_note_prefix' => __('Credit notes'), 'debit_note_prefix' => __('Debit notes'), 'sourcing_prefix' => __('Factory quotes'), 'expense_claim_prefix' => __('Expense claims'), 'asset_prefix' => __('Fixed assets'),
                     ] as $field => $label)
                         <div class="col-6 col-md-4 col-xl-2">
                             <label class="form-label" for="{{ $field }}">{{ $label }}</label>

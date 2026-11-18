@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\DB;
 class PaymentQueries
 {
     /** The kinds recorded on the payment form; transfers have their own form. */
-    public const RECORDABLE_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'other_in', 'other_out', 'salary_payment'];
+    public const RECORDABLE_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'other_in', 'other_out', 'salary_payment', 'claim_payment'];
 
     public function approvalRequired(): bool
     {
@@ -249,6 +249,7 @@ class PaymentQueries
         return array_values(array_filter(self::RECORDABLE_KINDS, fn ($kind) => match ($kind) {
             'supplier_payment' => Visibility::canSeeSupplierPrices($user),
             'salary_payment' => $user->can('payroll.view'),
+            'claim_payment' => $user->can('expense_claims.view'),
             default => true,
         }));
     }

@@ -126,6 +126,17 @@ class MasdarReferenceSeeder extends Seeder
             ['paternity', 'Paternity leave', 'إجازة أبوة', '陪产假', ['days_per_year' => 15, 'paid' => 1]],
             ['bereavement', 'Bereavement leave', 'إجازة وفاة', '丧假', ['days_per_year' => 3, 'paid' => 1]],
         ],
+        // Staff expense claims (spec §5.8); meta account: the account a line of that kind is booked to.
+        'expense_category' => [
+            ['travel', 'Travel and transport', 'السفر والمواصلات', '差旅交通', ['account' => '6502']],
+            ['meals', 'Meals and client entertainment', 'الوجبات وضيافة العملاء', '餐费及客户招待', ['account' => '6599']],
+            ['communications', 'Phone and internet', 'الهاتف والإنترنت', '通讯费', ['account' => '6501']],
+            ['courier', 'Courier and samples postage', 'البريد السريع وإرسال العينات', '快递及寄样费', ['account' => '6599']],
+            ['samples', 'Samples bought', 'شراء العينات', '样品采购', ['account' => '6599']],
+            ['office', 'Office supplies', 'مستلزمات المكتب', '办公用品', ['account' => '6599']],
+            ['inspection', 'Inspection on site', 'الفحص في الموقع', '现场验货', ['account' => '5301']],
+            ['other', 'Other', 'أخرى', '其他', ['account' => '6599']],
+        ],
         // What a quality claim is about (spec §5.8).
         'claim_type' => [
             ['shortage', 'Short shipped or missing cartons', 'نقص في الكمية أو الكراتين', '短装或缺箱'],
@@ -192,6 +203,7 @@ class MasdarReferenceSeeder extends Seeder
         ['2402', 'Salaries payable', 'رواتب مستحقة', '应付工资', 'liability', '24', null],
         ['2403', 'Social insurance and housing fund payable', 'تأمينات اجتماعية وصندوق إسكان مستحقة', '应付社保及公积金', 'liability', '24', null],
         ['2404', 'Individual income tax withheld', 'ضريبة دخل الأفراد المستقطعة', '代扣个人所得税', 'liability', '24', null],
+        ['2405', 'Staff expense claims payable', 'مطالبات مصروفات الموظفين المستحقة', '应付员工报销款', 'liability', '24', null],
         ['25', "Directors' current accounts", 'جاري الشركاء', '董事往来', 'liability', '2', null],
         ['2501', "Directors' current accounts", 'جاري الشركاء', '董事往来', 'liability', '25', null],
         ['26', 'Hong Kong profits tax payable', 'ضريبة أرباح هونج كونج المستحقة', '应交香港利得税', 'liability', '2', null],
@@ -201,6 +213,8 @@ class MasdarReferenceSeeder extends Seeder
         ['3101', 'Share capital', 'رأس المال', '股本', 'equity', '31', null],
         ['32', 'Retained earnings', 'الأرباح المحتجزة', '留存收益', 'equity', '3', null],
         ['3201', 'Retained earnings', 'الأرباح المحتجزة', '留存收益', 'equity', '32', null],
+        ['39', 'Opening balances', 'الأرصدة الافتتاحية', '期初余额', 'equity', '3', null],
+        ['3901', 'Opening balance equity', 'حقوق الأرصدة الافتتاحية', '期初余额权益', 'equity', '39', null],
         ['4', 'Income', 'الإيرادات', '收入', 'income', null, null],
         ['41', 'Sales of goods', 'مبيعات البضائع', '货物销售收入', 'income', '4', null],
         ['4101', 'Sales of goods', 'مبيعات البضائع', '货物销售收入', 'income', '41', null],
@@ -238,6 +252,8 @@ class MasdarReferenceSeeder extends Seeder
         ['6501', 'Communications', 'الاتصالات', '通讯费', 'expense', '65', null],
         ['6502', 'Travel', 'السفر', '差旅费', 'expense', '65', null],
         ['6599', 'Other expenses', 'مصروفات أخرى', '其他费用', 'expense', '65', null],
+        ['66', 'Depreciation', 'الإهلاك', '折旧', 'expense', '6', null],
+        ['6601', 'Depreciation of fixed assets', 'إهلاك الأصول الثابتة', '固定资产折旧', 'expense', '66', null],
         ['7', 'Other income and charges', 'إيرادات وأعباء أخرى', '其他收支', 'income', null, null],
         ['71', 'FX gains and losses', 'أرباح وخسائر فروق العملة', '汇兑损益', 'income', '7', null],
         ['7101', 'FX gains and losses', 'أرباح وخسائر فروق العملة', '汇兑损益', 'income', '71', null],
@@ -270,6 +286,12 @@ class MasdarReferenceSeeder extends Seeder
         // Claims (spec §5.8): what MASDAR gives back to a client, and claims back from a factory.
         'credit_note' => ['4102', '1401', 'A credit note to a client: what the client owes goes down.'],
         'debit_note' => ['2201', '5102', 'A debit note on a supplier: what MASDAR owes the factory goes down.'],
+        // Batch C (spec §5.8).
+        'fx_revaluation' => ['7101', '7101', 'Exchange revaluation at a month end: a loss is debited, a gain credited.'],
+        'expense_claim' => [null, '2405', 'A staff expense claim, approved: each line\'s category account, owed to the claimant.'],
+        'claim_payment' => ['2405', null, 'An approved expense claim paid back to the claimant.'],
+        'depreciation' => ['6601', '1802', 'A month\'s depreciation of the fixed assets.'],
+        'opening_balance' => [null, '3901', 'Opening balances: the other side of each balance brought in.'],
     ];
 
     public function run(): void
