@@ -230,6 +230,15 @@ onto a quotation through `QuotationService::addLine`). Analysis: `Reports\Analyt
 (read-only), charts in `resources/views/analytics/_bars` and `_columns`, styles in
 `resources/css/screens/analytics.css`.
 
+Books (batch C): `Finance\BankReconciliationService` (bank_statements, bank_statement_lines,
+bank_matches), `Finance\ExpenseClaimService` (expense_claims, lines, decisions; paid with
+`claim_payment`), `Accounting\BudgetService` (budgets, budget_lines) with `BudgetQueries`,
+`Accounting\FixedAssetService` (fixed_assets, depreciation_lines; posts through
+`PostingService::postDepreciation`), `Accounting\OpeningBalanceService` (drafts through
+`PostingService::createDraft`, event `opening_balance`), `Accounting\Revaluation` (read-only
+preview) and `PostingService::postRevaluation` (lines carry `revalues_currency`; they may be in
+the book currency on an account that takes another).
+
 The PostgreSQL session's time zone is `APP_TIMEZONE` (`config/database.php`): PHP writes local
 times without an offset.
 

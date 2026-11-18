@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\BusinessSetting;
 use App\Models\Container;
+use App\Models\ExpenseClaim;
 use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\Payment;
@@ -31,7 +32,7 @@ class PaymentController extends Controller
     private const PAGE = 25;
 
     /** Every kind, in the order the filter lists them. */
-    private const ALL_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'salary_payment', 'other_in', 'other_out', 'transfer_out', 'transfer_in'];
+    private const ALL_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'salary_payment', 'claim_payment', 'other_in', 'other_out', 'transfer_out', 'transfer_in'];
 
     public function __construct(private PaymentService $payments, private PaymentQueries $queries) {}
 
@@ -87,6 +88,12 @@ class PaymentController extends Controller
             'supplier_order_id' => $request->integer('order') ?: null,
             'container_id' => $request->integer('container') ?: null,
             'payroll_run_id' => $request->integer('payroll') ?: null,
+            'expense_claim_id' => $request->integer('claim') ?: null,
+            // A bank statement line recorded as a payment brings its date, amount and reference (spec §5.8).
+            'money_account_id' => $request->integer('account') ?: null,
+            'paid_on' => is_string($request->query('date')) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->query('date')) ? $request->query('date') : null,
+            'amount' => is_string($request->query('amount')) && preg_match('/^\d{1,14}(\.\d{1,4})?$/', $request->query('amount')) ? $request->query('amount') : null,
+            'reference' => is_string($request->query('reference')) ? mb_substr($request->query('reference'), 0, 120) : null,
         ];
         if ($preset['proforma_invoice_id'] && ! $preset['party_id']) {
             $preset['party_id'] = ProformaInvoice::query()->whereKey($preset['proforma_invoice_id'])->value('client_id');
@@ -104,6 +111,11 @@ class PaymentController extends Controller
             'pis' => in_array($kind, ['client_receipt', 'expense'], true) ? $this->piOptions($user, $kind === 'expense' ? ['party_id' => null] + $preset : $preset) : collect(),
             'orders' => in_array($kind, ['supplier_payment', 'expense'], true) ? $this->orderOptions($kind, $preset) : collect(),
             'containers' => in_array($kind, ['shipping_payment', 'expense'], true) ? $this->containerOptions($preset) : collect(),
+            'claims' => $kind === 'claim_payment'
+                ? ExpenseClaim::query()->whereHas('latestDecision', fn ($q) => $q->where('decision', 'approved'))
+                    ->whereDoesntHave('payments', fn ($q) => $q->whereNull('reverses_payment_id')->whereDoesntHave('reversal'))
+                    ->with('user')->orderByDesc('id')->limit(100)->get()
+                : collect(),
             'payrollRuns' => $kind === 'salary_payment'
                 ? PayrollRun::query()->where('status', 'approved')->orderByDesc('period')->limit(24)->get(['id', 'number', 'period', 'currency'])
                 : collect(),
@@ -130,6 +142,7 @@ class PaymentController extends Controller
             'supplier_order_id' => ['nullable', 'integer'],
             'container_id' => ['nullable', 'integer'],
             'payroll_run_id' => ['nullable', 'integer'],
+            'expense_claim_id' => ['nullable', 'integer'],
             'counter_account_id' => ['nullable', 'integer'],
             'reference' => ['nullable', 'string', 'max:120'],
             'note' => ['nullable', 'string', 'max:2000'],
@@ -269,6 +282,7 @@ class PaymentController extends Controller
         return array_values(array_filter(self::ALL_KINDS, fn ($kind) => match ($kind) {
             'supplier_payment' => Visibility::canSeeSupplierPrices($user),
             'salary_payment' => $user->can('payroll.view'),
+            'claim_payment' => $user->can('expense_claims.view'),
             default => true,
         }));
     }

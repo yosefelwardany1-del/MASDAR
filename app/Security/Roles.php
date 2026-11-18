@@ -101,6 +101,7 @@ final class Roles
                 'proforma_invoices' => 'view', 'supplier_orders' => 'view', 'goods_receipts' => 'view',
                 'containers' => 'view', 'payments' => 'edit', 'accounting' => 'edit', 'finance_reports' => 'view',
                 'payroll' => 'view', 'claims' => 'view', 'profit' => 'view', 'analytics' => 'view',
+                'bank_reconciliation' => 'edit', 'expense_claims' => 'edit', 'budgets' => 'view', 'fixed_assets' => 'edit',
             ]),
             self::HR => $grants([
                 'employees' => 'edit', 'leave' => 'edit', 'payroll' => 'edit',

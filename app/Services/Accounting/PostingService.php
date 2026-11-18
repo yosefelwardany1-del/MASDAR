@@ -4,8 +4,11 @@ namespace App\Services\Accounting;
 
 use App\Models\Account;
 use App\Models\Container;
+use App\Models\ExpenseClaim;
+use App\Models\FixedAsset;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
+use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\PayrollRun;
@@ -19,6 +22,7 @@ use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -49,6 +53,10 @@ class PostingService
 
     public const SOURCE_TRADE_NOTE = 'trade_note';
 
+    public const SOURCE_EXPENSE_CLAIM = 'expense_claim';
+
+    public const SOURCE_DEPRECIATION = 'depreciation';
+
     /**
      * The sides of each posting rule that the rule sets. For payments the other side is the
      * money account's own ledger account; events not listed here set both sides.
@@ -70,6 +78,11 @@ class PostingService
         'salary_payment' => ['debit'],
         'credit_note' => ['debit', 'credit'],
         'debit_note' => ['debit', 'credit'],
+        'fx_revaluation' => ['debit', 'credit'],
+        'expense_claim' => ['credit'],
+        'claim_payment' => ['debit'],
+        'depreciation' => ['debit', 'credit'],
+        'opening_balance' => ['credit'],
     ];
 
     /** English names of the posting events, shown through __(). */
@@ -93,6 +106,11 @@ class PostingService
         'salary_payment' => 'Salary payment',
         'credit_note' => 'Credit note to a client',
         'debit_note' => 'Debit note on a supplier',
+        'fx_revaluation' => 'Exchange revaluation',
+        'expense_claim' => 'Staff expense claim',
+        'claim_payment' => 'Expense claim paid back',
+        'depreciation' => 'Depreciation',
+        'opening_balance' => 'Opening balances',
     ];
 
     public function __construct(private NumberingService $numbers, private Ledger $ledger) {}
@@ -121,11 +139,15 @@ class PostingService
         $lines = $this->manualLines($data['lines'] ?? []);
         $this->assertOpen($data['entry_date']);
 
-        return $this->write(function () use ($data, $lines, $by) {
+        // Opening balances are manual entries marked as such (spec §5.8); no other event is typed.
+        $event = ($data['event'] ?? null) === 'opening_balance' ? 'opening_balance' : null;
+
+        return $this->write(function () use ($data, $lines, $by, $event) {
             $entry = JournalEntry::create([
                 'number' => $this->provisionalNumber(),
                 'entry_date' => $data['entry_date'],
                 'status' => 'draft',
+                'event' => $event,
                 'description' => $data['description'] ?? null,
                 'created_by' => $by->id,
             ]);
@@ -452,6 +474,117 @@ class PostingService
     }
 
     /**
+     * Book an approved expense claim (spec §5.8, event expense_claim) on the date it was approved:
+     * each line Dr the account of its category (the expense_category list's meta account, else
+     * 6599), Cr the rule's credit (2405 Staff expense claims payable), in the claim's currency.
+     */
+    public function postExpenseClaim(ExpenseClaim $claim, User $by): JournalEntry
+    {
+        $this->authorize($by, 'accounting.edit');
+        $claim = ExpenseClaim::query()->with(['lines', 'latestDecision', 'user'])->findOrFail($claim->id);
+        if ($claim->status() !== 'approved') {
+            throw new AccountingException(__('Only an approved expense claim is posted; :number is not.', ['number' => $claim->number]));
+        }
+        if ($posted = $this->ledger->postingOf(self::SOURCE_EXPENSE_CLAIM, $claim->id, 'expense_claim')) {
+            throw new AccountingException(__('Claim :number is already posted (:entry).', ['number' => $claim->number, 'entry' => $posted->number]));
+        }
+
+        $date = $claim->latestDecision->created_at->timezone(config('app.timezone'))->toDateString();
+        $rate = $this->ledger->rateOn($claim->currency, $date);
+        $accounts = Lookup::query()->where('list', 'expense_category')->get()->mapWithKeys(fn ($l) => [$l->code => $l->meta['account'] ?? null]);
+        $fallback = Account::query()->where('code', '6599')->first();
+        $lines = [];
+        $total = '0';
+        foreach ($claim->lines->groupBy(fn ($l) => $accounts[$l->category] ?? '6599') as $code => $group) {
+            $account = Account::query()->where('code', $code)->first() ?? $fallback
+                ?? throw new AccountingException(__('Set the account of expense category :category on Lists & options.', ['category' => $group->first()->category]));
+            $amount = Decimal::sum($group->pluck('amount')->map(fn ($v) => (string) $v));
+            $lines[] = $this->line($account, 'debit', Decimal::mul($amount, $rate), $claim->currency, $amount, $rate, null, $claim->number);
+            $total = Decimal::add($total, $amount);
+        }
+        if (! Decimal::isPositive($total)) {
+            throw new AccountingException(__('Claim :number has no amount to post.', ['number' => $claim->number]));
+        }
+        $debits = Decimal::sum(array_column($lines, 'debit'));
+        $lines[] = $this->line($this->ruleAccount('expense_claim', 'credit'), 'credit', $debits, $claim->currency, $total, $rate, null, $claim->number);
+
+        return $this->postNew([
+            'entry_date' => $date, 'event' => 'expense_claim',
+            'source_type' => self::SOURCE_EXPENSE_CLAIM, 'source_id' => $claim->id,
+            'description' => $this->stored('Expense claim :number of :name', ['number' => $claim->number, 'name' => $claim->user?->name]),
+        ], $lines, $by);
+    }
+
+    /**
+     * A month's depreciation (event depreciation), on the month's last day, in the book
+     * currency: per asset, Dr its expense account / Cr its accumulated depreciation account.
+     * $charges: list of [FixedAsset, amount]. Called by FixedAssetService inside its transaction.
+     *
+     * @param  list<array{0: FixedAsset, 1: string}>  $charges
+     */
+    public function postDepreciation(string $month, array $charges, User $by): JournalEntry
+    {
+        $this->authorize($by, 'accounting.edit');
+        $monthStart = Carbon::parse($month)->startOfMonth();
+        $book = $this->ledger->bookCurrency();
+        $lines = [];
+        foreach ($charges as [$asset, $amount]) {
+            if (! Decimal::isPositive($amount)) {
+                continue;
+            }
+            $asset->loadMissing('expenseAccount', 'depreciationAccount');
+            $lines[] = $this->line($asset->expenseAccount, 'debit', $amount, $book, $amount, '1.000000', null, $asset->code);
+            $lines[] = $this->line($asset->depreciationAccount, 'credit', $amount, $book, $amount, '1.000000', null, $asset->code);
+        }
+        if ($lines === []) {
+            throw new AccountingException(__('Nothing to depreciate for :month.', ['month' => $monthStart->format('Y-m')]));
+        }
+
+        return $this->postNew([
+            'entry_date' => $monthStart->copy()->endOfMonth()->toDateString(), 'event' => 'depreciation',
+            'source_type' => self::SOURCE_DEPRECIATION, 'source_id' => (int) $monthStart->format('Ym'),
+            'description' => $this->stored('Depreciation for :month', ['month' => $monthStart->locale('en')->isoFormat('MMMM YYYY')]),
+        ], $lines, $by);
+    }
+
+    /**
+     * Revalue every foreign-currency balance on asset and liability accounts at the rate of $date
+     * (spec §5.8, event fx_revaluation, accounting.approve): per account, party and currency, the
+     * difference between the balance at that rate and what the books carry goes to the line, and
+     * the gain or loss to the rule's accounts. The lines are in the book currency and say which
+     * currency they revalue, so the next revaluation carries on from them.
+     */
+    public function postRevaluation(string $date, User $by): JournalEntry
+    {
+        $this->authorize($by, 'accounting.approve');
+        $rows = app(Revaluation::class)->preview($date);
+        if ($rows === []) {
+            throw new AccountingException(__('Nothing to revalue on :date.', ['date' => $date]));
+        }
+        $book = $this->ledger->bookCurrency();
+        $lines = [];
+        $net = '0';
+        foreach ($rows as $row) {
+            $diff = $row['difference'];
+            $side = Decimal::isPositive($diff) ? 'debit' : 'credit';
+            $abs = Decimal::abs($diff);
+            $lines[] = $this->line($row['account'], $side, $abs, $book, $abs, '1.000000', $row['party_id'], 'FX '.$row['currency'].' @ '.$row['rate']) + ['revalues_currency' => $row['currency']];
+            $net = Decimal::add($net, $diff);
+        }
+        if (Decimal::isPositive($net)) {
+            $lines[] = $this->line($this->ruleAccount('fx_revaluation', 'credit'), 'credit', $net, $book, $net, '1.000000', null, 'FX gain');
+        } elseif (! Decimal::isZero($net)) {
+            $loss = Decimal::abs($net);
+            $lines[] = $this->line($this->ruleAccount('fx_revaluation', 'debit'), 'debit', $loss, $book, $loss, '1.000000', null, 'FX loss');
+        }
+
+        return $this->postNew([
+            'entry_date' => $date, 'event' => 'fx_revaluation',
+            'description' => $this->stored('Exchange revaluation at :date', ['date' => $date]),
+        ], $lines, $by, revaluation: true);
+    }
+
+    /**
      * A shipping company's bill (event shipping_bill): Dr the rule's debit (5201) / Cr the
      * rule's credit (2301, party = the company). Its source is the container, when one is
      * named; a container takes one shipping bill (the one-posting-per-source index).
@@ -533,6 +666,7 @@ class PostingService
             'transfer_out' => [$line($this->ruleAccount('transfer_out', 'debit'), 'debit'), $line($money, 'credit')],
             'transfer_in' => [$line($money, 'debit'), $line($this->ruleAccount('transfer_in', 'credit'), 'credit')],
             'salary_payment' => [$line($this->ruleAccount('salary_payment', 'debit'), 'debit'), $line($money, 'credit')],
+            'claim_payment' => [$line($this->ruleAccount('claim_payment', 'debit'), 'debit'), $line($money, 'credit')],
             default => throw new AccountingException(__('Payments of kind :kind have no posting.', ['kind' => $payment->kind])),
         };
     }
@@ -621,18 +755,18 @@ class PostingService
     // ---------------------------------------------------------------- writing
 
     /** Insert a new entry and post it at once (automatic postings). */
-    private function postNew(array $header, array $lines, User $by): JournalEntry
+    private function postNew(array $header, array $lines, User $by, bool $revaluation = false): JournalEntry
     {
         $this->assertBalanced($lines);
         $this->assertOpen($header['entry_date']);
 
-        return $this->write(function () use ($header, $lines, $by) {
+        return $this->write(function () use ($header, $lines, $by, $revaluation) {
             $entry = JournalEntry::create($header + [
                 'number' => $this->provisionalNumber(),
                 'status' => 'draft',
                 'created_by' => $by->id,
             ]);
-            $this->insertLines($entry, $lines);
+            $this->insertLines($entry, $lines, $revaluation);
             $this->markPosted($entry, $by);
             AuditTrail::record('posted', $entry, [], $this->snapshot($entry));
 
@@ -660,6 +794,7 @@ class PostingService
             'amount_currency' => (string) $l->amount_currency,
             'rate' => (string) $l->rate,
             'memo' => $l->memo,
+            'revalues_currency' => $l->revalues_currency,
         ])->all();
 
         return $this->postNew(array_merge([
@@ -670,13 +805,15 @@ class PostingService
         ], $header, [
             'description' => $description ?: $this->stored('Reversal of :number', ['number' => $original->number]),
             'reverses_entry_id' => $original->id,
-        ]), $lines, $by);
+        ]), $lines, $by, revaluation: $original->event === 'fx_revaluation');
     }
 
-    private function insertLines(JournalEntry $entry, array $lines): void
+    private function insertLines(JournalEntry $entry, array $lines, bool $revaluation = false): void
     {
         foreach ($lines as $line) {
-            $this->assertPostable($line['account'], $line['currency']);
+            // A revaluation line is in the book currency on an account that may take only another:
+            // it changes what the balance is worth, never the balance in its own currency.
+            $this->assertPostable($line['account'], $revaluation ? null : $line['currency']);
             JournalLine::create([
                 'journal_entry_id' => $entry->id,
                 'account_id' => $line['account']->id,
@@ -687,6 +824,7 @@ class PostingService
                 'amount_currency' => $line['amount_currency'],
                 'rate' => $line['rate'],
                 'memo' => $line['memo'] !== null ? mb_substr($line['memo'], 0, 255) : null,
+                'revalues_currency' => $line['revalues_currency'] ?? null,
             ]);
         }
     }

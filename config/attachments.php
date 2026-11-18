@@ -3,6 +3,8 @@
 use App\Models\Claim;
 use App\Models\Container;
 use App\Models\Employee;
+use App\Models\ExpenseClaim;
+use App\Models\FixedAsset;
 use App\Models\JournalEntry;
 use App\Models\Party;
 use App\Models\Payment;
@@ -43,6 +45,8 @@ return [
         'claims' => Claim::class,
         'trade-notes' => TradeNote::class,
         'sourcing' => SourcingRequest::class,
+        'expense-claims' => ExpenseClaim::class,
+        'fixed-assets' => FixedAsset::class,
     ],
 
 ];

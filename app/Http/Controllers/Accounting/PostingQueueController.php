@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Container;
+use App\Models\ExpenseClaim;
 use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\Payment;
@@ -35,6 +36,7 @@ class PostingQueueController extends Controller
             'bills' => $queue->bills(),
             'payrolls' => $queue->payrolls(),
             'notes' => $queue->tradeNotes(),
+            'claims' => $queue->expenseClaims(),
             'shippingCompanies' => Party::query()->shippingCompanies()->where('active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'containers' => Container::query()->orderByDesc('id')->limit(500)->get(['id', 'container_no', 'shipment_id']),
             'currencies' => array_keys(Lookup::options('currency')) ?: [$ledger->bookCurrency()],
@@ -94,6 +96,16 @@ class PostingQueueController extends Controller
     public function postAllNotes(Request $request, PostingQueue $queue, PostingService $posting)
     {
         return $this->all($queue->tradeNotes(), fn (TradeNote $n) => $posting->postTradeNote($n, $request->user()), fn (TradeNote $n) => $n->number);
+    }
+
+    public function postClaim(Request $request, ExpenseClaim $claim, PostingService $posting)
+    {
+        return $this->one(fn () => $posting->postExpenseClaim($claim, $request->user()));
+    }
+
+    public function postAllClaims(Request $request, PostingQueue $queue, PostingService $posting)
+    {
+        return $this->all($queue->expenseClaims(), fn (ExpenseClaim $c) => $posting->postExpenseClaim($c, $request->user()), fn (ExpenseClaim $c) => $c->number);
     }
 
     public function postShippingBill(Request $request, PostingService $posting)

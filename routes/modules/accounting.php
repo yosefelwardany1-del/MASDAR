@@ -48,6 +48,8 @@ Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::post('payrolls', [PostingQueueController::class, 'postAllPayrolls'])->name('payrolls');
         Route::post('payrolls/{run}', [PostingQueueController::class, 'postPayroll'])->whereNumber('run')->name('payroll');
         Route::post('notes', [PostingQueueController::class, 'postAllNotes'])->name('notes');
+        Route::post('claims', [PostingQueueController::class, 'postAllClaims'])->name('claims');
+        Route::post('claims/{claim}', [PostingQueueController::class, 'postClaim'])->whereNumber('claim')->name('claim');
         Route::post('notes/{note}', [PostingQueueController::class, 'postNote'])->whereNumber('note')->name('note');
         Route::post('shipping-bill', [PostingQueueController::class, 'postShippingBill'])->name('shipping-bill');
     });

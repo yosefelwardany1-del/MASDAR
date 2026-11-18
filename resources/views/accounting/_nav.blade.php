@@ -7,6 +7,8 @@
             'to-post' => ['accounting.to-post.index', __('To post'), 'accounting.edit', 'inbox'],
             'rules' => ['accounting.posting-rules.index', __('Posting rules'), 'accounting.view', 'signpost-split'],
             'periods' => ['accounting.periods.index', __('Periods'), 'accounting.view', 'calendar3'],
+            'revaluation' => ['accounting.revaluation', __('Revaluation'), 'accounting.view', 'currency-exchange'],
+            'opening' => ['accounting.opening', __('Opening balances'), 'accounting.edit', 'box-arrow-in-right'],
         ] as $key => [$route, $label, $permission, $icon])
             @can($permission)
                 <li class="nav-item"><a class="nav-link {{ $active === $key ? 'active' : '' }}" href="{{ route($route) }}" @if($active === $key) aria-current="page" @endif><i class="bi bi-{{ $icon }}" aria-hidden="true"></i>{{ $label }}</a></li>

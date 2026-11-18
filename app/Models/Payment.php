@@ -21,7 +21,7 @@ class Payment extends Model
 
     public const KINDS_IN = ['client_receipt', 'transfer_in', 'other_in'];
 
-    public const KINDS_OUT = ['supplier_payment', 'shipping_payment', 'expense', 'transfer_out', 'other_out', 'salary_payment'];
+    public const KINDS_OUT = ['supplier_payment', 'shipping_payment', 'expense', 'transfer_out', 'other_out', 'salary_payment', 'claim_payment'];
 
     protected $guarded = ['id', 'book_amount', 'signed_amount', 'signed_book_amount'];
 
@@ -53,6 +53,11 @@ class Payment extends Model
     public function payrollRun(): BelongsTo
     {
         return $this->belongsTo(PayrollRun::class);
+    }
+
+    public function expenseClaim(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseClaim::class);
     }
 
     public function moneyAccount(): BelongsTo
@@ -118,6 +123,7 @@ class Payment extends Model
             'transfer_out' => __('Transfer out'),
             'transfer_in' => __('Transfer in'),
             'salary_payment' => __('Salary payment'),
+            'claim_payment' => __('Expense claim paid back'),
             default => $kind,
         };
     }

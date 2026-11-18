@@ -5,7 +5,7 @@
 @section('content')
 @php
     $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v);
-    $waiting = $payments->count() + $invoices->count() + $bills->count() + $payrolls->count() + $notes->count();
+    $waiting = $payments->count() + $invoices->count() + $bills->count() + $payrolls->count() + $notes->count() + $claims->count();
     $seesPayroll = auth()->user()->can('payroll.view');
 @endphp
 <x-page-header :title="__('To post')" :eyebrow="__('Accounting')"
@@ -176,6 +176,34 @@
                 </tr>
             @empty
                 <tr><td colspan="5" class="p-0"><div class="app-panel-empty"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('No issued note is waiting to be posted.') }}</div></td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+</x-section>
+
+{{-- Staff expense claims (spec §5.8). --}}
+<x-section :title="__('Expense claims to post')" icon="receipt-cutoff" flush class="mb-4 app-section--wrap">
+    @if($claims->isNotEmpty())
+        <x-slot:actions>
+            <form method="POST" action="{{ route('accounting.to-post.claims') }}">@csrf <button class="btn btn-sm btn-primary"><i class="bi bi-check2-all" aria-hidden="true"></i>{{ __('Post all') }}</button></form>
+        </x-slot:actions>
+    @endif
+    <p class="app-note mx-3 mt-3 mb-0"><i class="bi bi-info-circle" aria-hidden="true"></i><span>{{ __('Approved claims, booked on the day they were approved: each receipt to its category\'s account, owed to the claimant until paid back.') }}</span></p>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th scope="col">{{ __('Claim') }}</th><th scope="col">{{ __('Claimant') }}</th><th scope="col">{{ __('Approved') }}</th><th scope="col" class="text-end">{{ __('Amount') }}</th><th scope="col"><span class="visually-hidden">{{ __('Post') }}</span></th></tr></thead>
+            <tbody>
+            @forelse($claims as $claim)
+                <tr>
+                    <td class="text-nowrap">@can('expense_claims.view')<a href="{{ route('expense-claims.show', $claim) }}" class="app-ltr fw-semibold">{{ $claim->number }}</a>@else<span class="app-ltr">{{ $claim->number }}</span>@endcan</td>
+                    <td>{{ $claim->user?->name }}</td>
+                    <td><span class="app-num">{{ $claim->latestDecision?->created_at?->timezone(config('app.timezone'))->toDateString() }}</span></td>
+                    <td class="app-figcell"><span class="app-num app-fig">{{ $fmt($claim->lines_sum_amount) }}</span><span class="app-unit">{{ $claim->currency }}</span></td>
+                    <td class="text-end"><form method="POST" action="{{ route('accounting.to-post.claim', $claim) }}">@csrf <button class="btn btn-sm btn-light">{{ __('Post') }}</button></form></td>
+                </tr>
+            @empty
+                <tr><td colspan="5" class="p-0"><div class="app-panel-empty"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('No approved claim is waiting to be posted.') }}</div></td></tr>
             @endforelse
             </tbody>
         </table>

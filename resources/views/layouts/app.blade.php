@@ -77,6 +77,7 @@
                         <li><a class="dropdown-item" href="{{ route('profile') }}"><i class="bi bi-person me-2"></i>{{ __('My profile') }}</a></li>
                         @if(\App\Models\Employee::query()->where('user_id', $user->id)->exists())
                             <li><a class="dropdown-item" href="{{ route('my-leave.index') }}"><i class="bi bi-calendar-check me-2"></i>{{ __('My leave') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('my-expenses.index') }}"><i class="bi bi-receipt-cutoff me-2"></i>{{ __('My expenses') }}</a></li>
                         @endif
                     @endif
                     <li><hr class="dropdown-divider"></li>

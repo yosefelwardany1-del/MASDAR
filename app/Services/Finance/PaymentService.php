@@ -5,6 +5,7 @@ namespace App\Services\Finance;
 use App\Models\Account;
 use App\Models\BusinessSetting;
 use App\Models\Container;
+use App\Models\ExpenseClaim;
 use App\Models\MoneyAccount;
 use App\Models\OrderStepDefinition;
 use App\Models\Party;
@@ -46,6 +47,7 @@ class PaymentService
         'supplier_order_id' => ['supplier_payment', 'expense'],
         'container_id' => ['shipping_payment', 'expense'],
         'payroll_run_id' => ['salary_payment'],
+        'expense_claim_id' => ['claim_payment'],
     ];
 
     public function __construct(
@@ -309,6 +311,7 @@ class PaymentService
             'supplier_order_id' => $id('supplier_order_id'),
             'container_id' => $id('container_id'),
             'payroll_run_id' => $id('payroll_run_id'),
+            'expense_claim_id' => $id('expense_claim_id'),
             'counter_account_id' => in_array($kind, self::NEEDS_COUNTER_ACCOUNT, true) ? $id('counter_account_id') : null,
         ];
         $errors = [];
@@ -359,6 +362,17 @@ class PaymentService
                 $errors['payroll_run_id'] = __('Choose the approved payroll run the salaries are paid for.');
             } elseif ($account && $account->currency !== $run->currency) {
                 $errors['money_account_id'] = __('Payroll run :number is in :currency: pay it from an account in :currency.', ['number' => $run->number, 'currency' => $run->currency]);
+            }
+        }
+
+        // An expense claim is paid back once approved, from an account in its currency (spec §5.8).
+        if ($kind === 'claim_payment' && ! isset($errors['expense_claim_id'])) {
+            $claim = $links['expense_claim_id'] !== null ? ExpenseClaim::query()->with('latestDecision')->find($links['expense_claim_id']) : null;
+            $account = MoneyAccount::query()->find($data['money_account_id'] ?? null);
+            if (! $claim || $claim->status() !== 'approved') {
+                $errors['expense_claim_id'] = __('Choose the approved expense claim paid back.');
+            } elseif ($account && $account->currency !== $claim->currency) {
+                $errors['money_account_id'] = __('Claim :number is in :currency: pay it from an account in :currency.', ['number' => $claim->number, 'currency' => $claim->currency]);
             }
         }
 
