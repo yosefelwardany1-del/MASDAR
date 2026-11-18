@@ -118,17 +118,17 @@
             </div>
             @endif
 
-            @if($kind === 'client_receipt')
+            @if(in_array($kind, ['client_receipt', 'expense'], true))
                 <div class="col-md-6">
-                    <label class="form-label" for="pay-pi">{{ __('Proforma invoice') }}</label>
-                    <select name="proforma_invoice_id" id="pay-pi" class="form-select @error('proforma_invoice_id') is-invalid @enderror" data-follows-party aria-describedby="pay-pi-help">
+                    <label class="form-label" for="pay-pi">{{ $kind === 'expense' ? __('A cost of the PI') : __('Proforma invoice') }}</label>
+                    <select name="proforma_invoice_id" id="pay-pi" class="form-select @error('proforma_invoice_id') is-invalid @enderror" @if($kind === 'client_receipt') data-follows-party @endif aria-describedby="pay-pi-help">
                         <option value="">{{ __('None') }}</option>
                         @foreach($pis as $pi)
                             <option value="{{ $pi->id }}" data-party="{{ $pi->client_id }}" @selected((int) old('proforma_invoice_id', $preset['proforma_invoice_id']) === $pi->id)>{{ $pi->reference() }} · {{ $pi->currency }}</option>
                         @endforeach
                     </select>
                     @error('proforma_invoice_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    <div class="form-text" id="pay-pi-help">{{ __('A receipt counts as paid on the PI only in the PI\'s currency.') }}</div>
+                    <div class="form-text" id="pay-pi-help">{{ $kind === 'expense' ? __('Counted against the PI on the Profit screen, e.g. an inspection or a sample for that order.') : __('A receipt counts as paid on the PI only in the PI\'s currency.') }}</div>
                 </div>
             @endif
 

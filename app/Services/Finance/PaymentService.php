@@ -15,6 +15,7 @@ use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
 use App\Services\Attachments\AttachmentService;
+use App\Services\Claims\NoteQueries;
 use App\Services\Numbering\NumberingService;
 use App\Services\SupplierOrders\OrderStepService;
 use App\Support\Audit\AuditTrail;
@@ -41,7 +42,7 @@ class PaymentService
 
     /** Which kinds may link which document. */
     private const LINKS = [
-        'proforma_invoice_id' => ['client_receipt'],
+        'proforma_invoice_id' => ['client_receipt', 'expense'],
         'supplier_order_id' => ['supplier_payment', 'expense'],
         'container_id' => ['shipping_payment', 'expense'],
         'payroll_run_id' => ['salary_payment'],
@@ -89,7 +90,7 @@ class PaymentService
             ] + $links);
             AuditTrail::record('created', $payment, [], $this->audited($payment));
             $this->storeEvidence($payment, $evidence, $by);
-            $this->syncOrderPaymentSteps($payment, $by);
+            $this->syncStepsForPayment($payment, $by);
 
             return $payment;
         });
@@ -186,7 +187,7 @@ class PaymentService
                 'note' => $this->text($note),
             ]);
             AuditTrail::record('approved', $payment, [], ['number' => $payment->number, 'approval_id' => $approval->id, 'note' => $approval->note]);
-            $this->syncOrderPaymentSteps($payment->fresh(), $by);
+            $this->syncStepsForPayment($payment->fresh(), $by);
 
             return $approval;
         });
@@ -235,7 +236,7 @@ class PaymentService
                 ]));
                 AuditTrail::record('created', $reversal, [], $this->audited($reversal));
                 AuditTrail::record('reversed', $leg, [], ['number' => $leg->number, 'reversal' => $reversal->number, 'reason' => $reason]);
-                $this->syncOrderPaymentSteps($reversal, $by);
+                $this->syncStepsForPayment($reversal, $by);
                 $reversals[] = $reversal;
             }
 
@@ -251,34 +252,48 @@ class PaymentService
      * (PaymentQueries::isEffective) move a step: one awaiting approval moves it when approved.
      * A manager turns this off by giving those steps another kind on Lists & options.
      */
-    private function syncOrderPaymentSteps(Payment $payment, User $by): void
+    private function syncStepsForPayment(Payment $payment, User $by): void
     {
         if ($payment->kind !== 'supplier_payment' || $payment->supplier_order_id === null) {
             return;
         }
         $order = SupplierOrder::query()->find($payment->supplier_order_id);
+        if (! $order) {
+            return;
+        }
+        $queries = app(PaymentQueries::class);
+        // Link the step to this payment only when it is the money that just started to count.
+        $paymentId = $payment->reverses_payment_id === null && $queries->isEffective($payment) ? $payment->id : null;
+
+        $this->syncOrderPaymentSteps($order, $by, $payment->reverses_payment_id !== null, 'Payment '.$payment->number, $paymentId, $payment->paid_on?->toDateString());
+    }
+
+    /**
+     * Bring $order's payment steps in line with what is paid against what is due: the order's
+     * total less its issued debit notes (spec §5.8). $reopen lets a step that no longer holds
+     * go back (a reversal, a voided debit note); otherwise a step only moves forward.
+     */
+    public function syncOrderPaymentSteps(SupplierOrder $order, User $by, bool $reopen = false, string $note = '', ?int $paymentId = null, ?string $on = null): void
+    {
         $codes = OrderStepDefinition::query()->where('active', true)->where('kind', 'payment')->ordered()->pluck('code')->all();
-        if (! $order || $codes === []) {
+        if ($codes === []) {
             return;
         }
 
-        $queries = app(PaymentQueries::class);
-        $paid = $queries->paidToSupplierOrder($order);
+        $paid = app(PaymentQueries::class)->paidToSupplierOrder($order);
         $total = (string) DB::table('supplier_order_lines')->where('supplier_order_id', $order->id)->sum('amount');
+        $due = bcsub($total, app(NoteQueries::class)->debitedForOrder($order->id, $order->currency), 4);
         $steps = app(OrderStepService::class);
-        // Link the step to this payment only when it is the money that just started to count.
-        $paymentId = $payment->reverses_payment_id === null && $queries->isEffective($payment) ? $payment->id : null;
-        $note = 'Payment '.$payment->number;
 
         $paidSome = bccomp($paid, '0', 4) > 0;
-        $paidAll = $paidSome && bccomp($paid, $total, 4) >= 0;
+        $paidAll = $paidSome && bccomp($paid, $due, 4) >= 0;
         foreach ($codes as $i => $code) {
             $isFirst = $i === 0;
             $shouldBeDone = $paidAll || ($isFirst && $paidSome);
             if ($shouldBeDone) {
-                $steps->recordAutomatic($order, $code, $by, $note, $paymentId, $payment->paid_on?->toDateString());
-            } elseif ($payment->reverses_payment_id !== null) {
-                // Only a reversal takes a step back; a step a person marked done stays done.
+                $steps->recordAutomatic($order, $code, $by, $note, $paymentId, $on);
+            } elseif ($reopen) {
+                // Only a reversal or a voided debit note takes a step back; a step a person marked done stays done.
                 $steps->reopenAutomatic($order, $code, $by, $note);
             }
         }
@@ -321,7 +336,8 @@ class PaymentService
 
         if ($links['proforma_invoice_id'] !== null && ! isset($errors['proforma_invoice_id'])) {
             $pi = ProformaInvoice::query()->find($links['proforma_invoice_id']);
-            if (! $pi || ! $party || $pi->client_id !== $party->id) {
+            // A receipt is from the PI's client; an expense may be a cost of any PI (spec §5.8, profit).
+            if (! $pi || ($kind === 'client_receipt' && (! $party || $pi->client_id !== $party->id))) {
                 $errors['proforma_invoice_id'] = __('Choose a PI of this client.');
             }
         }

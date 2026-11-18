@@ -27,6 +27,12 @@ RUN apk add --no-cache \
     # headers pdo_pgsql compiles against; the CLIENT package is what ships the
     # dump binary, and without it the nightly backup fails with "not found".
     postgresql-client \
+    # Headless Chromium turns the printed documents into PDF for email and WhatsApp
+    # (App\Services\Documents\PdfRenderer); Liberation is Arial's metric twin, Noto CJK the
+    # Chinese of the purchase contract and debit notes.
+    chromium \
+    font-liberation \
+    font-noto-cjk \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         pdo_pgsql \

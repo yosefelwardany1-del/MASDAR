@@ -55,7 +55,7 @@ class SupplierOrderStepEvent extends Model
         if ($note === 'All cartons received') {
             return __('All cartons received');
         }
-        if (! preg_match('/^(Booked on|Unbooked from|Loaded in|Unloaded from|Payment) (\S+)$/', $note, $m)) {
+        if (! preg_match('/^(Booked on|Unbooked from|Loaded in|Unloaded from|Payment|Debit note) (\S+)$/', $note, $m)) {
             return $note;
         }
 
@@ -65,6 +65,7 @@ class SupplierOrderStepEvent extends Model
             'Loaded in' => __('Loaded in :ref', ['ref' => $m[2]]),
             'Unloaded from' => __('Unloaded from :ref', ['ref' => $m[2]]),
             'Payment' => __('Payment :ref', ['ref' => $m[2]]),
+            'Debit note' => __('Debit note :ref', ['ref' => $m[2]]),
         };
     }
 }

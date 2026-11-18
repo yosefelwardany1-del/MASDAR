@@ -94,6 +94,10 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            // The session reads the times PHP writes (in APP_TIMEZONE, without an offset) in the
+            // same zone, so a timestamptz holds the real instant. Without it PostgreSQL takes them
+            // as UTC and every time written from PHP comes back 8 hours late.
+            'timezone' => env('DB_TIMEZONE', env('APP_TIMEZONE', 'Asia/Shanghai')),
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             // KEEP THE CONNECTION between requests (12 Oct 2026, "speed up the ERP"). Neon is
             // a network hop away, and every request used to open a fresh TLS connection and

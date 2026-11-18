@@ -143,6 +143,26 @@
                 </div>
             </x-section>
 
+            <x-section :title="__('Profit and ageing')" icon="graph-up-arrow" id="profit">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="container_cost_split">{{ __('A shared container\'s costs are split') }}</label>
+                        <select id="container_cost_split" name="container_cost_split" class="form-select @error('container_cost_split') is-invalid @enderror">
+                            @foreach(['cbm' => __('by CBM loaded'), 'kg' => __('by weight loaded'), 'value' => __('by the value of the goods loaded'), 'cartons' => __('by cartons loaded')] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('container_cost_split', $setting->container_cost_split) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">{{ __('Between the clients and orders inside it, on the Profit screen (spec Q-C3).') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="ageing_buckets">{{ __('Ageing buckets (days)') }}</label>
+                        <input id="ageing_buckets" name="ageing_buckets" dir="ltr" class="form-control app-num @error('ageing_buckets') is-invalid @enderror" value="{{ old('ageing_buckets', $setting->ageing_buckets) }}" placeholder="30,60,90">
+                        @error('ageing_buckets')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">{{ __('The limits of each column of the ageing report, separated by commas.') }}</div>
+                    </div>
+                </div>
+            </x-section>
+
             <x-section :title="__('HR and payroll')" icon="people" id="hr-payroll">
                 <p class="form-text mt-0 mb-3">{{ __('Rates and bases are left empty until MASDAR\'s accountant gives them: payroll then deducts nothing and says so. Leave types and their days a year are under Lists.') }}</p>
                 <div class="row g-3">
@@ -203,6 +223,7 @@
                         'product_prefix' => __('Products'), 'pi_prefix' => __('Proforma invoices'), 'supplier_order_prefix' => __('Supplier orders'),
                         'shipment_prefix' => __('Shipments'), 'payment_prefix' => __('Payments'), 'journal_prefix' => __('Journal entries'),
                         'employee_prefix' => __('Employees'), 'payroll_prefix' => __('Payroll runs'), 'quotation_prefix' => __('Quotations'),
+                        'claim_prefix' => __('Claims'), 'credit_note_prefix' => __('Credit notes'), 'debit_note_prefix' => __('Debit notes'),
                     ] as $field => $label)
                         <div class="col-6 col-md-4 col-xl-2">
                             <label class="form-label" for="{{ $field }}">{{ $label }}</label>

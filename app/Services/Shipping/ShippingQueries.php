@@ -11,6 +11,7 @@ use App\Models\ProformaInvoice;
 use App\Models\Shipment;
 use App\Models\SupplierOrder;
 use App\Models\User;
+use App\Services\Claims\NoteQueries;
 use App\Support\Access\Visibility;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -450,13 +451,16 @@ class ShippingQueries
                       WHERE r.pi_number = ? AND p.kind = 'client_receipt' AND p.currency = ?) AS paid",
             [$current->id, $current->pi_number, $current->currency],
         );
-        $full = (bool) DB::selectOne('SELECT CAST(? AS numeric) >= CAST(? AS numeric) AS full', [$row->paid, $row->total])->full;
+        // A credit note settles part of the PI as surely as a receipt (spec §5.8).
+        $credited = app(NoteQueries::class)->creditedForPiNumber($current->pi_number, $current->currency);
+        $full = bccomp(bcadd((string) $row->paid, $credited, 4), (string) $row->total, 4) >= 0;
 
         return [
             'pi_number' => $current->pi_number,
             'currency' => $current->currency,
             'total' => (string) $row->total,
             'paid' => (string) $row->paid,
+            'credited' => $credited,
             'fully_paid' => $full,
         ];
     }

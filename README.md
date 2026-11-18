@@ -125,6 +125,28 @@ The new `hr` role ("HR & administration") is created on the next deploy, and the
 read access to payroll. Income tax is entered on each payroll line, as the tax bureau's system
 computes it; the system never computes it.
 
+### Documents by email and WhatsApp
+
+Every printed document (PI, quotation, purchase contract, packing list, commercial invoice,
+credit and debit notes) has a **Send** page and a PDF. The Docker image installs Chromium for the
+PDF; nothing to set.
+
+- **Email:** set a real mailer on the service (`MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`,
+  `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION`, `MAIL_FROM_ADDRESS`). Until then the Send
+  page says email is not set up (the `log` mailer is refused in production). Replies go to the
+  person who sent it.
+- **WhatsApp:** in WhatsApp Manager create a **Utility** template named `document_send` (or set
+  `WHATSAPP_DOCUMENT_TEMPLATE`) with a **Document** header and two body parameters, e.g. *Please
+  find attached {{1}} from {{2}}.* Once Meta approves it and `WHATSAPP_PHONE_NUMBER_ID` and
+  `WHATSAPP_ACCESS_TOKEN` are set, documents go to a client's or factory's WhatsApp number.
+
+Every send is logged on the document's Send page, with the reason when it failed.
+
+**Times written before 2026-11-18:** the database session used UTC while the app writes China
+time, so times the app wrote itself before this fix (a PI's confirmation, a payment's creation…)
+read 8 hours late. New ones are right. If real data was entered before, say so and those rows are
+corrected.
+
 ## Backups
 
 `backup:run` runs every night at 02:15 (`APP_TIMEZONE`): a `pg_dump` of the database

@@ -62,6 +62,17 @@
                 </div>
             @endif
         @endcan
+        <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-send" aria-hidden="true"></i>{{ __('Send') }}</button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{{ route('documents.send.create', ['type' => 'packing-list', 'id' => $container->id]) }}">{{ __('Packing list') }}</a></li>
+                @can('proforma_invoices.view')
+                    @foreach($contents->unique('client_id') as $c)
+                        <li><a class="dropdown-item" href="{{ route('documents.send.create', ['type' => 'commercial-invoice', 'id' => $container->id, 'client' => $c->client_id]) }}">{{ __('Commercial invoice') }} · <bdi>{{ $c->client_name }}</bdi></a></li>
+                    @endforeach
+                @endcan
+            </ul>
+        </div>
         @can('containers.edit')
             <a href="{{ route('containers.edit', $container) }}" class="btn btn-light"><i class="bi bi-pencil" aria-hidden="true"></i>{{ __('Edit') }}</a>
         @endcan

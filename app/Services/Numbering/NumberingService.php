@@ -27,6 +27,9 @@ class NumberingService
         'employee' => 'employee_prefix',
         'payroll' => 'payroll_prefix',
         'quotation' => 'quotation_prefix',
+        'claim' => 'claim_prefix',
+        'credit_note' => 'credit_note_prefix',
+        'debit_note' => 'debit_note_prefix',
     ];
 
     /** Codes that run without a year. */

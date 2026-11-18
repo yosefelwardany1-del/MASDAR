@@ -71,6 +71,12 @@
     </x-slot:meta>
     <x-slot:actions>
         <a href="{{ route('proforma-invoices.print', $pi) }}" class="btn btn-light" target="_blank" rel="noopener"><i class="bi bi-printer" aria-hidden="true"></i>{{ __('Print') }}</a>
+        @if(! in_array($pi->status, ['draft', 'cancelled', 'superseded'], true))
+            <a href="{{ route('documents.send.create', ['type' => 'proforma-invoice', 'id' => $pi->id]) }}" class="btn btn-light"><i class="bi bi-send" aria-hidden="true"></i>{{ __('Send') }}</a>
+        @endif
+        @if(Gate::allows('profit.view') && \App\Support\Access\Visibility::canSeeSupplierPrices(auth()->user()) && $pi->status !== 'draft')
+            <a href="{{ route('profit.pi', $pi) }}" class="btn btn-light"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i>{{ __('Profit') }}</a>
+        @endif
         @if($canEdit)
             @if($pi->isDraft())
                 <a href="{{ route('proforma-invoices.edit', $pi) }}" class="btn btn-light"><i class="bi bi-pencil" aria-hidden="true"></i>{{ __('Edit header') }}</a>
@@ -215,6 +221,12 @@
                         @endif
                     </dd>
                 </div>
+                @if(bccomp((string) $credited, '0', 4) > 0)
+                    <div class="app-doc-summary__row">
+                        <dt>{{ __('Credited') }}</dt>
+                        <dd class="app-num">{{ $money($credited) }}</dd>
+                    </div>
+                @endif
                 <div class="app-doc-summary__row app-doc-summary__row--due">
                     <dt>{{ __('Balance due') }}</dt>
                     <dd class="app-num">{{ $money($outstanding) }}</dd>

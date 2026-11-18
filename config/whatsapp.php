@@ -52,6 +52,12 @@ return [
     'container_template' => env('WHATSAPP_CONTAINER_TEMPLATE', 'container_update'),
     'container_template_language' => env('WHATSAPP_CONTAINER_TEMPLATE_LANG', 'en'),
 
+    // Documents (PI, quotation, invoice …) go as an approved UTILITY template whose header is a
+    // DOCUMENT and whose body takes {{1}} the document's reference and {{2}} the company name,
+    // e.g. "Please find attached {{1}} from {{2}}." (spec §5.8). Meta refuses free text.
+    'document_template' => env('WHATSAPP_DOCUMENT_TEMPLATE', 'document_send'),
+    'document_template_language' => env('WHATSAPP_DOCUMENT_TEMPLATE_LANG', 'en'),
+
     'timeout' => (int) env('WHATSAPP_TIMEOUT', 15),
 
     // The country assumed for a number typed without one (PhoneNumber::normalise).

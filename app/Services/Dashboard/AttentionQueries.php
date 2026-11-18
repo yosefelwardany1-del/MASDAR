@@ -3,6 +3,7 @@
 namespace App\Services\Dashboard;
 
 use App\Models\BusinessSetting;
+use App\Services\Claims\NoteQueries;
 use App\Services\Finance\PaymentQueries;
 use App\Services\Hr\LeaveQueries;
 use Illuminate\Support\Carbon;
@@ -97,6 +98,7 @@ class AttentionQueries
     public function unpaidBooked(?int $accountManagerId = null, int $limit = 50): Collection
     {
         $effective = app(PaymentQueries::class)->effectiveSql('pay');
+        $credited = NoteQueries::creditedSql('pi');
 
         return collect(DB::select(<<<SQL
             SELECT * FROM (
@@ -105,7 +107,8 @@ class AttentionQueries
                        COALESCE((SELECT SUM(pay.signed_amount) FROM payments pay
                                  JOIN proforma_invoices r ON r.id = pay.proforma_invoice_id
                                  WHERE r.pi_number = pi.pi_number AND pay.kind = 'client_receipt'
-                                   AND pay.currency = pi.currency AND {$effective}), 0) AS paid
+                                   AND pay.currency = pi.currency AND {$effective}), 0) AS paid,
+                       {$credited} AS credited
                 FROM proforma_invoices pi
                 JOIN parties p ON p.id = pi.client_id
                 WHERE pi.is_current AND pi.status IN ('issued', 'accepted', 'confirmed')
@@ -117,7 +120,7 @@ class AttentionQueries
                       WHERE r.pi_number = pi.pi_number)
                   AND (CAST(? AS bigint) IS NULL OR p.account_manager_id = CAST(? AS bigint))
             ) unpaid
-            WHERE paid < total
+            WHERE paid + credited < total
             ORDER BY pi_number
             LIMIT ?
         SQL, [$accountManagerId, $accountManagerId, $limit]));

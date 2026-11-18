@@ -47,6 +47,8 @@ Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::post('bills/{order}', [PostingQueueController::class, 'postBill'])->whereNumber('order')->name('bill');
         Route::post('payrolls', [PostingQueueController::class, 'postAllPayrolls'])->name('payrolls');
         Route::post('payrolls/{run}', [PostingQueueController::class, 'postPayroll'])->whereNumber('run')->name('payroll');
+        Route::post('notes', [PostingQueueController::class, 'postAllNotes'])->name('notes');
+        Route::post('notes/{note}', [PostingQueueController::class, 'postNote'])->whereNumber('note')->name('note');
         Route::post('shipping-bill', [PostingQueueController::class, 'postShippingBill'])->name('shipping-bill');
     });
 });
@@ -59,4 +61,5 @@ Route::prefix('finance-reports')->name('finance-reports.')->middleware('can:fina
     Route::get('account-ledger', [FinanceReportController::class, 'accountLedger'])->name('account-ledger');
     Route::get('party-statement', [FinanceReportController::class, 'partyStatement'])->name('party-statement');
     Route::get('cash-position', [FinanceReportController::class, 'cashPosition'])->name('cash-position');
+    Route::get('ageing', [FinanceReportController::class, 'ageing'])->name('ageing');
 });

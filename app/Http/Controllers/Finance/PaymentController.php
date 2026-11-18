@@ -101,7 +101,7 @@ class PaymentController extends Controller
             'preset' => $preset,
             'accounts' => MoneyAccount::query()->where('active', true)->orderBy('name')->get(),
             'parties' => $this->partyOptions($kind, $user, $preset['party_id']),
-            'pis' => $kind === 'client_receipt' ? $this->piOptions($user, $preset) : collect(),
+            'pis' => in_array($kind, ['client_receipt', 'expense'], true) ? $this->piOptions($user, $kind === 'expense' ? ['party_id' => null] + $preset : $preset) : collect(),
             'orders' => in_array($kind, ['supplier_payment', 'expense'], true) ? $this->orderOptions($kind, $preset) : collect(),
             'containers' => in_array($kind, ['shipping_payment', 'expense'], true) ? $this->containerOptions($preset) : collect(),
             'payrollRuns' => $kind === 'salary_payment'

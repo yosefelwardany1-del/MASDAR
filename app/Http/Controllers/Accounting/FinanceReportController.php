@@ -9,6 +9,7 @@ use App\Models\Party;
 use App\Services\Accounting\Ledger;
 use App\Services\Accounting\LedgerReports;
 use App\Services\Finance\FxRateService;
+use App\Services\Reports\AgeingQueries;
 use App\Support\IO\CsvSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -181,6 +182,39 @@ class FinanceReportController extends Controller
             // Read only, for the bars: each currency's total at the rate of the day.
             'inBook' => MoneyAccountController::inBook($report['by_currency'], $asAt, app(FxRateService::class)),
         ]);
+    }
+
+    /** Receivables or payables by age (spec §5.8): per party and currency, oldest settled first. */
+    public function ageing(Request $request, AgeingQueries $ageing)
+    {
+        $side = in_array($request->query('side'), AgeingQueries::SIDES, true) ? $request->query('side') : 'receivable';
+        $asAt = $this->dateOr($request->query('as_at'), now()->toDateString());
+        $report = $ageing->report($side, $asAt, $request->user());
+        $labels = $this->bucketLabels($report['buckets']);
+
+        if ($this->wantsCsv($request)) {
+            return $this->csv("ageing-{$side}-{$asAt}.csv",
+                array_merge([__('Code'), __('Party'), __('Currency'), __('Open')], $labels, [__('Advance'), __('Oldest open (days)')]),
+                array_map(fn ($r) => array_merge(
+                    [$r['party']->code, $r['party']->name, $r['currency'], $r['open']], $r['buckets'], [$r['advance'], $r['oldest']['days'] ?? ''],
+                ), $report['rows']));
+        }
+
+        return view('finance-reports.ageing', compact('side', 'asAt', 'report', 'labels'));
+    }
+
+    /** @return list<string> "0–30 days", "31–60 days", …, "over 90 days" */
+    private function bucketLabels(array $buckets): array
+    {
+        $labels = [];
+        $from = 0;
+        foreach ($buckets as $limit) {
+            $labels[] = __(':from–:to days', ['from' => $from, 'to' => $limit]);
+            $from = $limit + 1;
+        }
+        $labels[] = __('Over :days days', ['days' => end($buckets)]);
+
+        return $labels;
     }
 
     /** @return array{string, string} from, to — the current year to date unless given */

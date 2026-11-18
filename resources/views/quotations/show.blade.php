@@ -18,6 +18,9 @@
     <x-slot:meta><x-status :tone="Quotation::statusTone($st)">{{ Quotation::statusLabel($st) }}</x-status></x-slot:meta>
     <x-slot:actions>
         <a href="{{ route('quotations.print', $quotation) }}" target="_blank" class="btn btn-light"><i class="bi bi-printer" aria-hidden="true"></i>{{ __('Print') }}</a>
+        @unless($quotation->isDraft())
+            <a href="{{ route('documents.send.create', ['type' => 'quotation', 'id' => $quotation->id]) }}" class="btn btn-light"><i class="bi bi-envelope" aria-hidden="true"></i>{{ __('Email or WhatsApp') }}</a>
+        @endunless
         @can('quotations.edit')
             @if($quotation->isDraft())
                 <form method="POST" action="{{ route('quotations.send', $quotation) }}">@csrf<button class="btn btn-primary"><i class="bi bi-send" aria-hidden="true"></i>{{ __('Send') }}</button></form>
