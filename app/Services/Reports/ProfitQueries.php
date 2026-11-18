@@ -170,7 +170,7 @@ class ProfitQueries
             'pi' => $pi, 'currency' => $pi->currency, 'error' => null, 'estimated' => false, 'cost_missing' => false,
             'sales_doc' => '0', 'sales' => '0', 'credited' => '0', 'goods_cost' => '0', 'debited' => '0',
             'container_cost' => Decimal::sum(array_values($shares)), 'containers' => count($shares),
-            'other_cost' => '0', 'profit' => '0', 'margin' => null,
+            'other_cost' => '0', 'fees' => '0', 'profit' => '0', 'margin' => null,
         ];
 
         try {
@@ -231,7 +231,15 @@ class ProfitQueries
                 ->where('r.pi_number', $pi->pi_number)->whereIn('payments.kind', ['expense', 'other_out'])
                 ->selectRaw('COALESCE(-SUM(payments.signed_book_amount), 0) AS total')->value('total'));
 
-            $net = Decimal::sub($row['sales'], $row['credited']);
+            // Service invoices on the PI (commission, inspection …), each at the rate of its date.
+            foreach (DB::table('service_invoices as s')->join('proforma_invoices as r', 'r.id', '=', 's.proforma_invoice_id')
+                ->where('s.status', 'issued')->where('r.pi_number', $pi->pi_number)
+                ->get(['s.id', 's.currency', 's.issued_on']) as $si) {
+                $amount = Decimal::normalize((string) DB::table('service_invoice_lines')->where('service_invoice_id', $si->id)->sum('amount'));
+                $row['fees'] = Decimal::add($row['fees'], Decimal::mul($amount, $this->rate($si->currency, (string) $si->issued_on)));
+            }
+
+            $net = Decimal::add(Decimal::sub($row['sales'], $row['credited']), $row['fees']);
             $row['profit'] = Decimal::sub(Decimal::sub(Decimal::sub($net, Decimal::sub($goods, $debited)), $row['container_cost']), $row['other_cost']);
             $row['margin'] = $this->margin($row['profit'], $net);
         } catch (AccountingException $e) {

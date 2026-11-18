@@ -60,6 +60,9 @@ class BusinessSetting extends Model
         'sourcing_prefix' => 'RFQ',
         'expense_claim_prefix' => 'EXP',
         'asset_prefix' => 'FA',
+        'sample_prefix' => 'SMP',
+        'service_invoice_prefix' => 'INV',
+        'client_portal_enabled' => false,
     ];
 
     protected function casts(): array
@@ -74,6 +77,7 @@ class BusinessSetting extends Model
             'step_warning_days' => 'integer',
             'eta_warning_days' => 'integer',
             'whatsapp_container_updates' => 'boolean',
+            'client_portal_enabled' => 'boolean',
             'hr_document_warning_days' => 'integer',
             'crm_quiet_days' => 'integer',
             'quotation_valid_days' => 'integer',

@@ -10,6 +10,7 @@ use App\Models\Party;
 use App\Models\Payment;
 use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
+use App\Models\ServiceInvoice;
 use App\Models\SupplierOrder;
 use App\Models\TradeNote;
 use App\Services\Accounting\AccountingException;
@@ -37,6 +38,7 @@ class PostingQueueController extends Controller
             'payrolls' => $queue->payrolls(),
             'notes' => $queue->tradeNotes(),
             'claims' => $queue->expenseClaims(),
+            'serviceInvoices' => $queue->serviceInvoices(),
             'shippingCompanies' => Party::query()->shippingCompanies()->where('active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'containers' => Container::query()->orderByDesc('id')->limit(500)->get(['id', 'container_no', 'shipment_id']),
             'currencies' => array_keys(Lookup::options('currency')) ?: [$ledger->bookCurrency()],
@@ -106,6 +108,16 @@ class PostingQueueController extends Controller
     public function postAllClaims(Request $request, PostingQueue $queue, PostingService $posting)
     {
         return $this->all($queue->expenseClaims(), fn (ExpenseClaim $c) => $posting->postExpenseClaim($c, $request->user()), fn (ExpenseClaim $c) => $c->number);
+    }
+
+    public function postServiceInvoice(Request $request, ServiceInvoice $invoice, PostingService $posting)
+    {
+        return $this->one(fn () => $posting->postServiceInvoice($invoice, $request->user()));
+    }
+
+    public function postAllServiceInvoices(Request $request, PostingQueue $queue, PostingService $posting)
+    {
+        return $this->all($queue->serviceInvoices(), fn ($i) => $posting->postServiceInvoice($i, $request->user()), fn ($i) => $i->number);
     }
 
     public function postShippingBill(Request $request, PostingService $posting)

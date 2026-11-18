@@ -5,7 +5,7 @@
 @section('content')
 @php
     $fmt = fn ($v) => \App\Services\Accounting\Decimal::format($v);
-    $waiting = $payments->count() + $invoices->count() + $bills->count() + $payrolls->count() + $notes->count() + $claims->count();
+    $waiting = $payments->count() + $invoices->count() + $bills->count() + $payrolls->count() + $notes->count() + $claims->count() + $serviceInvoices->count();
     $seesPayroll = auth()->user()->can('payroll.view');
 @endphp
 <x-page-header :title="__('To post')" :eyebrow="__('Accounting')"
@@ -176,6 +176,33 @@
                 </tr>
             @empty
                 <tr><td colspan="5" class="p-0"><div class="app-panel-empty"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('No issued note is waiting to be posted.') }}</div></td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+</x-section>
+
+{{-- Service invoices (spec §5.8). --}}
+<x-section :title="__('Service invoices to post')" icon="receipt" flush class="mb-4 app-section--wrap">
+    @if($serviceInvoices->isNotEmpty())
+        <x-slot:actions>
+            <form method="POST" action="{{ route('accounting.to-post.service-invoices') }}">@csrf <button class="btn btn-sm btn-primary"><i class="bi bi-check2-all" aria-hidden="true"></i>{{ __('Post all') }}</button></form>
+        </x-slot:actions>
+    @endif
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th scope="col">{{ __('Invoice') }}</th><th scope="col">{{ __('Client') }}</th><th scope="col">{{ __('Date') }}</th><th scope="col" class="text-end">{{ __('Amount') }}</th><th scope="col"><span class="visually-hidden">{{ __('Post') }}</span></th></tr></thead>
+            <tbody>
+            @forelse($serviceInvoices as $si)
+                <tr>
+                    <td class="text-nowrap">@can('service_invoices.view')<a href="{{ route('service-invoices.show', $si) }}" class="app-ltr fw-semibold">{{ $si->number }}</a>@else<span class="app-ltr">{{ $si->number }}</span>@endcan</td>
+                    <td><bdi>{{ $si->client?->name }}</bdi></td>
+                    <td><span class="app-num">{{ $si->issued_on?->toDateString() }}</span></td>
+                    <td class="app-figcell"><span class="app-num app-fig">{{ $fmt($si->lines_sum_amount) }}</span><span class="app-unit">{{ $si->currency }}</span></td>
+                    <td class="text-end"><form method="POST" action="{{ route('accounting.to-post.service-invoice', $si) }}">@csrf <button class="btn btn-sm btn-light">{{ __('Post') }}</button></form></td>
+                </tr>
+            @empty
+                <tr><td colspan="5" class="p-0"><div class="app-panel-empty"><i class="bi bi-check-circle" aria-hidden="true"></i>{{ __('No issued service invoice is waiting to be posted.') }}</div></td></tr>
             @endforelse
             </tbody>
         </table>

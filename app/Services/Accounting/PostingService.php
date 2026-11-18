@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\PayrollRun;
 use App\Models\PostingRule;
 use App\Models\ProformaInvoice;
+use App\Models\ServiceInvoice;
 use App\Models\SupplierOrder;
 use App\Models\TradeNote;
 use App\Models\User;
@@ -57,6 +58,8 @@ class PostingService
 
     public const SOURCE_DEPRECIATION = 'depreciation';
 
+    public const SOURCE_SERVICE_INVOICE = 'service_invoice';
+
     /**
      * The sides of each posting rule that the rule sets. For payments the other side is the
      * money account's own ledger account; events not listed here set both sides.
@@ -83,6 +86,7 @@ class PostingService
         'claim_payment' => ['debit'],
         'depreciation' => ['debit', 'credit'],
         'opening_balance' => ['credit'],
+        'service_invoice' => ['debit'],
     ];
 
     /** English names of the posting events, shown through __(). */
@@ -111,6 +115,7 @@ class PostingService
         'claim_payment' => 'Expense claim paid back',
         'depreciation' => 'Depreciation',
         'opening_balance' => 'Opening balances',
+        'service_invoice' => 'Service invoice',
     ];
 
     public function __construct(private NumberingService $numbers, private Ledger $ledger) {}
@@ -512,6 +517,43 @@ class PostingService
             'entry_date' => $date, 'event' => 'expense_claim',
             'source_type' => self::SOURCE_EXPENSE_CLAIM, 'source_id' => $claim->id,
             'description' => $this->stored('Expense claim :number of :name', ['number' => $claim->number, 'name' => $claim->user?->name]),
+        ], $lines, $by);
+    }
+
+    /**
+     * Post an issued service invoice (spec §5.8, event service_invoice) at the rate of its date:
+     * Dr the rule's debit (1401, party = the client) / Cr each line's kind's income account (the
+     * service_income list's meta account, else 4301).
+     */
+    public function postServiceInvoice(ServiceInvoice $invoice, User $by): JournalEntry
+    {
+        $this->authorize($by, 'accounting.edit');
+        $invoice = ServiceInvoice::query()->with(['lines', 'client'])->findOrFail($invoice->id);
+        if ($invoice->status !== 'issued') {
+            throw new AccountingException(__('Only an issued invoice is posted; :number is not.', ['number' => $invoice->number]));
+        }
+        if ($posted = $this->ledger->postingOf(self::SOURCE_SERVICE_INVOICE, $invoice->id, 'service_invoice')) {
+            throw new AccountingException(__('Invoice :number is already posted (:entry).', ['number' => $invoice->number, 'entry' => $posted->number]));
+        }
+        $date = $invoice->issued_on->toDateString();
+        $rate = $this->ledger->rateOn($invoice->currency, $date);
+        $accounts = Lookup::query()->where('list', 'service_income')->get()->mapWithKeys(fn ($l) => [$l->code => $l->meta['account'] ?? null]);
+        $lines = [];
+        $total = '0';
+        foreach ($invoice->lines->groupBy(fn ($l) => $accounts[$l->category] ?? '4301') as $code => $group) {
+            $account = Account::query()->where('code', $code)->first()
+                ?? throw new AccountingException(__('Set the account of service :category on Lists & options.', ['category' => $group->first()->category]));
+            $amount = Decimal::sum($group->pluck('amount')->map(fn ($v) => (string) $v));
+            $lines[] = $this->line($account, 'credit', Decimal::mul($amount, $rate), $invoice->currency, $amount, $rate, null, $invoice->number);
+            $total = Decimal::add($total, $amount);
+        }
+        $credits = Decimal::sum(array_column($lines, 'credit'));
+        array_unshift($lines, $this->line($this->ruleAccount('service_invoice', 'debit'), 'debit', $credits, $invoice->currency, $total, $rate, $invoice->client_id, $invoice->number));
+
+        return $this->postNew([
+            'entry_date' => $date, 'event' => 'service_invoice',
+            'source_type' => self::SOURCE_SERVICE_INVOICE, 'source_id' => $invoice->id,
+            'description' => $this->stored('Service invoice :number to :client', ['number' => $invoice->number, 'client' => $invoice->client?->name]),
         ], $lines, $by);
     }
 

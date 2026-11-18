@@ -139,6 +139,40 @@
     @endif
 </x-section>
 
+@if($editable && \App\Services\Ai\Drafts\TradeDrafts::enabled('quotation_from_message'))
+    @php $aiLines = session('ai_lines'); $unitOptions = \App\Models\Lookup::options('unit'); @endphp
+    <x-section :title="__('Draft lines from the client\'s message')" icon="stars" class="mt-3" :subtitle="__('Paste the client\'s email or WhatsApp message: the AI proposes the lines, you check and price them before anything is added.')">
+        @if(is_array($aiLines) && count($aiLines))
+            <form method="POST" action="{{ route('quotations.ai.add', $quotation) }}">
+                @csrf
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead><tr><th scope="col"><span class="visually-hidden">{{ __('Add') }}</span></th><th scope="col">{{ __('Item name & description') }}</th><th scope="col">{{ __('Unit') }}</th><th scope="col">{{ __('MOQ') }}</th><th scope="col">{{ __('Unit price') }}</th></tr></thead>
+                        <tbody>
+                        @foreach($aiLines as $i => $l)
+                            <tr>
+                                <td><input type="checkbox" class="form-check-input" name="lines[{{ $i }}][take]" value="1" checked aria-label="{{ __('Add') }}"></td>
+                                <td><textarea name="lines[{{ $i }}][description]" rows="2" class="form-control form-control-sm" dir="auto">{{ $l['description'] }}</textarea>@if($l['note'])<div class="small text-muted">{{ $l['note'] }}</div>@endif</td>
+                                <td><select name="lines[{{ $i }}][unit]" class="form-select form-select-sm">@foreach($unitOptions as $code => $label)<option value="{{ $code }}" @selected(($l['unit'] ?? 'pcs') === $code)>{{ $label }}</option>@endforeach</select></td>
+                                <td><input name="lines[{{ $i }}][quantity]" value="{{ $l['quantity'] }}" inputmode="decimal" class="form-control form-control-sm" style="max-inline-size: 7rem"></td>
+                                <td><input name="lines[{{ $i }}][unit_price]" value="{{ $l['target_price'] }}" inputmode="decimal" class="form-control form-control-sm" style="max-inline-size: 7rem" placeholder="0"></td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary btn-sm"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __('Add the ticked lines') }}</button>
+            </form>
+        @else
+            <form method="POST" action="{{ route('quotations.ai.read', $quotation) }}">
+                @csrf
+                <textarea name="message" rows="4" class="form-control mb-2" dir="auto" required aria-label="{{ __('The client\'s message') }}">{{ old('message') }}</textarea>
+                <button class="btn btn-light btn-sm"><i class="bi bi-stars" aria-hidden="true"></i>{{ __('Read it') }}</button>
+            </form>
+        @endif
+    </x-section>
+@endif
+
 @if($editable)
     <form method="POST" action="{{ route('quotations.destroy', $quotation) }}" class="mt-3" onsubmit="return confirm(@js(__('Delete this draft?')));">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash" aria-hidden="true"></i>{{ __('Delete the draft') }}</button></form>
 @endif

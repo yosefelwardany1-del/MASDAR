@@ -375,6 +375,7 @@ abstract class PartyController extends Controller
         }
         if ($writes(PartyKind::Shipping)) {
             $rules['shipping_kind'] = ['nullable', 'string', $lookup('shipping_company_kind')];
+            $rules['tracking_url_template'] = ['nullable', 'string', 'max:255', 'regex:#^https?://[^\s]+$#'];
         }
 
         $data = $request->validate($rules);

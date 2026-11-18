@@ -173,6 +173,9 @@
             <div class="app-ptabs__attach">
                 @include('partials.attachments', ['attachable' => $party, 'type' => 'parties'])
             </div>
+            @if($party->is_client && Gate::allows('clients.edit') && Gate::allows('users.edit'))
+                @include('parties._portal')
+            @endif
         </section>
 
         <section class="app-ptabs__panel" id="money" aria-labelledby="money-head" tabindex="-1" data-app-tab-panel>

@@ -38,5 +38,7 @@ Route::prefix('supplier-orders/{supplierOrder}')->whereNumber('supplierOrder')->
 });
 
 Route::get('goods-receipts', [GoodsReceiptController::class, 'index'])->middleware('can:goods_receipts.view')->name('goods-receipts.index');
+// Goods in the warehouse: received, not yet loaded (spec §5.4, §5.8).
+Route::get('goods-receipts/in-the-warehouse', [GoodsReceiptController::class, 'stock'])->middleware('can:goods_receipts.view')->name('goods-receipts.stock');
 Route::post('goods-receipts', [GoodsReceiptController::class, 'store'])->middleware('can:goods_receipts.edit')->name('goods-receipts.store');
 Route::post('goods-receipts/{receipt}/correct', [GoodsReceiptController::class, 'correct'])->whereNumber('receipt')->middleware('can:goods_receipts.edit')->name('goods-receipts.correct');

@@ -105,6 +105,27 @@ return [
         'signed_in' => false,
     ],
 
+    // Samples followed from the factory to the client's answer (spec §5.8).
+    'samples' => [
+        'label' => 'Samples',
+        'route' => 'samples.index',
+        'group' => 'sales',
+        'icon' => 'bi-gift',
+        'levels' => ['view', 'edit'],
+        'active' => ['samples.*'],
+        'signed_in' => false,
+    ],
+    // Commission, inspection, freight recharged: invoices besides goods (spec §5.8).
+    'service_invoices' => [
+        'label' => 'Service invoices',
+        'route' => 'service-invoices.index',
+        'group' => 'sales',
+        'icon' => 'bi-receipt',
+        'levels' => ['view', 'edit', 'approve'],
+        'active' => ['service-invoices.*'],
+        'signed_in' => false,
+    ],
+
     // Operations: the two follow-ups (spec §5.3–§5.5).
     'supplier_orders' => [
         'label' => 'Purchase orders',

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Ai\TradeDraftController;
 use App\Http\Controllers\Quotations\QuotationController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,3 +27,8 @@ Route::prefix('quotations/{quotation}')->whereNumber('quotation')->name('quotati
         Route::post('duplicate', [QuotationController::class, 'duplicate'])->name('duplicate');
     });
 });
+
+// AI drafts (spec §5.8): proposed lines from a client's message, reviewed before they are added.
+Route::post('quotations/{quotation}/ai/read', [TradeDraftController::class, 'readMessage'])->whereNumber('quotation')->middleware(['can:quotations.edit', 'throttle:10,1'])->name('quotations.ai.read');
+Route::post('quotations/{quotation}/ai/add', [TradeDraftController::class, 'addLines'])->whereNumber('quotation')->middleware('can:quotations.edit')->name('quotations.ai.add');
+Route::post('products/{product}/ai/chinese', [TradeDraftController::class, 'chinese'])->whereNumber('product')->middleware(['can:products.edit', 'throttle:20,1'])->name('products.ai.chinese');

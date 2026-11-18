@@ -125,6 +125,17 @@ The new `hr` role ("HR & administration") is created on the next deploy, and the
 read access to payroll. Income tax is entered on each payroll line, as the tax bureau's system
 computes it; the system never computes it.
 
+### Client portal, AI drafts, tracking links
+
+- **Client portal:** switch it on under Lists & options → Business options → Client portal, then
+  give a client's buyer an account from the client's page (Documents tab). The first password is
+  shown once. They see only their own orders, payments, containers and statement.
+- **AI drafts** need `ANTHROPIC_API_KEY` (or `OPENROUTER_API_KEY`). Then a draft quotation offers
+  "Draft lines from the client's message" and a product's edit page "Suggest the Chinese name".
+  `AI_QUOTATION_FROM_MESSAGE=false` or `AI_TRANSLATE_TO_CHINESE=false` turns one off.
+- **Tracking links:** give each shipping company its tracking address, e.g.
+  `https://www.example-line.com/track/{container}`; containers link to it.
+
 ### Documents by email and WhatsApp
 
 Every printed document (PI, quotation, purchase contract, packing list, commercial invoice,

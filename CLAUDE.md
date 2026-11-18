@@ -239,6 +239,15 @@ bank_matches), `Finance\ExpenseClaimService` (expense_claims, lines, decisions; 
 preview) and `PostingService::postRevaluation` (lines carry `revalues_currency`; they may be in
 the book currency on an account that takes another).
 
+Batch D: `Samples\SampleService` (samples, sample_events), `ServiceInvoices\ServiceInvoiceService`
+(service_invoices, lines; posted by `PostingService::postServiceInvoice`, counted in
+`ProfitQueries` as fees), `Shipping\WarehouseStock` (read-only), `Portal\ClientPortalService`
+(portal accounts: `users.party_id`, no role). `EnsureStaffUser` (web middleware) sends a portal
+account to `/portal` from every staff route; `EnsurePortalUser` (`portal`) guards the portal and
+its switch `client_portal_enabled`. Portal queries are always bound to the account's own party.
+AI drafts: `Ai\Drafts\TradeDrafts` (features `quotation_from_message`, `translate_to_chinese` in
+`config/ai.php`); a person saves what they keep through the normal writers.
+
 The PostgreSQL session's time zone is `APP_TIMEZONE` (`config/database.php`): PHP writes local
 times without an offset.
 

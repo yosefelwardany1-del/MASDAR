@@ -20,6 +20,9 @@
                     <label class="form-label" for="f-name_local">{{ __('Name in Chinese or Arabic') }}</label>
                     <input type="text" name="name_local" id="f-name_local" dir="auto" class="form-control @error('name_local') is-invalid @enderror" value="{{ old('name_local', $product?->name_local) }}" maxlength="255">
                     @error('name_local')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @if(session('ai_chinese'))
+                        <div class="app-note mt-2"><i class="bi bi-stars" aria-hidden="true"></i><span>{{ __('AI suggestion — copy what you keep:') }} <strong lang="zh">{{ session('ai_chinese')['name_local'] }}</strong>@if(session('ai_chinese')['description'])<br><span lang="zh">{{ session('ai_chinese')['description'] }}</span>@endif</span></div>
+                    @endif
                 </div>
                 <div class="col-12">
                     <label class="form-label" for="f-description">{{ __('Description') }}</label>

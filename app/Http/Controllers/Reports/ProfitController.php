@@ -39,7 +39,7 @@ class ProfitController extends Controller
             ->orderByRaw('COALESCE(confirmed_at, issued_at) DESC')->orderByDesc('id');
 
         $rows = $this->profit->forPis($query->get());
-        $totals = $this->totals($rows, ['sales', 'credited', 'goods_cost', 'debited', 'container_cost', 'other_cost', 'profit']);
+        $totals = $this->totals($rows, ['sales', 'credited', 'fees', 'goods_cost', 'debited', 'container_cost', 'other_cost', 'profit']);
 
         if ($request->query('format') === 'csv') {
             return $this->csv("profit-by-order-{$from}-{$to}.csv",
@@ -136,7 +136,7 @@ class ProfitController extends Controller
             }
         }
         $totals['margin'] = Decimal::isPositive($totals['sales'])
-            ? bcdiv(bcmul($totals['profit'], '100', 8), Decimal::sub($totals['sales'], $totals['credited'] ?? '0'), 1)
+            ? bcdiv(bcmul($totals['profit'], '100', 8), Decimal::add(Decimal::sub($totals['sales'], $totals['credited'] ?? '0'), $totals['fees'] ?? '0'), 1)
             : null;
 
         return $totals;

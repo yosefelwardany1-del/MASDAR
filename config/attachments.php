@@ -9,6 +9,8 @@ use App\Models\JournalEntry;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\ProformaInvoice;
+use App\Models\Sample;
+use App\Models\ServiceInvoice;
 use App\Models\SourcingRequest;
 use App\Models\SupplierOrder;
 use App\Models\TradeNote;
@@ -47,6 +49,8 @@ return [
         'sourcing' => SourcingRequest::class,
         'expense-claims' => ExpenseClaim::class,
         'fixed-assets' => FixedAsset::class,
+        'samples' => Sample::class,
+        'service-invoices' => ServiceInvoice::class,
     ],
 
 ];

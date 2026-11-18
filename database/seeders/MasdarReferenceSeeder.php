@@ -137,6 +137,15 @@ class MasdarReferenceSeeder extends Seeder
             ['inspection', 'Inspection on site', 'الفحص في الموقع', '现场验货', ['account' => '5301']],
             ['other', 'Other', 'أخرى', '其他', ['account' => '6599']],
         ],
+        // What MASDAR charges besides goods (spec §5.8); meta account: the income account a line is credited to.
+        'service_income' => [
+            ['commission', 'Sourcing commission', 'عمولة التوريد', '采购佣金', ['account' => '4201']],
+            ['inspection', 'Inspection and quality control', 'الفحص ومراقبة الجودة', '验货及质检', ['account' => '4301']],
+            ['sourcing', 'Sourcing and factory visits', 'التوريد وزيارات المصانع', '寻源及验厂', ['account' => '4301']],
+            ['samples', 'Samples and courier', 'العينات والبريد السريع', '样品及快递', ['account' => '4301']],
+            ['freight', 'Freight and port charges recharged', 'الشحن ورسوم الموانئ المحمّلة', '代收运费及港杂费', ['account' => '4401']],
+            ['other', 'Other services', 'خدمات أخرى', '其他服务', ['account' => '4301']],
+        ],
         // What a quality claim is about (spec §5.8).
         'claim_type' => [
             ['shortage', 'Short shipped or missing cartons', 'نقص في الكمية أو الكراتين', '短装或缺箱'],
@@ -292,6 +301,7 @@ class MasdarReferenceSeeder extends Seeder
         'claim_payment' => ['2405', null, 'An approved expense claim paid back to the claimant.'],
         'depreciation' => ['6601', '1802', 'A month\'s depreciation of the fixed assets.'],
         'opening_balance' => [null, '3901', 'Opening balances: the other side of each balance brought in.'],
+        'service_invoice' => ['1401', null, 'A service invoice to a client (commission, inspection, freight recharged): each line credits its kind\'s income account.'],
     ];
 
     public function run(): void

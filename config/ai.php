@@ -120,5 +120,10 @@ return [
     |     high   = customer documents, prices, contacts
     |   Keep 'high' features on a PAID model before enabling them in production.
     */
-    'features' => [],
+    'features' => [
+        // A client's message read into draft quotation lines (spec §5.8). Customer data: keep on a paid model.
+        'quotation_from_message' => ['enabled' => (bool) env('AI_QUOTATION_FROM_MESSAGE', true), 'tier' => 'mid', 'data' => 'high'],
+        // A product's name and specification in Chinese, for the factories.
+        'translate_to_chinese' => ['enabled' => (bool) env('AI_TRANSLATE_TO_CHINESE', true), 'tier' => 'cheap', 'data' => 'medium'],
+    ],
 ];

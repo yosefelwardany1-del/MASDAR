@@ -94,6 +94,16 @@
                 </div>
             </x-section>
 
+            <x-section :title="__('Client portal')" icon="door-open">
+                <p class="form-text mt-0 mb-3">{{ __('Clients sign in to see their own orders, payments, containers and statement. Accounts are given on each client\'s page; nobody signs in while this is off (spec Q-R2).') }}</p>
+                <div class="app-switch">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="client_portal_enabled" name="client_portal_enabled" value="1" @checked(old('client_portal_enabled', $setting->client_portal_enabled))>
+                        <label class="form-check-label" for="client_portal_enabled">{{ __('Open the client portal') }}</label>
+                    </div>
+                </div>
+            </x-section>
+
             <x-section :title="__('WhatsApp updates to clients')" icon="whatsapp">
                 <p class="form-text mt-0 mb-3">{{ __('When a container reaches one of these statuses, each client with goods inside gets MASDAR\'s approved WhatsApp message. Nothing is sent until the WhatsApp keys are set and the template is approved (see the README).') }}</p>
                 <div class="app-switch mb-3">
@@ -223,7 +233,7 @@
                         'product_prefix' => __('Products'), 'pi_prefix' => __('Proforma invoices'), 'supplier_order_prefix' => __('Supplier orders'),
                         'shipment_prefix' => __('Shipments'), 'payment_prefix' => __('Payments'), 'journal_prefix' => __('Journal entries'),
                         'employee_prefix' => __('Employees'), 'payroll_prefix' => __('Payroll runs'), 'quotation_prefix' => __('Quotations'),
-                        'claim_prefix' => __('Claims'), 'credit_note_prefix' => __('Credit notes'), 'debit_note_prefix' => __('Debit notes'), 'sourcing_prefix' => __('Factory quotes'), 'expense_claim_prefix' => __('Expense claims'), 'asset_prefix' => __('Fixed assets'),
+                        'claim_prefix' => __('Claims'), 'credit_note_prefix' => __('Credit notes'), 'debit_note_prefix' => __('Debit notes'), 'sourcing_prefix' => __('Factory quotes'), 'expense_claim_prefix' => __('Expense claims'), 'asset_prefix' => __('Fixed assets'), 'sample_prefix' => __('Samples'), 'service_invoice_prefix' => __('Service invoices'),
                     ] as $field => $label)
                         <div class="col-6 col-md-4 col-xl-2">
                             <label class="form-label" for="{{ $field }}">{{ $label }}</label>
