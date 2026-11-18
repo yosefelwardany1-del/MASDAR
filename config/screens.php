@@ -22,6 +22,16 @@ return [
     ],
 
     // CRM: the three interaction points (spec §5.1) and the follow-up log.
+    // The CRM itself: its home, the pipeline, every contact, the follow-up tasks.
+    'crm' => [
+        'label' => 'CRM',
+        'route' => 'crm.index',
+        'group' => 'crm',
+        'icon' => 'bi-bullseye',
+        'levels' => ['view', 'edit'],
+        'active' => ['crm.*'],
+        'signed_in' => false,
+    ],
     'clients' => [
         'label' => 'Clients',
         'route' => 'clients.index',
@@ -44,15 +54,6 @@ return [
         'group' => 'crm',
         'icon' => 'bi-truck',
         'levels' => ['view', 'edit'],
-        'signed_in' => false,
-    ],
-    'crm' => [
-        'label' => 'Follow-up tasks',
-        'route' => 'crm.tasks.index',
-        'group' => 'crm',
-        'icon' => 'bi-check2-square',
-        'levels' => ['view', 'edit'],
-        'active' => ['crm.*'],
         'signed_in' => false,
     ],
 

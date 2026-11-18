@@ -4,8 +4,8 @@ MASDAR's ERP. It starts as a copy of the starter ERP
 ([Empty-ERP](https://github.com/yosefelwardany1-del/Empty-ERP) at `88da6fd`): the platform
 layer (sign-in, roles and screen permissions, audit log, settings, attachments, notifications,
 AI and WhatsApp clients, import/export, backups) behind an Arabic RTL shell, single company.
-MASDAR's business is built on it to MASDAR's spec: clients, suppliers and shipping companies
-with their CRM log, products, Proforma Invoices, the order and container follow-ups, payments
+MASDAR's business is built on it to MASDAR's spec: the CRM (clients, suppliers and shipping
+companies, the pipeline, every contact and follow-up), products, Proforma Invoices, the order and container follow-ups, payments
 and the accounts, and HR (employees, leave and attendance, payroll).
 
 - **What to build:** `docs/spec/PROJECT.md` (MASDAR's build spec — the authority; draft 0.1,

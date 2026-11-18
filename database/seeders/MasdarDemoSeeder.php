@@ -4,10 +4,12 @@ namespace Database\Seeders;
 
 use App\Models\Account;
 use App\Models\MoneyAccount;
+use App\Models\Party;
 use App\Models\Payment;
 use App\Models\User;
 use App\Security\Roles;
 use App\Services\Accounting\PostingService;
+use App\Services\Crm\CrmService;
 use App\Services\Finance\FxRateService;
 use App\Services\Finance\MoneyAccountService;
 use App\Services\Finance\PaymentQueries;
@@ -49,8 +51,8 @@ class MasdarDemoSeeder extends Seeder
 
         $parties = app(PartyService::class);
         $clients = [
-            $parties->create(['is_client' => true, 'name' => 'Gulf Home Trading LLC', 'country' => 'AE', 'city' => 'Dubai', 'account_manager_id' => $sales->id, 'default_destination' => 'Jebel Ali, UAE', 'stage' => 'confirmed', 'source' => 'exhibition'], $manager),
-            $parties->create(['is_client' => true, 'name' => 'Nile Kitchenware Co.', 'country' => 'EG', 'city' => 'Cairo', 'account_manager_id' => $sales->id, 'default_destination' => 'Alexandria, Egypt', 'stage' => 'pi_sent', 'source' => 'referral'], $manager),
+            $parties->create(['is_client' => true, 'name' => 'Gulf Home Trading LLC', 'country' => 'AE', 'city' => 'Dubai', 'account_manager_id' => $sales->id, 'default_destination' => 'Jebel Ali, UAE', 'source' => 'exhibition'], $manager),
+            $parties->create(['is_client' => true, 'name' => 'Nile Kitchenware Co.', 'country' => 'EG', 'city' => 'Cairo', 'account_manager_id' => $sales->id, 'default_destination' => 'Alexandria, Egypt', 'source' => 'referral'], $manager),
         ];
         $factories = [
             $parties->create(['is_supplier' => true, 'name' => 'Yiwu Bright Housewares Factory', 'name_local' => '义乌明亮家居用品厂', 'country' => 'CN', 'city' => 'Yiwu'], $manager),
@@ -123,6 +125,36 @@ class MasdarDemoSeeder extends Seeder
         Payment::query()->orderBy('id')->get()->each(fn (Payment $payment) => $posting->postPayment($payment, $manager));
 
         $this->hr($manager, $usd, $rmb);
+        $this->crm($manager, $sales, $clients, $factories[0], $forwarder);
+    }
+
+    /**
+     * The CRM (spec §5.1): new leads, a dormant client, contacts over the last weeks across
+     * clients, a factory and the forwarder, and follow-ups (one overdue).
+     *
+     * @param  list<Party>  $clients
+     */
+    private function crm(User $manager, User $sales, array $clients, Party $factory, Party $forwarder): void
+    {
+        $parties = app(PartyService::class);
+        $crm = app(CrmService::class);
+        $leads = [
+            $parties->create(['is_client' => true, 'name' => 'Riyadh Home Center', 'country' => 'SA', 'city' => 'Riyadh', 'account_manager_id' => $sales->id, 'stage' => 'lead', 'source' => 'social_media'], $manager),
+            $parties->create(['is_client' => true, 'name' => 'Basra Trading House', 'country' => 'IQ', 'city' => 'Basra', 'account_manager_id' => $sales->id, 'stage' => 'inquiry', 'source' => 'website'], $manager),
+            $parties->create(['is_client' => true, 'name' => 'Casablanca Bazaar SARL', 'country' => 'MA', 'city' => 'Casablanca', 'account_manager_id' => $sales->id, 'stage' => 'dormant', 'source' => 'referral'], $manager),
+        ];
+        $contact = fn (Party $party, string $channel, int $daysAgo, string $summary, ?string $next = null, ?int $dueIn = null) => $crm->recordInteraction($party, [
+            'channel' => $channel, 'happened_at' => now()->subDays($daysAgo)->setTime(10, 30)->toDateTimeString(), 'summary' => $summary,
+            'next_step' => $next, 'next_step_due' => $dueIn === null ? null : now()->addDays($dueIn)->toDateString(),
+        ], $sales);
+
+        $contact($clients[0], 'whatsapp', 2, 'Sent photos of the loading; client asked for the B/L draft.', 'Send the B/L draft', 1);
+        $contact($clients[0], 'meeting', 40, 'Met at the Canton Fair booth: interested in glass storage jars and lunch boxes.');
+        $contact($clients[1], 'call', 5, 'Discussed the 30% deposit for the mug order; they will pay next week.', 'Remind about the deposit', -2);
+        $contact($leads[0], 'whatsapp', 1, 'Asked for a catalogue of kitchen storage; prefers prices in USD FOB Ningbo.', 'Send the catalogue and price list', 2);
+        $contact($leads[1], 'email', 45, 'Inquiry for plastic hangers, 2 × 40HQ. Waiting for their target price.');
+        $contact($factory, 'factory_visit', 8, 'Checked the final samples of the 1L jar; lids fit well. Packing photos promised by Friday.');
+        $contact($forwarder, 'wechat', 3, 'Confirmed MSC AURORA ETD and the free days at Jebel Ali.');
     }
 
     /**

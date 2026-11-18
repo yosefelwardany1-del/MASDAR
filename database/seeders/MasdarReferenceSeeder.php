@@ -72,11 +72,15 @@ class MasdarReferenceSeeder extends Seeder
             ['social_media', 'Social media', 'وسائل التواصل', '社交媒体'], ['website', 'Website', 'الموقع الإلكتروني', '网站'],
             ['walk_in', 'Market visit', 'زيارة مباشرة', '上门'], ['other', 'Other', 'أخرى', '其他'],
         ],
+        // from_documents: the stage follows the client's PI, orders and containers (spec §5.1); closed: not chased.
         'client_stage' => [
             ['lead', 'Lead', 'عميل محتمل', '潜在客户'], ['inquiry', 'Inquiry', 'استفسار', '询价'],
-            ['pi_sent', 'PI sent', 'أُرسلت الفاتورة المبدئية', '已发形式发票'], ['confirmed', 'Order confirmed', 'تم تأكيد الطلب', '订单已确认'],
-            ['in_production', 'In production', 'قيد الإنتاج', '生产中'], ['shipped', 'Shipped', 'تم الشحن', '已发货'],
-            ['delivered', 'Delivered', 'تم التسليم', '已交付'], ['dormant', 'Dormant', 'غير نشط', '休眠'],
+            ['pi_sent', 'PI sent', 'أُرسلت الفاتورة المبدئية', '已发形式发票', ['from_documents' => 1]],
+            ['confirmed', 'Order confirmed', 'تم تأكيد الطلب', '订单已确认', ['from_documents' => 1]],
+            ['in_production', 'In production', 'قيد الإنتاج', '生产中', ['from_documents' => 1]],
+            ['shipped', 'Shipped', 'تم الشحن', '已发货', ['from_documents' => 1]],
+            ['delivered', 'Delivered', 'تم التسليم', '已交付', ['from_documents' => 1]],
+            ['dormant', 'Dormant', 'غير نشط', '休眠', ['closed' => 1]],
         ],
         'interaction_channel' => [
             ['call', 'Phone call', 'مكالمة', '电话'], ['whatsapp', 'WhatsApp', 'واتساب', 'WhatsApp'],

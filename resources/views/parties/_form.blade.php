@@ -82,6 +82,7 @@
             </div>
             <div class="col-md-4">
                 @include('parties._select', ['name' => 'stage', 'label' => __('Stage'), 'options' => $options['client_stage'], 'value' => $party?->stage])
+                <div class="form-text">{{ __('From "PI sent" on, the stage follows the client\'s PI, orders and containers.') }}</div>
             </div>
             <div class="col-md-4">
                 <label class="form-label" for="f-deposit_percent">{{ __('Deposit %') }}</label>

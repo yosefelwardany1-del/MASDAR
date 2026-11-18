@@ -5,7 +5,7 @@
 
     $user = auth()->user();
     $setting = \App\Models\Setting::current();
-    $groupLabels = ['overview' => __('Overview'), 'crm' => __('Clients & partners'), 'sales' => __('Sales'), 'operations' => __('Operations'), 'finance' => __('Finance'), 'hr' => __('HR'), 'admin' => __('Administration')];
+    $groupLabels = ['overview' => __('Overview'), 'crm' => __('CRM'), 'sales' => __('Sales'), 'operations' => __('Operations'), 'finance' => __('Finance'), 'hr' => __('HR'), 'admin' => __('Administration')];
     $sections = collect(Screens::visibleFor($user))->groupBy('group');
     $link = fn (array $item) => Route::has($item['route']) ? route($item['route']) : '#';
     $isActive = fn (array $item) => request()->routeIs($item['route'], Str::beforeLast($item['route'], '.').'.*', ...($item['active'] ?? []));

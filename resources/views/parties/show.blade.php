@@ -56,7 +56,7 @@
             <div class="app-profile__sub">
                 <span class="app-doc-code">{{ $party->code }}</span>
                 @if($party->name_local)<bdi class="app-profile__local">{{ $party->name_local }}</bdi>@endif
-                @if($party->is_client && $party->stage)<span class="app-profile__stage"><i class="bi bi-signpost" aria-hidden="true"></i>{{ $label('client_stage', $party->stage) }}</span>@endif
+                @if($party->is_client && ($crmStage['stage'] ?? null))<span class="app-profile__stage" title="{{ ($crmStage['by'] ?? '') === 'documents' ? __('From the documents') : __('Set by a person') }}"><i class="bi {{ ($crmStage['by'] ?? '') === 'documents' ? 'bi-file-earmark-text' : 'bi-signpost' }}" aria-hidden="true"></i>{{ $label('client_stage', $crmStage['stage']) }}</span>@endif
                 @if($openTasks->isNotEmpty())
                     <a href="#history" class="app-pill {{ $overdue ? 'app-pill--late' : 'app-pill--due' }} text-decoration-none" data-app-tab-link>
                         <i class="bi {{ $overdue ? 'bi-exclamation-triangle' : 'bi-check2-square' }}" aria-hidden="true"></i>{{ __('Open tasks') }} <span class="app-num">{{ $openTasks->count() }}</span>
@@ -98,7 +98,7 @@
 
         @if($party->is_client)
             <div class="app-details__item"><dt>{{ __('Account manager') }}</dt><dd><bdi>{{ $party->accountManager?->name ?? '—' }}</bdi></dd></div>
-            <div class="app-details__item"><dt>{{ __('Stage') }}</dt><dd>{{ $label('client_stage', $party->stage) }}</dd></div>
+            <div class="app-details__item"><dt>{{ __('Stage') }}</dt><dd>{{ $label('client_stage', $crmStage['stage'] ?? null) }}@if(($crmStage['by'] ?? '') === 'documents') <span class="text-muted small fw-normal">({{ __('from the documents') }})</span>@endif</dd></div>
             <div class="app-details__item"><dt>{{ __('How they found us') }}</dt><dd>{{ $label('party_source', $party->source) }}</dd></div>
             <div class="app-details__item"><dt>{{ __('Shipped to') }}</dt><dd><bdi>{{ $party->default_destination ?: '—' }}</bdi></dd></div>
             <div class="app-details__item app-profile__wide"><dt>{{ __('Payment terms') }}</dt>
@@ -146,7 +146,24 @@
             <h2 class="visually-hidden" id="history-head">{{ __('History') }}</h2>
             <div class="row g-3">
                 <div class="col-xl-7">@include('parties._interactions')</div>
-                <div class="col-xl-5">@include('parties._tasks')</div>
+                <div class="col-xl-5">
+                    @include('parties._tasks')
+                    @if($party->is_client && $stageChanges->isNotEmpty())
+                        <section class="app-card mt-3" aria-labelledby="stages-head">
+                            <div class="app-card__head border-bottom" id="stages-head"><i class="bi bi-signpost-split" aria-hidden="true"></i>{{ __('Stages set by a person') }}</div>
+                            <ul class="app-list">
+                                @foreach($stageChanges as $change)
+                                    <li class="app-list__row">
+                                        <div class="app-list__main">
+                                            <span class="app-list__title">{{ $change->from_stage ? $label('client_stage', $change->from_stage).' → ' : '' }}{{ $label('client_stage', $change->to_stage) }}</span>
+                                            <div class="app-list__sub"><bdi>{{ $change->user?->name }}</bdi> · <span class="app-num">{{ $change->created_at->format('Y-m-d') }}</span>@if($change->note) · <span dir="auto">{{ $change->note }}</span>@endif</div>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </section>
+                    @endif
+                </div>
             </div>
         </section>
 

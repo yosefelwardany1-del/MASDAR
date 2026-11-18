@@ -204,10 +204,18 @@ against any party: who, when, a summary, the next step and its due date. Writer:
 S3: "TWO in ONE" — one system, one party registry and one sign-in for the ERP and the CRM.
 
 - Screens: clients, suppliers, shipping companies; a party's page (contacts, interactions,
-  tasks, and its PIs, supplier orders, containers and balance); my follow-up tasks.
+  tasks, and its PIs, supplier orders, containers and balance); my follow-up tasks. The CRM
+  menu adds (2026-11-18): an overview (new clients, contacts this week, overdue follow-ups,
+  clients gone quiet, orders confirmed, where the clients are by stage, how clients find MASDAR
+  and how many confirm, contacts per person), the pipeline (clients by stage, moved between
+  the stages a person sets) and the activity of every contact with every party.
 - Client pipeline: OPEN — proposed stages: lead → inquiry → PI sent → order confirmed (deposit
   received) → in production → shipped → delivered. Every stage after "PI sent" is read from the
-  documents, never typed.
+  documents, never typed. Built so (2026-11-18): the stages list marks those that follow the
+  documents; a client's stage is the latest of the stage a person set (logged, append-only) and
+  the stage its latest PI has reached (issued → PI sent, confirmed, a factory order → in
+  production, its goods on board → shipped, every container delivered → delivered). A client
+  nobody has contacted for N days (setting, proposed 30) in a stage still chased has gone quiet.
 - OPEN: do clients, suppliers or shipping companies ever sign in (a portal)? Proposed for
   phase 1: staff only; clients get status updates through a channel (§7).
 
@@ -580,3 +588,4 @@ Decisions settled during the build from this spec (marked `INFERRED`) or with th
 | 2026-11-18 | INFERRED | §5.7 HR is added at our proposal, before MASDAR has answered Q-H1–Q-H5. Every rate and allowance is a setting; social-insurance rates and public holidays start empty and the screens warn; income tax is entered per line, never computed. |
 | 2026-11-18 | INFERRED | Q-H2: the working week starts as Monday–Friday and the days a month as 21.75 (China's standard for a daily wage); leave types start with China's common statutory days (annual 5, marriage 3, maternity 158 and paternity 15 as in Zhejiang, bereavement 3). All editable. |
 | 2026-11-18 | INFERRED | A new `hr` role prepares; a manager approves leave and payroll; the accountant sees payroll to post and pay it. Salaries are visible only to those who see payroll. |
+| 2026-11-18 | INFERRED | §5.1's "read from the documents, never typed": the stages from "PI sent" on are refused when typed and are read from the client's latest live PI; a person sets lead, inquiry, dormant and any stage MASDAR adds. When both say something, the more recent signal wins, so a new inquiry from a client whose last order is at sea shows as an inquiry. |
