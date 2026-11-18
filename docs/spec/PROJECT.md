@@ -475,6 +475,21 @@ Chromium in the server image), downloadable and sendable from the page: by email
 Sending needs the edit level of the document's screen; a draft is never sent. Every attempt is
 logged (`document_sends`), sent or failed with the reason.
 
+**Factory quotes** (screen `sourcing`, under Sales; factories' prices, so it needs supplier prices
+to be visible). A sourcing request (`RFQ-`): what the client wants, how many, a target factory
+price, when. Each factory's answer is a quote — price and currency, minimum order, lead time,
+packing, valid until — compared side by side in the book currency at the latest rate, against
+the target, the lowest marked. Choosing one decides the request (its quotes then never change)
+and puts it on a draft quotation line through the quotation's own writer: the factory, its price
+and packing, and the selling price given there. A request can be closed without choosing, and
+reopened until it is on a quotation.
+
+**Analysis** (screen `analytics`): confirmed sales by month, by client, by product and by
+account manager; purchases by factory and by month; quotations written, sent, answered, won and
+turned into a PI — all in the book currency, each document at the rate of its date (one without
+a rate is left out and said). Sales limited to their own clients see theirs; purchases need
+supplier prices to be visible.
+
 ## 6. Roles and permissions
 
 OPEN — proposed roles, from the jobs S2 and S3 imply. They replace the starter's `supervisor`

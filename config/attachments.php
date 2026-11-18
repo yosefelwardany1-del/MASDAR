@@ -7,6 +7,7 @@ use App\Models\JournalEntry;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\ProformaInvoice;
+use App\Models\SourcingRequest;
 use App\Models\SupplierOrder;
 use App\Models\TradeNote;
 
@@ -41,6 +42,7 @@ return [
         'employees' => Employee::class,
         'claims' => Claim::class,
         'trade-notes' => TradeNote::class,
+        'sourcing' => SourcingRequest::class,
     ],
 
 ];
