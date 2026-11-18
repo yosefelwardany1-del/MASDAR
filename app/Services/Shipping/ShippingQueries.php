@@ -285,6 +285,31 @@ class ShippingQueries
             ->get();
     }
 
+    /**
+     * One client's goods in a container at the client's prices, for the commercial invoice:
+     * per PI line, net of unloads, with the product's HS code and the PI's currency.
+     */
+    public function invoiceLines(int $containerId, int $clientId): Collection
+    {
+        return DB::table('container_loads as cl')
+            ->join('supplier_order_lines as sol', 'sol.id', '=', 'cl.supplier_order_line_id')
+            ->join('pi_lines as pl', 'pl.id', '=', 'sol.pi_line_id')
+            ->join('proforma_invoices as pi', 'pi.id', '=', 'pl.proforma_invoice_id')
+            ->leftJoin('products as pr', 'pr.id', '=', 'pl.product_id')
+            ->where('cl.container_id', $containerId)->where('pi.client_id', $clientId)
+            ->groupBy('pl.id', 'pi.id', 'pr.id')
+            ->havingRaw('SUM(cl.cartons) > 0')
+            ->orderBy('pi.pi_number')->orderBy('pl.line_no')
+            ->select(['pl.id', 'pl.description', 'pl.unit', 'pl.unit_price', 'pl.qty_per_carton', 'pi.pi_number', 'pi.revision', 'pi.po_number', 'pi.currency',
+                'pr.code as product_code', 'pr.hs_code'])
+            ->selectRaw('SUM(cl.cartons) AS cartons')
+            ->selectRaw('ROUND(SUM(cl.cartons) * pl.qty_per_carton, 4) AS qty')
+            ->selectRaw('ROUND(SUM(cl.cartons) * pl.qty_per_carton * pl.unit_price, 4) AS amount')
+            ->selectRaw('ROUND(SUM(cl.cartons) * pl.cbm_per_carton, 4) AS cbm')
+            ->selectRaw('ROUND(SUM(cl.cartons) * pl.kg_per_carton, 4) AS kg')
+            ->get();
+    }
+
     /** Totals of contents(): cartons, qty, cbm, kg — summed in SQL. */
     public function contentTotals(array $containerIds, ?array $clientIds = null): object
     {

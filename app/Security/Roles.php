@@ -78,13 +78,13 @@ final class Roles
         return match ($role) {
             self::MANAGER => Screens::allPermissions(),
             self::SALES => $grants([
-                'clients' => 'edit', 'crm' => 'edit', 'products' => 'edit',
+                'clients' => 'edit', 'crm' => 'edit', 'products' => 'edit', 'quotations' => 'edit',
                 'proforma_invoices' => 'edit', 'supplier_orders' => 'view', 'containers' => 'view',
                 'payments' => 'view',
             ]),
             self::MERCHANDISER => $grants([
                 'clients' => 'view', 'suppliers' => 'edit', 'shipping_companies' => 'view', 'crm' => 'edit',
-                'products' => 'edit', 'proforma_invoices' => 'view', 'supplier_orders' => 'edit',
+                'products' => 'edit', 'quotations' => 'view', 'proforma_invoices' => 'view', 'supplier_orders' => 'edit',
                 'goods_receipts' => 'view', 'containers' => 'view',
             ]),
             self::WAREHOUSE_QC => $grants([

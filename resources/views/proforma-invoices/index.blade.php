@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('Proforma invoices'))
+@section('title', __('Sales orders (PI)'))
 
 @php
     use App\Models\ProformaInvoice;
@@ -12,7 +12,7 @@
 @endphp
 
 @section('content')
-<x-page-header :title="__('Proforma invoices')" :subtitle="__('Each PI\'s current revision, with what the client has paid and what is still due.')">
+<x-page-header :title="__('Sales orders (PI)')" :subtitle="__('MASDAR sells on Proforma Invoices: once the client confirms one, it is the sales order. Each PI\'s current revision, with what the client has paid and what is still due.')">
     @can('proforma_invoices.edit')
         <x-slot:actions>
             <a href="{{ route('proforma-invoices.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __('New PI') }}</a>

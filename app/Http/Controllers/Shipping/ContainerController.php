@@ -130,6 +130,43 @@ class ContainerController extends Controller
         ]);
     }
 
+    /**
+     * The commercial invoice for one client's goods in the container (spec §5.5): English, MASDAR
+     * as the seller, the client as the buyer, the goods at the PI's prices with their HS codes and
+     * weights. Needs the container, the client and the PIs' prices to be visible to the user.
+     */
+    public function commercialInvoice(Request $request, Container $container)
+    {
+        $user = $request->user();
+        abort_unless($this->queries->canSeeContainer($user, $container) && $user->can('proforma_invoices.view'), 404);
+        $client = Party::query()->clients()->visibleTo($user)->findOrFail($request->integer('client'));
+        $lines = $this->queries->invoiceLines($container->id, $client->id);
+        abort_if($lines->isEmpty(), 404);
+        $shipment = $container->shipment;
+        $english = fn (string $list, ?string $code) => $code ? (Lookup::query()->where('list', $list)->where('code', $code)->value('name') ?? $code) : '';
+        $business = BusinessSetting::current();
+        $setting = Setting::current();
+
+        return view('containers.commercial-invoice', [
+            'container' => $container,
+            'shipment' => $shipment,
+            'client' => $client,
+            'lines' => $lines,
+            'number' => 'CI-'.$shipment->number.'-'.$client->code,
+            'date' => ($shipment->etd ?? now())->format('Y-m-d'),
+            'incoterm' => $shipment->incoterm ?: $business->default_incoterm,
+            'bank' => $business->invoice_bank_details,
+            'companyName' => $setting->company_name,
+            'logoUrl' => $setting->logo ? route('settings.logo') : asset('images/masdar-logo.png'),
+            'address' => $business->company_address,
+            'phone' => $business->company_phone,
+            'pol' => $english('port', $shipment->port_of_loading),
+            'pod' => $english('port', $shipment->port_of_discharge),
+            'country' => $english('country', $client->country),
+            'units' => Lookup::query()->where('list', 'unit')->pluck('name', 'code')->all(),
+        ]);
+    }
+
     /** Read-only, for the status stepper: each container status's place along the path (code => sort). */
     private function statusSorts(): array
     {

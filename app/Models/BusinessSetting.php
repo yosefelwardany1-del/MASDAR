@@ -35,7 +35,7 @@ class BusinessSetting extends Model
         'shipping_company_prefix' => 'SC',
         'product_prefix' => 'P',
         'pi_prefix' => 'PI',
-        'supplier_order_prefix' => 'SO',
+        'supplier_order_prefix' => 'PO',
         'shipment_prefix' => 'SH',
         'payment_prefix' => 'PAY',
         'journal_prefix' => 'JE',
@@ -49,6 +49,9 @@ class BusinessSetting extends Model
         'payroll_days_per_month' => '21.75',
         'payroll_overtime_multiplier' => '1.50',
         'crm_quiet_days' => 30,
+        'quotation_prefix' => 'QT',
+        'quotation_valid_days' => 30,
+        'default_incoterm' => 'FOB',
     ];
 
     protected function casts(): array
@@ -65,6 +68,7 @@ class BusinessSetting extends Model
             'whatsapp_container_updates' => 'boolean',
             'hr_document_warning_days' => 'integer',
             'crm_quiet_days' => 'integer',
+            'quotation_valid_days' => 'integer',
             'payroll_days_per_month' => 'decimal:2',
             'payroll_overtime_multiplier' => 'decimal:2',
             'si_employee_percent' => 'decimal:3',
@@ -80,6 +84,24 @@ class BusinessSetting extends Model
     public function whatsappUpdateStatuses(): array
     {
         return array_values(array_filter(array_map('trim', explode(',', (string) $this->whatsapp_update_statuses))));
+    }
+
+    /**
+     * The purchase contract's terms until MASDAR writes its own (Lists & options): a starting
+     * point, in English and Chinese, as factories read Chinese.
+     */
+    public const DEFAULT_PURCHASE_CONTRACT_TERMS = <<<'TXT'
+        1. Quality: the goods match the confirmed sample and the specifications above. 质量：货物须与确认样品及上述规格一致。
+        2. Packing and labels: export cartons; labels, marks and packaging as MASDAR instructs. 包装与标签：出口纸箱；标签、唛头及包装按 MASDAR 要求。
+        3. Delivery: the goods are ready for inspection by the delivery date; any delay is told to MASDAR in writing at once. 交货：须在交货日期前备妥待验；如有延误须立即书面通知 MASDAR。
+        4. Inspection: MASDAR or its agent inspects before loading; goods that fail are reworked or replaced at the seller's cost. 验货：装柜前由 MASDAR 或其代理验货；不合格货物由卖方承担费用返工或更换。
+        5. Payment: as stated above; the balance once the goods pass inspection. 付款：按上述条款；尾款在验货合格后支付。
+        6. Disputes are settled by friendly negotiation. 争议由双方友好协商解决。
+        TXT;
+
+    public function purchaseContractTerms(): string
+    {
+        return filled($this->purchase_contract_terms) ? (string) $this->purchase_contract_terms : self::DEFAULT_PURCHASE_CONTRACT_TERMS;
     }
 
     /** ISO weekdays (1 = Monday … 7 = Sunday) that are working days. @return list<int> */

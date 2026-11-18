@@ -49,6 +49,19 @@
     </x-slot:meta>
     <x-slot:actions>
         <a href="{{ route('containers.packing-list', $container) }}" target="_blank" class="btn btn-light"><i class="bi bi-printer" aria-hidden="true"></i>{{ __('Packing list') }}</a>
+        @can('proforma_invoices.view')
+            @php $invoiceClients = $contents->unique('client_id'); @endphp
+            @if($invoiceClients->count() === 1)
+                <a href="{{ route('containers.commercial-invoice', [$container, 'client' => $invoiceClients->first()->client_id]) }}" target="_blank" class="btn btn-light"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>{{ __('Commercial invoice') }}</a>
+            @elseif($invoiceClients->count() > 1)
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>{{ __('Commercial invoice') }}</button>
+                    <ul class="dropdown-menu">
+                        @foreach($invoiceClients as $c)<li><a class="dropdown-item" target="_blank" href="{{ route('containers.commercial-invoice', [$container, 'client' => $c->client_id]) }}"><bdi>{{ $c->client_name }}</bdi></a></li>@endforeach
+                    </ul>
+                </div>
+            @endif
+        @endcan
         @can('containers.edit')
             <a href="{{ route('containers.edit', $container) }}" class="btn btn-light"><i class="bi bi-pencil" aria-hidden="true"></i>{{ __('Edit') }}</a>
         @endcan

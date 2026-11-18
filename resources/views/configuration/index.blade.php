@@ -118,6 +118,31 @@
                 </fieldset>
             </x-section>
 
+            <x-section :title="__('Quotations, contracts and invoices')" icon="file-earmark-text" id="documents">
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label" for="quotation_valid_days">{{ __('A quotation is valid for (days)') }}</label>
+                        <input id="quotation_valid_days" name="quotation_valid_days" type="number" min="1" max="365" class="form-control app-num @error('quotation_valid_days') is-invalid @enderror" value="{{ old('quotation_valid_days', $setting->quotation_valid_days) }}">
+                        @error('quotation_valid_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label" for="default_incoterm">{{ __('Default incoterm') }}</label>
+                        <input id="default_incoterm" name="default_incoterm" dir="ltr" class="form-control @error('default_incoterm') is-invalid @enderror" value="{{ old('default_incoterm', $setting->default_incoterm) }}" placeholder="FOB">
+                        @error('default_incoterm')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label" for="invoice_bank_details">{{ __('Bank details on the commercial invoice') }}</label>
+                        <textarea id="invoice_bank_details" name="invoice_bank_details" rows="3" dir="ltr" class="form-control @error('invoice_bank_details') is-invalid @enderror" placeholder="{{ __('Bank, account name, account number, SWIFT') }}">{{ old('invoice_bank_details', $setting->invoice_bank_details) }}</textarea>
+                        <div class="form-text">{{ __('Empty: the invoice shows none.') }}</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="purchase_contract_terms">{{ __('Terms of the purchase contract (English and Chinese)') }}</label>
+                        <textarea id="purchase_contract_terms" name="purchase_contract_terms" rows="6" class="form-control @error('purchase_contract_terms') is-invalid @enderror" placeholder="{{ \App\Models\BusinessSetting::DEFAULT_PURCHASE_CONTRACT_TERMS }}">{{ old('purchase_contract_terms', $setting->purchase_contract_terms) }}</textarea>
+                        <div class="form-text">{{ __('Empty: the standard terms shown here are printed. Write MASDAR\'s own to replace them.') }}</div>
+                    </div>
+                </div>
+            </x-section>
+
             <x-section :title="__('HR and payroll')" icon="people" id="hr-payroll">
                 <p class="form-text mt-0 mb-3">{{ __('Rates and bases are left empty until MASDAR\'s accountant gives them: payroll then deducts nothing and says so. Leave types and their days a year are under Lists.') }}</p>
                 <div class="row g-3">
@@ -177,7 +202,7 @@
                         'client_prefix' => __('Clients'), 'supplier_prefix' => __('Suppliers'), 'shipping_company_prefix' => __('Shipping companies'),
                         'product_prefix' => __('Products'), 'pi_prefix' => __('Proforma invoices'), 'supplier_order_prefix' => __('Supplier orders'),
                         'shipment_prefix' => __('Shipments'), 'payment_prefix' => __('Payments'), 'journal_prefix' => __('Journal entries'),
-                        'employee_prefix' => __('Employees'), 'payroll_prefix' => __('Payroll runs'),
+                        'employee_prefix' => __('Employees'), 'payroll_prefix' => __('Payroll runs'), 'quotation_prefix' => __('Quotations'),
                     ] as $field => $label)
                         <div class="col-6 col-md-4 col-xl-2">
                             <label class="form-label" for="{{ $field }}">{{ $label }}</label>

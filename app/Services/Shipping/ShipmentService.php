@@ -23,7 +23,7 @@ class ShipmentService
 {
     public const FIELDS = [
         'shipping_company_id', 'mode', 'booking_no', 'port_of_loading', 'port_of_discharge',
-        'etd', 'eta', 'vessel', 'voyage', 'bl_number', 'notes',
+        'etd', 'eta', 'vessel', 'voyage', 'bl_number', 'incoterm', 'notes',
     ];
 
     public const CONTAINER_FIELDS = ['container_no', 'container_type', 'seal_no', 'notes'];

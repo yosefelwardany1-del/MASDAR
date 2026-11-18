@@ -26,6 +26,7 @@ class NumberingService
         'journal' => 'journal_prefix',
         'employee' => 'employee_prefix',
         'payroll' => 'payroll_prefix',
+        'quotation' => 'quotation_prefix',
     ];
 
     /** Codes that run without a year. */

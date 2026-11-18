@@ -16,6 +16,7 @@ Route::get('supplier-orders/create', [SupplierOrderController::class, 'create'])
 Route::post('supplier-orders', [SupplierOrderController::class, 'store'])->middleware('can:supplier_orders.edit')->name('supplier-orders.store');
 
 Route::prefix('supplier-orders/{supplierOrder}')->whereNumber('supplierOrder')->name('supplier-orders.')->group(function () {
+    Route::get('contract', [SupplierOrderController::class, 'contract'])->middleware('can:supplier_orders.view')->name('contract');
     Route::get('/', [SupplierOrderController::class, 'show'])->middleware('can:supplier_orders.view')->name('show');
 
     Route::middleware('can:supplier_orders.edit')->group(function () {

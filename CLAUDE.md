@@ -157,9 +157,10 @@ tables through one service; the others only read them or call that service.
 |---|---|---|
 | Clients, suppliers, shipping companies, CRM | `clients.*`, `suppliers.*`, `shipping-companies.*`, `crm.*` (overview, `.pipeline`, `.activity`, `.tasks`) | `Parties\PartyService` (also client_stage_changes), `Crm\CrmService`; `Crm\CrmQueries` (read-only) |
 | Products | `products.*`, `products.photo` | `Products\ProductService` |
-| Proforma invoices | `proforma-invoices.*` (incl. `.print`, MASDAR's own layout, English) | `ProformaInvoices\ProformaInvoiceService` |
-| Order follow-up | `supplier-orders.*` (the board, `.evaluation`), `goods-receipts.*` | `SupplierOrders\{SupplierOrderService,OrderStepService,GoodsReceiptService}` |
-| Container follow-up | `containers.*` (the board, `.packing-list`), `shipments.*` | `Shipping\{ShipmentService,ContainerTrackingService}` |
+| Quotations | `quotations.*` (incl. `.print`, `.convert` into a draft PI) | `Quotations\QuotationService` |
+| Proforma invoices — the sales orders | `proforma-invoices.*` (incl. `.print`, MASDAR's own layout, English); menu "Sales orders (PI)" | `ProformaInvoices\ProformaInvoiceService` |
+| Order follow-up — the purchase orders | `supplier-orders.*` (the board, `.evaluation`, `.contract` the bilingual purchase contract), `goods-receipts.*`; menu "Purchase orders" | `SupplierOrders\{SupplierOrderService,OrderStepService,GoodsReceiptService}` |
+| Container follow-up | `containers.*` (the board, `.packing-list`, `.commercial-invoice` per client), `shipments.*` | `Shipping\{ShipmentService,ContainerTrackingService}` |
 | Money | `payments.*`, `money-accounts.*`, `fx-rates.*` | `Finance\{PaymentService,MoneyAccountService,FxRateService}` |
 | Accounting | `accounting.*` (chart, rules, periods, journal, the posting queue), `finance-reports.*` | `Accounting\{PostingService,ChartOfAccountsService,PeriodService}` |
 | Lists & options, home, alerts | `configuration.*`, `dashboard`, `masdar:daily-alerts` | `Configuration\*`, `Dashboard\AttentionQueries` (read-only) |
