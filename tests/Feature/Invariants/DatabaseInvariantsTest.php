@@ -55,8 +55,12 @@ class DatabaseInvariantsTest extends TestCase
         $this->assertRefused(fn () => DB::table('proforma_invoices')->where('id', $pi->id)->delete(), 'delete');
         $this->assertRefused(fn () => DB::table('proforma_invoices')->where('id', $pi->id)->update(['status' => 'draft']), 'back to draft');
 
-        DB::table('proforma_invoices')->where('id', $pi->id)->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+        // B03: not confirmed before its deposit, unless a manager's reason is given with it.
+        $this->assertRefused(fn () => DB::table('proforma_invoices')->where('id', $pi->id)->update(['status' => 'confirmed', 'confirmed_at' => now()]), 'confirm without the deposit');
+        DB::table('proforma_invoices')->where('id', $pi->id)->update(['status' => 'confirmed', 'confirmed_at' => now(),
+            'deposit_override_reason' => 'Long-standing client', 'deposit_override_by' => $pi->created_by]);
         $this->assertSame('confirmed', $pi->fresh()->status);
+        $this->assertRefused(fn () => DB::table('proforma_invoices')->where('id', $pi->id)->update(['deposit_override_reason' => 'changed']), 'override changed');
     }
 
     public function test_i4_only_one_current_revision_per_pi_number(): void

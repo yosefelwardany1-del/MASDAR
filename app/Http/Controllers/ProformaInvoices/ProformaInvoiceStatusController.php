@@ -36,9 +36,12 @@ class ProformaInvoiceStatusController extends Controller
     public function confirm(Request $request, ProformaInvoice $pi)
     {
         $this->abortUnlessVisible($request->user(), $pi);
-        $pi = $this->service->confirm($pi, $request->user());
+        $data = $request->validate(['override_reason' => ['nullable', 'string', 'max:2000']]);
+        $pi = $this->service->confirm($pi, $request->user(), $data['override_reason'] ?? null);
 
-        return redirect()->route('proforma-invoices.show', $pi)->with('success', __('Confirmed: the client\'s deposit has arrived.'));
+        return redirect()->route('proforma-invoices.show', $pi)->with('success', $pi->deposit_override_reason
+            ? __('Confirmed without the full deposit. Your reason is kept on the PI and in the audit log.')
+            : __('Confirmed: the client\'s deposit has arrived.'));
     }
 
     public function cancel(Request $request, ProformaInvoice $pi)

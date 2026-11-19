@@ -97,7 +97,8 @@ trait InteractsWithLedger
     /** A confirmed, current PI with two lines of 10 × 48 × 1.25 = 600 each (1,200 in all). */
     protected function confirmedPi(array $attributes = []): ProformaInvoice
     {
-        $pi = ProformaInvoice::factory()->create($attributes);
+        // No deposit asked (0%) unless given: a deposit must be paid before a PI confirms (B03).
+        $pi = ProformaInvoice::factory()->create($attributes + ['deposit_percent' => 0]);
         PiLine::factory()->create(['proforma_invoice_id' => $pi->id, 'line_no' => 1]);
         PiLine::factory()->create(['proforma_invoice_id' => $pi->id, 'line_no' => 2]);
         $pi->update(['status' => 'issued', 'issued_at' => now(), 'issued_by' => $pi->created_by]);

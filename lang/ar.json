@@ -2583,5 +2583,13 @@
     "A confirmed PI is the sales order: a manager cancels it.": "الفاتورة المبدئية المؤكدة هي أمر البيع: يلغيها المدير.",
     "This PI's invoice :entry is posted. Reverse it on the Accounting screen first.": "فاتورة هذه الفاتورة المبدئية :entry مُرحَّلة. اعكسها من شاشة المحاسبة أولاً.",
     "Money has been received on this PI (:amount). Refund it to the client, or reverse the receipt and record it again on the client without a PI, first.": "استُلمت أموال على هذه الفاتورة المبدئية (:amount). ردّها إلى العميل، أو اعكس الإيصال وسجّله من جديد على العميل دون فاتورة مبدئية، أولاً.",
-    "This PI has purchase orders (:orders). Cancel them first.": "لهذه الفاتورة المبدئية أوامر شراء (:orders). ألغِها أولاً."
+    "This PI has purchase orders (:orders). Cancel them first.": "لهذه الفاتورة المبدئية أوامر شراء (:orders). ألغِها أولاً.",
+    "The deposit of :required has not arrived (:paid received). Record the client's payment first.": "لم يصل العربون البالغ :required (المستلم :paid). سجّل دفعة العميل أولاً.",
+    "Only a manager confirms a PI without its deposit.": "لا يؤكد الفاتورة المبدئية دون عربونها إلا المدير.",
+    "Confirmed without the full deposit. Your reason is kept on the PI and in the audit log.": "تم التأكيد دون العربون كاملاً. سببك محفوظ على الفاتورة المبدئية وفي سجل التدقيق.",
+    "Waiting for the deposit": "بانتظار العربون",
+    "Confirm without the deposit": "تأكيد دون العربون",
+    "Why is this PI confirmed before its deposit?": "لماذا تُؤكَّد هذه الفاتورة المبدئية قبل عربونها؟",
+    "The reason is kept on the PI and in the audit log.": "يُحفَظ السبب على الفاتورة المبدئية وفي سجل التدقيق.",
+    "Confirmed without the full deposit by :name: :reason": "أكّدها :name دون العربون كاملاً: :reason"
 }

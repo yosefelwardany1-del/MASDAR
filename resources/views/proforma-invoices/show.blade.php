@@ -95,9 +95,16 @@
                 </form>
             @endif
             @if(in_array($pi->status, ['issued', 'accepted'], true))
-                <form method="POST" action="{{ route('proforma-invoices.confirm', $pi) }}" onsubmit="return confirm(@js(__('Confirm that the client\'s deposit has arrived?')));">
-                    @csrf <button class="btn {{ $pi->status === 'accepted' ? 'btn-primary' : 'btn-light' }}"><i class="bi bi-check2-circle" aria-hidden="true"></i>{{ __('Deposit received: confirm') }}</button>
-                </form>
+                @if($depositMet)
+                    <form method="POST" action="{{ route('proforma-invoices.confirm', $pi) }}" onsubmit="return confirm(@js(__('Confirm that the client\'s deposit has arrived?')));">
+                        @csrf <button class="btn {{ $pi->status === 'accepted' ? 'btn-primary' : 'btn-light' }}"><i class="bi bi-check2-circle" aria-hidden="true"></i>{{ __('Deposit received: confirm') }}</button>
+                    </form>
+                @else
+                    <x-status tone="due" icon="hourglass-split">{{ __('Waiting for the deposit') }}</x-status>
+                    @can('proforma_invoices.approve')
+                        <button type="button" class="btn btn-light" data-bs-toggle="collapse" data-bs-target="#pi-override" aria-expanded="{{ $errors->has('override_reason') ? 'true' : 'false' }}" aria-controls="pi-override"><i class="bi bi-unlock" aria-hidden="true"></i>{{ __('Confirm without the deposit') }}</button>
+                    @endcan
+                @endif
             @endif
             @if($revisable)
                 <form method="POST" action="{{ route('proforma-invoices.revise', $pi) }}" onsubmit="return confirm(@js(__('Make a new revision? It starts as a draft copy; this one stays current until the new one is issued.')));">
@@ -132,6 +139,25 @@
         <i class="bi bi-clock-history me-1" aria-hidden="true"></i>{{ __('This is not the current revision.') }}
         <a href="{{ route('proforma-invoices.show', $current) }}">{{ __('Open the current one: :reference', ['reference' => $current->reference()]) }}</a>
     </div>
+@endif
+
+@if($canEdit && in_array($pi->status, ['issued', 'accepted'], true) && ! $depositMet)
+    <div class="alert alert-info py-2"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>{{ __('The deposit of :required has not arrived (:paid received). Record the client\'s payment first.', ['required' => $pi->currency.' '.\App\Services\ProformaInvoices\PiAmounts::number($depositRequired, 2, 2), 'paid' => $pi->currency.' '.\App\Services\ProformaInvoices\PiAmounts::number($paid, 2, 2)]) }}</div>
+    @can('proforma_invoices.approve')
+        <div class="collapse {{ $errors->has('override_reason') ? 'show' : '' }}" id="pi-override">
+            <form method="POST" action="{{ route('proforma-invoices.confirm', $pi) }}" class="app-card app-doc-cancel mb-3">
+                @csrf
+                <label class="form-label" for="override_reason">{{ __('Why is this PI confirmed before its deposit?') }} <span class="text-danger">*</span></label>
+                <textarea id="override_reason" name="override_reason" rows="2" class="form-control @error('override_reason') is-invalid @enderror" required>{{ old('override_reason') }}</textarea>
+                @error('override_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <div class="form-text">{{ __('The reason is kept on the PI and in the audit log.') }}</div>
+                <div class="d-flex flex-wrap gap-2 mt-2"><button class="btn btn-primary"><i class="bi bi-check2-circle" aria-hidden="true"></i>{{ __('Confirm without the deposit') }}</button></div>
+            </form>
+        </div>
+    @endcan
+@endif
+@if($pi->deposit_override_reason)
+    <div class="alert alert-warning py-2"><i class="bi bi-unlock me-1" aria-hidden="true"></i>{{ __('Confirmed without the full deposit by :name: :reason', ['name' => $pi->depositOverrider?->name ?? '—', 'reason' => $pi->deposit_override_reason]) }}</div>
 @endif
 
 @if($canEdit && $live)

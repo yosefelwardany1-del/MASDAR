@@ -3,11 +3,13 @@
 namespace Tests\Feature\Crm;
 
 use App\Models\ClientStageChange;
+use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\ProformaInvoice;
 use App\Models\User;
 use App\Security\Roles;
 use App\Services\Crm\CrmQueries;
+use App\Services\Finance\PaymentService;
 use App\Services\Parties\PartyService;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
 use Database\Seeders\DemoUsersSeeder;
@@ -57,6 +59,9 @@ class CrmPipelineTest extends TestCase
         // Confirming Nile's PI moves it on, by the documents.
         $this->travel(1)->minutes();
         $nile = ProformaInvoice::where('client_id', Party::where('name', 'Nile Kitchenware Co.')->value('id'))->where('is_current', true)->sole();
+        app(PaymentService::class)->record(['kind' => 'client_receipt', 'paid_on' => now()->toDateString(),
+            'money_account_id' => MoneyAccount::where('currency', $nile->currency)->value('id'),
+            'amount' => app(ProformaInvoiceService::class)->depositStatus($nile)['required'], 'party_id' => $nile->client_id, 'proforma_invoice_id' => $nile->id], $this->manager);
         app(ProformaInvoiceService::class)->confirm($nile, $this->manager);
         $this->assertSame('confirmed', $this->stageOf('Nile Kitchenware Co.'));
 

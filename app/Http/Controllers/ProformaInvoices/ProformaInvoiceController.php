@@ -95,6 +95,7 @@ class ProformaInvoiceController extends Controller
             'pendingRevision' => $revisions->firstWhere('status', 'draft'),
             'paid' => $paid,
             'depositRequired' => PiAmounts::depositRequired($totals->amount, (string) $pi->deposit_percent),
+            'depositMet' => bccomp($paid, PiAmounts::round(PiAmounts::depositRequired($totals->amount, (string) $pi->deposit_percent), 2), 4) >= 0,
             'credited' => $credited,
             'outstanding' => PiAmounts::subtract(PiAmounts::subtract($totals->amount, $paid), $credited),
             'payments' => $user->can('payments.view')

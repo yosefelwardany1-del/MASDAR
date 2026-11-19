@@ -3,6 +3,7 @@
 namespace Tests\Feature\ProformaInvoices;
 
 use App\Models\AuditLog;
+use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\PiLine;
 use App\Models\Product;
@@ -10,6 +11,7 @@ use App\Models\ProformaInvoice;
 use App\Models\User;
 use App\Security\Roles;
 use App\Services\Configuration\BusinessSettingsService;
+use App\Services\Finance\PaymentService;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -242,6 +244,11 @@ class ProformaInvoiceWorkflowTest extends TestCase
         $this->assertSame('accepted', $pi->fresh()->status);
         $this->assertNotNull($pi->fresh()->accepted_at);
 
+        // Confirmed once the client's deposit has arrived (B03).
+        $this->post(route('proforma-invoices.confirm', $pi))->assertSessionHasErrors('pi');
+        $deposit = app(PaymentService::class)->record(['kind' => 'client_receipt', 'paid_on' => now()->toDateString(),
+            'money_account_id' => MoneyAccount::factory()->create()->id, 'amount' => $this->service()->depositStatus($pi->fresh())['required'],
+            'party_id' => $pi->client_id, 'proforma_invoice_id' => $pi->id], $manager);
         $this->post(route('proforma-invoices.confirm', $pi))->assertSessionHasNoErrors();
         $this->assertSame('confirmed', $pi->fresh()->status);
         $this->assertNotNull($pi->fresh()->confirmed_at);
@@ -249,6 +256,9 @@ class ProformaInvoiceWorkflowTest extends TestCase
         $this->post(route('proforma-invoices.cancel', $pi), ['cancel_reason' => ''])->assertSessionHasErrors('cancel_reason');
         $this->assertSame('confirmed', $pi->fresh()->status);
 
+        // With the deposit in, it is refunded before the PI is cancelled (B02).
+        $this->post(route('proforma-invoices.cancel', $pi), ['cancel_reason' => 'Client withdrew the order'])->assertSessionHasErrors('pi');
+        app(PaymentService::class)->reverse($deposit, $manager, 'Refunded to the client');
         $this->post(route('proforma-invoices.cancel', $pi), ['cancel_reason' => 'Client withdrew the order'])->assertSessionHasNoErrors();
         $pi->refresh();
         $this->assertSame('cancelled', $pi->status);

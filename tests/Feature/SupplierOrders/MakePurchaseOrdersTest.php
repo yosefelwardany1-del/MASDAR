@@ -18,7 +18,7 @@ class MakePurchaseOrdersTest extends TestCase
 
     public function test_a_confirmed_pi_with_two_suppliers_is_offered_and_becomes_two_orders_on_the_board(): void
     {
-        $manager = $this->user(Roles::MANAGER);
+        $manager = $this->user(Roles::MANAGER)->forceFill(['locale' => 'en']);
         [$alpha, $beta] = [$this->supplier(['name' => 'Alpha Toys']), $this->supplier(['name' => 'Beta Bags'])];
         $pi = $this->orderablePi([
             ['supplier_id' => $alpha->id, 'supplier_price' => '6.5000'],
@@ -50,7 +50,7 @@ class MakePurchaseOrdersTest extends TestCase
 
     public function test_an_issued_pi_waits_for_its_deposit_unless_the_business_orders_before_it(): void
     {
-        $manager = $this->user(Roles::MANAGER);
+        $manager = $this->user(Roles::MANAGER)->forceFill(['locale' => 'en']);
         $supplier = $this->supplier();
         $pi = ProformaInvoice::factory()->issued()
             ->has(PiLine::factory()->state(['supplier_id' => $supplier->id, 'supplier_price' => '2', 'line_no' => 1]), 'lines')->create();
@@ -69,7 +69,7 @@ class MakePurchaseOrdersTest extends TestCase
 
     public function test_who_does_not_see_suppliers_is_not_offered_it(): void
     {
-        $sales = $this->user(Roles::SALES);
+        $sales = $this->user(Roles::SALES)->forceFill(['locale' => 'en']);
         $pi = $this->orderablePi([['supplier_id' => $this->supplier()->id, 'supplier_price' => '1']]);
         $pi->client->forceFill(['account_manager_id' => $sales->id])->save();
         $this->actingAs($sales)->get(route('proforma-invoices.show', $pi))->assertOk()

@@ -128,6 +128,12 @@ class ProformaInvoice extends Model
     }
 
     /** Client receipts in this revision's currency over every revision of the number, "0.0000" if none. */
+    /** The manager who confirmed it without the full deposit (B03), if one did. */
+    public function depositOverrider(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deposit_override_by');
+    }
+
     public function paidAmount(): string
     {
         return (string) Payment::query()

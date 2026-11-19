@@ -34,10 +34,13 @@ class ProformaInvoiceFactory extends Factory
         });
     }
 
-    /** Issued, then confirmed (the client's deposit in): the sales order purchase orders are made from. */
+    /**
+     * Issued, then confirmed: the sales order purchase orders are made from. With no deposit asked
+     * (0%), as a fixture records no payment and a deposit must be paid to confirm (B03).
+     */
     public function confirmed(): static
     {
-        return $this->afterCreating(function (ProformaInvoice $pi) {
+        return $this->state(['deposit_percent' => 0])->afterCreating(function (ProformaInvoice $pi) {
             $pi->update(['status' => 'issued', 'issued_at' => now(), 'issued_by' => $pi->created_by]);
             $pi->update(['status' => 'confirmed', 'confirmed_at' => now()]);
         });

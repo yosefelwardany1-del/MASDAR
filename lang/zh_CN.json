@@ -2583,5 +2583,13 @@
     "A confirmed PI is the sales order: a manager cancels it.": "已确认的形式发票即销售订单：须由经理取消。",
     "This PI's invoice :entry is posted. Reverse it on the Accounting screen first.": "此形式发票的发票 :entry 已过账。请先在“会计”页面冲销它。",
     "Money has been received on this PI (:amount). Refund it to the client, or reverse the receipt and record it again on the client without a PI, first.": "此形式发票已收到款项（:amount）。请先退款给客户，或冲销该收款并重新登记为客户名下的款项（不关联形式发票）。",
-    "This PI has purchase orders (:orders). Cancel them first.": "此形式发票已有采购订单（:orders）。请先取消这些订单。"
+    "This PI has purchase orders (:orders). Cancel them first.": "此形式发票已有采购订单（:orders）。请先取消这些订单。",
+    "The deposit of :required has not arrived (:paid received). Record the client's payment first.": "定金 :required 尚未到账（已收 :paid）。请先登记客户的付款。",
+    "Only a manager confirms a PI without its deposit.": "只有经理可以在未收定金时确认形式发票。",
+    "Confirmed without the full deposit. Your reason is kept on the PI and in the audit log.": "已在定金未付清时确认。您的理由已记录在形式发票和审计日志中。",
+    "Waiting for the deposit": "等待定金",
+    "Confirm without the deposit": "未收定金即确认",
+    "Why is this PI confirmed before its deposit?": "为何在收到定金前确认此形式发票？",
+    "The reason is kept on the PI and in the audit log.": "理由将记录在形式发票和审计日志中。",
+    "Confirmed without the full deposit by :name: :reason": "由 :name 在定金未付清时确认：:reason"
 }

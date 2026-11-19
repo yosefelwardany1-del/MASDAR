@@ -243,9 +243,47 @@ class ProformaInvoiceService
     }
 
     /** The client's deposit has arrived (informational: payments are their own records). */
-    public function confirm(ProformaInvoice $pi, User $by): ProformaInvoice
+    /**
+     * Confirm the PI once the client's deposit has arrived (B03): client receipts on any revision,
+     * in its currency, cover total × deposit % (0% needs none). A manager may confirm without it,
+     * giving the reason, which stays on the PI and in the audit log.
+     */
+    public function confirm(ProformaInvoice $pi, User $by, ?string $overrideReason = null): ProformaInvoice
     {
-        return $this->move($pi, ['issued', 'accepted'], 'confirmed', ['confirmed_at' => now()], __('Only an issued or accepted PI can be confirmed.'));
+        $overrideReason = trim((string) $overrideReason);
+
+        return $this->move($pi, ['issued', 'accepted'], 'confirmed', ['confirmed_at' => now()], __('Only an issued or accepted PI can be confirmed.'),
+            function (ProformaInvoice $pi) use ($by, $overrideReason) {
+                ['required' => $required, 'paid' => $paid] = $this->depositStatus($pi);
+                if (bccomp($paid, $required, 4) >= 0) {
+                    return [];
+                }
+                $amounts = ['required' => $pi->currency.' '.PiAmounts::number($required, 2, 2), 'paid' => $pi->currency.' '.PiAmounts::number($paid, 2, 2)];
+                if ($overrideReason === '') {
+                    throw ValidationException::withMessages(['pi' => __('The deposit of :required has not arrived (:paid received). Record the client\'s payment first.', $amounts)]);
+                }
+                if (! $by->can('proforma_invoices.approve')) {
+                    throw ValidationException::withMessages(['pi' => __('Only a manager confirms a PI without its deposit.')]);
+                }
+
+                return ['deposit_override_reason' => $overrideReason, 'deposit_override_by' => $by->id];
+            });
+    }
+
+    /**
+     * The deposit $pi asks for (total × deposit %, to the cent) and what the client has paid on it
+     * (client receipts on any revision, in its currency).
+     *
+     * @return array{required: string, paid: string}
+     */
+    public function depositStatus(ProformaInvoice $pi): array
+    {
+        $total = (string) DB::table('pi_lines')->where('proforma_invoice_id', $pi->id)->selectRaw('COALESCE(SUM(amount), 0) AS t')->value('t');
+
+        return [
+            'required' => PiAmounts::round(PiAmounts::depositRequired($total, (string) $pi->deposit_percent), 2),
+            'paid' => $pi->paidAmount(),
+        ];
     }
 
     /**
@@ -354,9 +392,8 @@ class ProformaInvoiceService
             if (! in_array($pi->status, $from, true)) {
                 throw ValidationException::withMessages(['pi' => $refusal]);
             }
-            if ($guard) {
-                $guard($pi);
-            }
+            // The guard refuses the move, or returns more columns to stamp (e.g. a deposit override).
+            $stamps += $guard ? ($guard($pi) ?? []) : [];
             $old = ['status' => $pi->status];
             $pi->update(['status' => $to] + $stamps);
             AuditTrail::record($to, $pi, $old, ['status' => $to] + array_diff_key($stamps, array_flip(['accepted_at', 'confirmed_at', 'cancelled_at'])));
