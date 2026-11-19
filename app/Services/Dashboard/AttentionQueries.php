@@ -145,22 +145,24 @@ class AttentionQueries
     public function expiringDocuments(int $limit = 50): Collection
     {
         $days = BusinessSetting::current()->hr_document_warning_days;
+        // Today by the app's clock, not the database's, so both ends of the window agree.
+        $today = Carbon::today()->toDateString();
         $until = Carbon::today()->addDays($days)->toDateString();
 
         return collect(DB::select(<<<'SQL'
             SELECT d.id, d.kind, d.number, d.expires_on, e.id AS employee_id, e.code, e.name,
-                   (d.expires_on - CURRENT_DATE) AS days_left
+                   (d.expires_on - ?::date) AS days_left
             FROM employee_documents d
             JOIN employees e ON e.id = d.employee_id
             WHERE d.expires_on IS NOT NULL AND d.expires_on <= ?
-              AND (e.left_on IS NULL OR e.left_on >= CURRENT_DATE)
+              AND (e.left_on IS NULL OR e.left_on >= ?::date)
               AND NOT EXISTS (
                   SELECT 1 FROM employee_documents n
                   WHERE n.employee_id = d.employee_id AND n.kind = d.kind
                     AND (COALESCE(n.issued_on, DATE '0001-01-01'), n.id) > (COALESCE(d.issued_on, DATE '0001-01-01'), d.id))
             ORDER BY d.expires_on, e.code
             LIMIT ?
-        SQL, [$until, $limit]));
+        SQL, [$today, $until, $today, $limit]));
     }
 
     /** Leave requests waiting for a decision. */
