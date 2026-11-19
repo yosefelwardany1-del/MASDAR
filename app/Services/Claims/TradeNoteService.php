@@ -9,6 +9,7 @@ use App\Models\SupplierOrder;
 use App\Models\TradeNote;
 use App\Models\TradeNoteLine;
 use App\Models\User;
+use App\Services\Accounting\Decimal;
 use App\Services\Finance\PaymentService;
 use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
@@ -52,6 +53,7 @@ class TradeNoteService
             foreach ($lines as $i => $line) {
                 TradeNoteLine::create($line + ['trade_note_id' => $note->id, 'line_no' => $i + 1]);
             }
+            $this->assertWithinLimits($note);
             AuditTrail::record('created', $note, [], $values + ['lines' => $lines]);
 
             return $note;
@@ -68,6 +70,7 @@ class TradeNoteService
             $note = $this->lockedDraft($note);
             $old = $note->only(array_keys($values));
             $note->update($values);
+            $this->assertWithinLimits($note);
             AuditTrail::record('updated', $note, $old, $values);
 
             return $note;
@@ -86,6 +89,7 @@ class TradeNoteService
                 'trade_note_id' => $note->id,
                 'line_no' => (int) TradeNoteLine::query()->where('trade_note_id', $note->id)->max('line_no') + 1,
             ]);
+            $this->assertWithinLimits($note);
             AuditTrail::record('line_added', $note, [], $values);
 
             return $line;
@@ -99,9 +103,10 @@ class TradeNoteService
         $values = $this->lineValues($data);
 
         return $this->write(function () use ($line, $values) {
-            $this->lockedDraft($line->note);
+            $note = $this->lockedDraft($line->note);
             $old = $line->only(array_keys($values));
             $line->update($values);
+            $this->assertWithinLimits($note);
             AuditTrail::record('line_updated', $line->note, $old, $values);
 
             return $line;
@@ -136,6 +141,7 @@ class TradeNoteService
             if (bccomp($note->total(), '0', 4) <= 0) {
                 throw ValidationException::withMessages(['note' => __('Add at least one line with an amount before issuing the note.')]);
             }
+            $this->assertWithinLimits($note);
             $number = $this->numbers->next($note->isCredit() ? 'credit_note' : 'debit_note', new \DateTimeImmutable($on));
             $note->update(['status' => 'issued', 'number' => $number, 'issued_on' => $on, 'issued_by' => $by->id, 'issued_at' => now()]);
             AuditTrail::record('issued', $note, ['status' => 'draft'], ['status' => 'issued', 'number' => $number, 'issued_on' => $on, 'total' => $note->total()]);
@@ -212,6 +218,9 @@ class TradeNoteService
             if (filled($data['proforma_invoice_id'] ?? null) && ! $pi) {
                 $errors['proforma_invoice_id'] = __('That PI does not exist.');
             }
+            if ($pi && filled($data['party_id'] ?? null) && (int) $data['party_id'] !== (int) $pi->client_id) {
+                $errors['party_id'] = __('That PI is of another client. Choose the PI\'s client, or another PI.');
+            }
             $partyId = $pi?->client_id ?? (filled($data['party_id'] ?? null) ? (int) $data['party_id'] : $claim?->client_id);
             $party = $partyId ? Party::query()->whereKey($partyId)->where('is_client', true)->first() : null;
             if (! $party) {
@@ -229,6 +238,9 @@ class TradeNoteService
             $order = filled($data['supplier_order_id'] ?? null) ? SupplierOrder::query()->find((int) $data['supplier_order_id']) : ($claim?->supplierOrder);
             if (filled($data['supplier_order_id'] ?? null) && ! $order) {
                 $errors['supplier_order_id'] = __('That purchase order does not exist.');
+            }
+            if ($order && filled($data['party_id'] ?? null) && (int) $data['party_id'] !== (int) $order->supplier_id) {
+                $errors['party_id'] = __('That purchase order is with another supplier. Choose its supplier, or another order.');
             }
             $partyId = $order?->supplier_id ?? (filled($data['party_id'] ?? null) ? (int) $data['party_id'] : $claim?->supplier_id);
             $party = $partyId ? Party::query()->whereKey($partyId)->where('is_supplier', true)->first() : null;
@@ -276,6 +288,55 @@ class TradeNoteService
             'quantity' => Money::amount(filled($data['quantity'] ?? null) ? $data['quantity'] : '1', 'quantity', true),
             'unit_price' => Money::amount($data['unit_price'] ?? null, 'unit_price', true),
         ];
+    }
+
+    /**
+     * B04: notes stay within what they settle. Credit notes on a PI (issued ones and this draft)
+     * never come to more than the PI's total; debit notes on a purchase order never more than the
+     * order's; notes settling a claim never more than its agreed amount (or the claimed amount
+     * before one is agreed). The trigger holds the same rule when a note is issued.
+     */
+    private function assertWithinLimits(TradeNote $note): void
+    {
+        $total = $note->total();
+        $issued = fn ($query) => (string) $query->join('trade_note_lines as l', 'l.trade_note_id', '=', 'n.id')
+            ->where('n.status', 'issued')->where('n.id', '<>', $note->id)->where('n.currency', $note->currency)
+            ->selectRaw('COALESCE(SUM(l.amount), 0)::numeric(18,4) AS t')->value('t');
+        $money = fn (string $amount) => $note->currency.' '.Decimal::format($amount);
+
+        if ($note->isCredit() && $note->proforma_invoice_id !== null) {
+            $pi = ProformaInvoice::query()->findOrFail($note->proforma_invoice_id);
+            $current = ProformaInvoice::query()->where('pi_number', $pi->pi_number)->where('is_current', true)->first() ?? $pi;
+            $cap = (string) DB::table('pi_lines')->where('proforma_invoice_id', $current->id)->selectRaw('COALESCE(SUM(amount), 0)::numeric(18,4) AS t')->value('t');
+            $others = $issued(DB::table('trade_notes as n')->join('proforma_invoices as r', 'r.id', '=', 'n.proforma_invoice_id')
+                ->where('n.kind', 'credit')->where('r.pi_number', $pi->pi_number));
+            if (bccomp(bcadd($others, $total, 4), $cap, 4) > 0) {
+                throw ValidationException::withMessages(['note' => __('Credit notes on :document would come to :total, more than its total of :cap. At most :left can still be credited.', [
+                    'document' => $current->reference(), 'total' => $money(bcadd($others, $total, 4)), 'cap' => $money($cap), 'left' => $money(Money::max('0', bcsub($cap, $others, 4))),
+                ])]);
+            }
+        }
+        if (! $note->isCredit() && $note->supplier_order_id !== null) {
+            $order = SupplierOrder::query()->findOrFail($note->supplier_order_id);
+            $cap = (string) DB::table('supplier_order_lines')->where('supplier_order_id', $order->id)->selectRaw('COALESCE(SUM(amount), 0)::numeric(18,4) AS t')->value('t');
+            $others = $issued(DB::table('trade_notes as n')->where('n.kind', 'debit')->where('n.supplier_order_id', $order->id));
+            if (bccomp(bcadd($others, $total, 4), $cap, 4) > 0) {
+                throw ValidationException::withMessages(['note' => __('Debit notes on :document would come to :total, more than its total of :cap. At most :left can still be debited.', [
+                    'document' => $order->number, 'total' => $money(bcadd($others, $total, 4)), 'cap' => $money($cap), 'left' => $money(Money::max('0', bcsub($cap, $others, 4))),
+                ])]);
+            }
+        }
+        if ($note->claim_id !== null && ($claim = Claim::query()->find($note->claim_id))) {
+            $cap = $claim->agreedAmount() ?? ($claim->claimed_amount !== null ? (string) $claim->claimed_amount : null);
+            if ($cap !== null && ($claim->currency === null || $claim->currency === $note->currency)) {
+                $others = $issued(DB::table('trade_notes as n')->where('n.claim_id', $claim->id));
+                if (bccomp(bcadd($others, $total, 4), $cap, 4) > 0) {
+                    throw ValidationException::withMessages(['note' => __('Notes settling claim :claim would come to :total, more than the :cap agreed. At most :left is left to settle.', [
+                        'claim' => $claim->number, 'total' => $money(bcadd($others, $total, 4)), 'cap' => $money($cap), 'left' => $money(Money::max('0', bcsub($cap, $others, 4))),
+                    ])]);
+                }
+            }
+        }
     }
 
     private function syncOrder(TradeNote $note, User $by, bool $reopen = false): void

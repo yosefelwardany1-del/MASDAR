@@ -2591,5 +2591,10 @@
     "Confirm without the deposit": "تأكيد دون العربون",
     "Why is this PI confirmed before its deposit?": "لماذا تُؤكَّد هذه الفاتورة المبدئية قبل عربونها؟",
     "The reason is kept on the PI and in the audit log.": "يُحفَظ السبب على الفاتورة المبدئية وفي سجل التدقيق.",
-    "Confirmed without the full deposit by :name: :reason": "أكّدها :name دون العربون كاملاً: :reason"
+    "Confirmed without the full deposit by :name: :reason": "أكّدها :name دون العربون كاملاً: :reason",
+    "Credit notes on :document would come to :total, more than its total of :cap. At most :left can still be credited.": "ستبلغ إشعارات الدائن على :document مبلغ :total، وهو أكثر من إجماليها :cap. يمكن إضافة :left كحد أقصى.",
+    "Debit notes on :document would come to :total, more than its total of :cap. At most :left can still be debited.": "ستبلغ إشعارات المدين على :document مبلغ :total، وهو أكثر من إجماليه :cap. يمكن إضافة :left كحد أقصى.",
+    "Notes settling claim :claim would come to :total, more than the :cap agreed. At most :left is left to settle.": "ستبلغ الإشعارات التي تسوي المطالبة :claim مبلغ :total، وهو أكثر من المتفق عليه :cap. المتبقي للتسوية :left كحد أقصى.",
+    "That PI is of another client. Choose the PI's client, or another PI.": "هذه الفاتورة المبدئية لعميل آخر. اختر عميلها أو فاتورة أخرى.",
+    "That purchase order is with another supplier. Choose its supplier, or another order.": "أمر الشراء هذا مع مورد آخر. اختر مورده أو أمراً آخر."
 }
