@@ -8,13 +8,14 @@ use App\Models\User;
 use App\Security\Roles;
 use App\Services\Shipping\ContainerTrackingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\LoadsContainers;
 use Tests\Concerns\SeedsReference;
 use Tests\TestCase;
 
 /** The container board (spec §5.5, §7): status, ETA flags, clients inside, fill. */
 class ContainerBoardTest extends TestCase
 {
-    use RefreshDatabase, SeedsReference, ShippingFixtures;
+    use LoadsContainers, RefreshDatabase, SeedsReference, ShippingFixtures;
 
     private function setStatus($container, string $status, User $by): void
     {
@@ -63,6 +64,8 @@ class ContainerBoardTest extends TestCase
         $soon = $this->containerOn($this->shipmentWith(['etd' => now()->subDays(20)->toDateString(), 'eta' => now()->addDays(2)->toDateString()]), ['container_no' => 'SOON0000001']);
         $arrived = $this->containerOn($this->shipmentWith(['etd' => now()->subDays(40)->toDateString(), 'eta' => now()->subDays(5)->toDateString()]), ['container_no' => 'HOME0000001']);
         $far = $this->containerOn($this->shipmentWith(['eta' => now()->addDays(30)->toDateString()]), ['container_no' => 'FARR0000001']);
+        $this->putGoodsIn($late);
+        $this->putGoodsIn($arrived);
         $this->setStatus($late, 'in_transit', $user);
         $this->setStatus($arrived, 'arrived', $user);
 
@@ -76,6 +79,7 @@ class ContainerBoardTest extends TestCase
         $this->get(route('containers.show', $late))->assertSee('Late by 3 days');
 
         // Released and delivered count as arrived too; a correction back before arrival does not.
+        $this->travel(1)->minutes();
         $this->setStatus($arrived, 'delivered', $user);
         $this->get(route('containers.index', ['late' => 1]))->assertDontSee('HOME0000001');
         app(ContainerTrackingService::class)->recordStatus($arrived, [

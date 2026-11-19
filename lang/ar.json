@@ -2628,5 +2628,10 @@
     "This quotation was valid until :date, which has passed. Send it anyway?": "كان عرض السعر هذا سارياً حتى :date، وقد انقضى هذا التاريخ. إرساله على أي حال؟",
     "This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.": "انتهت صلاحية عرض السعر هذا في :date. انسخه (نسخ للتعديل)، وأعطِ النسخة تاريخاً جديداً وأرسلها بدلاً منه.",
     "The amount agreed can't be more than the :amount claimed.": "لا يجوز أن يزيد المبلغ المتفق عليه عن المبلغ المطالب به :amount.",
-    "Above zero and at most the :amount claimed.": "أكبر من صفر وبحد أقصى المبلغ المطالب به :amount."
+    "Above zero and at most the :amount claimed.": "أكبر من صفر وبحد أقصى المبلغ المطالب به :amount.",
+    "A status is recorded once it has happened: the date and time cannot be in the future.": "تُسجَّل الحالة بعد وقوعها: لا يجوز أن يكون التاريخ والوقت في المستقبل.",
+    "The container is already :status.": "الحاوية بالفعل في حالة :status.",
+    "This is earlier than the status before it (:date). Check the date, or record it as a correction.": "هذا أبكر من الحالة التي قبلها (:date). تحقق من التاريخ، أو سجّله كتصحيح.",
+    "Nothing is loaded in this container yet. Load its goods before marking it :status.": "لم يُحمَّل شيء في هذه الحاوية بعد. حمّل بضائعها قبل وضعها في حالة :status.",
+    "Skipped": "تم تخطيها"
 }

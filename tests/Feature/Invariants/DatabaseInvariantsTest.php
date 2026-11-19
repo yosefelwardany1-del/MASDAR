@@ -19,6 +19,7 @@ use App\Services\Numbering\NumberingService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\LoadsContainers;
 use Tests\Concerns\SeedsReference;
 use Tests\TestCase;
 
@@ -28,7 +29,7 @@ use Tests\TestCase;
  */
 class DatabaseInvariantsTest extends TestCase
 {
-    use RefreshDatabase, SeedsReference;
+    use LoadsContainers, RefreshDatabase, SeedsReference;
 
     private function assertRefused(callable $write, string $message = ''): void
     {
@@ -99,6 +100,7 @@ class DatabaseInvariantsTest extends TestCase
             'container_id' => $container->id, 'status' => $status, 'happened_at' => now(), 'user_id' => $user->id, 'corrects_event_id' => $corrects,
         ]);
 
+        $this->putGoodsIn($container);
         $loaded = $insert('loaded_sealed');
         $this->assertRefused(fn () => $insert('booked'), 'backwards');
         $this->assertRefused(fn () => $insert('no_such_status'), 'unknown');
