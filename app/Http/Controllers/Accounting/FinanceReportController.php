@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Finance\MoneyAccountController;
 use App\Models\Account;
+use App\Models\BusinessSetting;
 use App\Models\Party;
 use App\Services\Accounting\Ledger;
 use App\Services\Accounting\LedgerReports;
@@ -75,9 +76,8 @@ class FinanceReportController extends Controller
     public function balanceSheet(Request $request)
     {
         $asAt = $this->dateOr($request->query('as_at'), now()->toDateString());
-        // The financial year end is OPEN (spec Q-A4): the year's start is asked on the report,
-        // starting at 1 January, so the split between this year's and earlier results is visible.
-        $yearStart = $this->dateOr($request->query('year_start'), Carbon::parse($asAt)->startOfYear()->toDateString());
+        // B32: the financial year starts as set on Lists & options.
+        $yearStart = BusinessSetting::current()->financialYearStart($asAt);
         $all = $request->boolean('all');
         $report = $this->reports->balanceSheet($asAt, $yearStart, $all);
 
@@ -217,11 +217,11 @@ class FinanceReportController extends Controller
         return $labels;
     }
 
-    /** @return array{string, string} from, to — the current year to date unless given */
+    /** @return array{string, string} from, to — the financial year to date unless given */
     private function range(Request $request): array
     {
         $to = $this->dateOr($request->query('to'), now()->toDateString());
-        $from = $this->dateOr($request->query('from'), Carbon::parse($to)->startOfYear()->toDateString());
+        $from = $this->dateOr($request->query('from'), BusinessSetting::current()->financialYearStart($to));
 
         return $from > $to ? [$to, $from] : [$from, $to];
     }

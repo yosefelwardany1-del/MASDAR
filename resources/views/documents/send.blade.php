@@ -18,7 +18,7 @@
     </x-slot:actions>
 </x-page-header>
 
-@foreach(array_filter([$notReady, $maySend ? null : __('You may see this document but not send it.'), $pdfReady ? null : __('PDF is not set up on this server: it needs Chromium (PDF_CHROME_BINARY). Print the page from the browser instead.')]) as $why)
+@foreach(array_filter([$notReady, $maySend ? null : __('You may see this document but not send it.'), $pdfReady ? null : $pdfProblem]) as $why)
     <div class="alert alert-warning d-flex gap-2"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><div>{{ $why }}</div></div>
 @endforeach
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * MASDAR's business options — one row (CHECK id = 1), like Setting. Reading never writes: before
@@ -69,6 +70,7 @@ class BusinessSetting extends Model
         'counter_types_expense' => 'expense',
         'counter_types_other_in' => 'income,liability,equity',
         'counter_types_other_out' => 'asset,liability,equity',
+        'financial_year_start_month' => 1,
     ];
 
     /** B29: the payment kinds that name the account the money is for, and the setting of each. */
@@ -94,6 +96,7 @@ class BusinessSetting extends Model
             'orders_from_issued_pi' => 'boolean',
             'payments_approved_by_another' => 'boolean',
             'part_cartons_allowed' => 'boolean',
+            'financial_year_start_month' => 'integer',
             'hr_document_warning_days' => 'integer',
             'crm_quiet_days' => 'integer',
             'quotation_valid_days' => 'integer',
@@ -112,6 +115,18 @@ class BusinessSetting extends Model
     public function whatsappUpdateStatuses(): array
     {
         return array_values(array_filter(array_map('trim', explode(',', (string) $this->whatsapp_update_statuses))));
+    }
+
+    /**
+     * B32: the first day of the financial year that $date falls in — the 1st of the month set
+     * on Lists & options, on or before $date.
+     */
+    public function financialYearStart(string $date): string
+    {
+        $day = Carbon::parse($date)->startOfDay();
+        $start = $day->copy()->setDate($day->year, max(1, min(12, (int) $this->financial_year_start_month)), 1);
+
+        return ($start->gt($day) ? $start->subYear() : $start)->toDateString();
     }
 
     /**

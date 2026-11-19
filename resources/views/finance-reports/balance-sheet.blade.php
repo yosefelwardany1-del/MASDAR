@@ -14,13 +14,12 @@
 
 <form method="GET" class="app-filterbar" aria-label="{{ __('As at') }}">
     <div class="app-filterbar__field app-filterbar__field--narrow"><label class="form-label" for="as_at">{{ __('As at') }}</label><input id="as_at" type="date" name="as_at" value="{{ $asAt }}" class="form-control form-control-sm"></div>
-    <div class="app-filterbar__field app-filterbar__field--narrow">
-        <label class="form-label" for="year_start">{{ __('Financial year starts on') }}</label>
-        <input id="year_start" type="date" name="year_start" value="{{ $yearStart }}" class="form-control form-control-sm" aria-describedby="year-start-help">
-    </div>
     <div class="app-filterbar__check"><div class="form-check"><input class="form-check-input" type="checkbox" name="all" value="1" id="all" @checked($all)><label class="form-check-label small" for="all">{{ __('Show accounts without postings') }}</label></div></div>
     <div class="app-filterbar__actions"><button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>{{ __('Show') }}</button></div>
-    <div class="form-text w-100 m-0" id="year-start-help">{{ __('MASDAR\'s financial year end is still open (spec Q-A4): set the start of the year here. It only splits the result between this year and earlier years; the totals are the same.') }}</div>
+    {{-- B32: the year's start is a setting, not a field of this report. --}}
+    <div class="form-text w-100 m-0">{{ __('This financial year started on :date: the result is split between this year and earlier years from then (Lists & options).', ['date' => $yearStart]) }}
+        @can('configuration.view')<a href="{{ route('configuration.index', ['tab' => 'options']) }}#profit">{{ __('Change the financial year') }}</a>@endcan
+    </div>
 </form>
 
 <div class="row g-3 mb-4 app-kpis">

@@ -8,7 +8,7 @@
 
 <div class="alert alert-info small d-flex gap-2">
     <i class="bi bi-info-circle" aria-hidden="true"></i>
-    <span>{{ __('Each automatic posting uses these accounts. For a payment, the money side is the money account\'s own ledger account (set on the Payments screen); expenses and other money in or out use the counter account chosen on the payment. The rules start as for a trader who buys and resells: for an agent, point the client invoice\'s credit at commission income (spec Q-A2). MASDAR\'s accountant confirms them.') }}</span>
+    <span>{{ __('Each automatic posting uses these accounts. For a payment, the money side is the money account\'s own ledger account (set on the Payments screen); expenses and other money in or out use the counter account chosen on the payment. The rules start as for a trader who buys and resells: for an agent, point the client invoice\'s credit at commission income. MASDAR\'s accountant confirms them.') }}</span>
 </div>
 
 @php $editable = auth()->user()->can('accounting.edit'); @endphp

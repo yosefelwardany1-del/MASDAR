@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\WhatsApp\PhoneNumber;
 use App\Services\WhatsApp\WhatsAppClient;
 use App\Support\Audit\AuditTrail;
+use App\Support\SetupNotice;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
@@ -21,19 +22,22 @@ class DocumentSender
 {
     public function __construct(private WhatsAppClient $whatsapp) {}
 
-    public function emailReady(): ?string
+    /** Null when email can be sent; else why not, in words for $viewer (B32: setup details for the system administrator only). */
+    public function emailReady(?User $viewer = null): ?string
     {
         $mailer = (string) config('mail.default');
         if (config('documents.email_requires_real_mailer') && in_array($mailer, ['log', 'array'], true)) {
-            return __('Email is not set up on this server: set MAIL_MAILER and the MAIL_* settings on Render. The PDF can still be downloaded.');
+            return SetupNotice::for($viewer, __('Email sending isn\'t set up yet. Ask your administrator.'),
+                __('Email is not set up on this server: set MAIL_MAILER and the MAIL_* settings on Render. The PDF can still be downloaded.'));
         }
 
         return null;
     }
 
-    public function whatsappReady(): ?string
+    public function whatsappReady(?User $viewer = null): ?string
     {
-        return $this->whatsapp->configured() ? null : __('WhatsApp is not set up on this server (WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID).');
+        return $this->whatsapp->configured() ? null : SetupNotice::for($viewer, __('WhatsApp sending isn\'t set up yet. Ask your administrator.'),
+            __('WhatsApp is not set up on this server (WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID).'));
     }
 
     /**
@@ -42,7 +46,7 @@ class DocumentSender
      */
     public function email(string $type, int $id, string $reference, string $pdf, string $filename, array $to, array $cc, string $subject, string $message, User $by): DocumentSend
     {
-        if ($why = $this->emailReady()) {
+        if ($why = $this->emailReady($by)) {
             throw new DocumentException($why);
         }
         $to = $this->emails($to, 'to', required: true);
@@ -66,7 +70,7 @@ class DocumentSender
 
     public function whatsapp(string $type, int $id, string $reference, string $pdf, string $filename, string $phone, User $by): DocumentSend
     {
-        if ($why = $this->whatsappReady()) {
+        if ($why = $this->whatsappReady($by)) {
             throw new DocumentException($why);
         }
         $number = PhoneNumber::normalise($phone);

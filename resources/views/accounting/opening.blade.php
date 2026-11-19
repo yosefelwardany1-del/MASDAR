@@ -4,7 +4,7 @@
 
 @section('content')
 <x-page-header :title="__('Opening balances')" :eyebrow="__('Accounting')"
-               :subtitle="__('What MASDAR has and owes on the day the books start in the system: bank balances, what each client and factory owes or is owed, other balances. Agreed with the accountant (spec §9, Q-M2).')" />
+               :subtitle="__('What MASDAR has and owes on the day the books start in the system: bank balances, what each client and factory owes or is owed, other balances. Agreed with the accountant.')" />
 @include('accounting._nav', ['active' => 'opening'])
 
 <div class="row g-3">

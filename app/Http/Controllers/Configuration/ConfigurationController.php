@@ -86,6 +86,8 @@ class ConfigurationController extends Controller
             // Profit and ageing (spec §5.8): how a shared container's costs split (Q-C3), the age buckets.
             'container_cost_split' => 'sometimes|required|in:cbm,kg,value,cartons',
             'ageing_buckets' => ['sometimes', 'required', 'string', 'max:40', 'regex:/^\s*\d{1,3}(\s*,\s*\d{1,3}){0,5}\s*$/'],
+            // B32: the month the financial year starts in (on its 1st).
+            'financial_year_start_month' => 'sometimes|required|integer|between:1,12',
         ] + array_fill_keys(array_values(NumberingService::SERIES), $prefix));
         if (isset($data['ageing_buckets'])) {
             $days = array_values(array_unique(array_filter(array_map('intval', explode(',', $data['ageing_buckets'])), fn (int $d) => $d > 0)));

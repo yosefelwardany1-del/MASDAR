@@ -118,7 +118,7 @@
             </x-section>
 
             <x-section :title="__('Client portal')" icon="door-open">
-                <p class="form-text mt-0 mb-3">{{ __('Clients sign in to see their own orders, payments, containers and statement. Accounts are given on each client\'s page; nobody signs in while this is off (spec Q-R2).') }}</p>
+                <p class="form-text mt-0 mb-3">{{ __('Clients sign in to see their own orders, payments, containers and statement. Accounts are given on each client\'s page; nobody signs in while this is off.') }}</p>
                 <div class="app-switch">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="client_portal_enabled" name="client_portal_enabled" value="1" @checked(old('client_portal_enabled', $setting->client_portal_enabled))>
@@ -128,7 +128,7 @@
             </x-section>
 
             <x-section :title="__('WhatsApp updates to clients')" icon="whatsapp">
-                <p class="form-text mt-0 mb-3">{{ __('When a container reaches one of these statuses, each client with goods inside gets MASDAR\'s approved WhatsApp message. Nothing is sent until the WhatsApp keys are set and the template is approved (see the README).') }}</p>
+                <p class="form-text mt-0 mb-3">{{ __('When a container reaches one of these statuses, each client with goods inside gets MASDAR\'s approved WhatsApp message. Nothing is sent until your administrator has set up WhatsApp and the message template is approved.') }}</p>
                 <div class="app-switch mb-3">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="whatsapp_container_updates" name="whatsapp_container_updates" value="1" @checked(old('whatsapp_container_updates', $setting->whatsapp_container_updates))>
@@ -185,13 +185,23 @@
                                 <option value="{{ $value }}" @selected(old('container_cost_split', $setting->container_cost_split) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        <div class="form-text">{{ __('Between the clients and orders inside it, on the Profit screen (spec Q-C3).') }}</div>
+                        <div class="form-text">{{ __('Between the clients and orders inside it, on the Profit screen.') }}</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label" for="ageing_buckets">{{ __('Ageing buckets (days)') }}</label>
                         <input id="ageing_buckets" name="ageing_buckets" dir="ltr" class="form-control app-num @error('ageing_buckets') is-invalid @enderror" value="{{ old('ageing_buckets', $setting->ageing_buckets) }}" placeholder="30,60,90">
                         @error('ageing_buckets')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         <div class="form-text">{{ __('The limits of each column of the ageing report, separated by commas.') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="financial_year_start_month">{{ __('The financial year starts on the 1st of') }}</label>
+                        <select id="financial_year_start_month" name="financial_year_start_month" class="form-select @error('financial_year_start_month') is-invalid @enderror">
+                            @foreach(range(1, 12) as $month)
+                                <option value="{{ $month }}" @selected((int) old('financial_year_start_month', $setting->financial_year_start_month) === $month)>{{ \Illuminate\Support\Carbon::create(2000, $month, 1)->locale(app()->getLocale())->monthName }}</option>
+                            @endforeach
+                        </select>
+                        @error('financial_year_start_month')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">{{ __('The balance sheet splits the result between this year and earlier years from this date; the reports start the year there.') }}</div>
                     </div>
                 </div>
             </x-section>

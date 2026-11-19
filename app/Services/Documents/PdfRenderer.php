@@ -5,6 +5,7 @@ namespace App\Services\Documents;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Services\Media\ImageStore;
+use App\Support\SetupNotice;
 use Illuminate\Http\Request;
 use Illuminate\Process\Exceptions\ProcessTimedOutException;
 use Illuminate\Support\Facades\File;
@@ -46,7 +47,10 @@ class PdfRenderer
     /** @throws DocumentException when there is no Chromium or it fails */
     public function fromHtml(string $html): string
     {
-        $binary = $this->binary() ?? throw new DocumentException(__('PDF is not set up on this server: it needs Chromium (PDF_CHROME_BINARY). Print the page from the browser instead.'));
+        // B32: the missing setting is named to the system administrator only.
+        $binary = $this->binary() ?? throw new DocumentException(SetupNotice::for(auth()->user(),
+            __('PDF files can\'t be made yet: print the page from the browser instead, or ask your administrator.'),
+            __('PDF is not set up on this server: it needs Chromium (PDF_CHROME_BINARY). Print the page from the browser instead.')));
 
         $dir = storage_path('framework/pdf/'.Str::ulid());
         File::ensureDirectoryExists($dir);
