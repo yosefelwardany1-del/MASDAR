@@ -2756,5 +2756,7 @@
     "{1} :count error|[0,*] :count errors": "{1} 错误 :count|[0,*] 错误 :count",
     "{1} :count row|[0,*] :count rows": "{1} 共 :count 行|[0,*] 共 :count 行",
     "This file is bigger than the :max MB limit.": "此文件超过了 :max MB 的大小限制。",
-    "This file could not be uploaded. Try again.": "此文件上传失败，请重试。"
+    "This file could not be uploaded. Try again.": "此文件上传失败，请重试。",
+    "Choose the statuses from the list.": "请从列表中选择状态。",
+    "{1} One amount is not a number we can save: it is marked below. Nothing was saved.|[2,*] :count amounts are not numbers we can save: they are marked below. Nothing was saved.": "{1} 有 1 个金额无法保存，已在下方标出。未保存任何内容。|[2,*] 有 :count 个金额无法保存，已在下方标出。未保存任何内容。"
 }

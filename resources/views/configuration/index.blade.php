@@ -26,11 +26,11 @@
                 <div class="row g-3">
                     <div class="col-md-8">
                         <label class="form-label" for="company_address">{{ __('Address on documents') }}</label>
-                        <input id="company_address" name="company_address" class="form-control" dir="ltr" value="{{ old('company_address', $setting->company_address) }}">
+                        <input id="company_address" name="company_address" class="form-control @error('company_address') is-invalid @enderror" dir="ltr" value="{{ old('company_address', $setting->company_address) }}">@error('company_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-4">
                         <label class="form-label" for="company_phone">{{ __('Phone on documents') }}</label>
-                        <input id="company_phone" name="company_phone" class="form-control" dir="ltr" value="{{ old('company_phone', $setting->company_phone) }}">
+                        <input id="company_phone" name="company_phone" class="form-control @error('company_phone') is-invalid @enderror" dir="ltr" value="{{ old('company_phone', $setting->company_phone) }}">@error('company_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-3">
                         <label class="form-label" for="default_deposit_percent">{{ __('Default deposit %') }}</label>
@@ -42,7 +42,7 @@
                     </div>
                     <div class="col-md-9">
                         <label class="form-label" for="pi_terms_template">{{ __('Payment terms on the PI') }}</label>
-                        <input id="pi_terms_template" name="pi_terms_template" class="form-control" dir="ltr" value="{{ old('pi_terms_template', $setting->pi_terms_template) }}" aria-describedby="pi-terms-help">
+                        <input id="pi_terms_template" name="pi_terms_template" class="form-control @error('pi_terms_template') is-invalid @enderror" dir="ltr" value="{{ old('pi_terms_template', $setting->pi_terms_template) }}" aria-describedby="pi-terms-help">@error('pi_terms_template')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         <div class="form-text" id="pi-terms-help">{{ __('{deposit} and {final} are replaced by the PI\'s percentages.') }} <span class="app-ltr">{{ $setting->piTerms($setting->default_deposit_percent) }}</span></div>
                     </div>
                 </div>
@@ -108,11 +108,11 @@
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-4">
                         <label class="form-label" for="step_warning_days">{{ __('Warn this many days before a step is due') }}</label>
-                        <input id="step_warning_days" name="step_warning_days" type="number" min="0" max="90" class="form-control app-num" value="{{ old('step_warning_days', $setting->step_warning_days) }}">
+                        <input id="step_warning_days" name="step_warning_days" type="number" min="0" max="90" class="form-control app-num @error('step_warning_days') is-invalid @enderror" value="{{ old('step_warning_days', $setting->step_warning_days) }}">@error('step_warning_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 col-lg-4">
                         <label class="form-label" for="eta_warning_days">{{ __('Warn this many days before a container arrives') }}</label>
-                        <input id="eta_warning_days" name="eta_warning_days" type="number" min="0" max="90" class="form-control app-num" value="{{ old('eta_warning_days', $setting->eta_warning_days) }}">
+                        <input id="eta_warning_days" name="eta_warning_days" type="number" min="0" max="90" class="form-control app-num @error('eta_warning_days') is-invalid @enderror" value="{{ old('eta_warning_days', $setting->eta_warning_days) }}">@error('eta_warning_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
             </x-section>
@@ -148,6 +148,7 @@
                         @endforeach
                     </div>
                     <input type="hidden" name="whatsapp_update_statuses[]" value="">
+                    @error('whatsapp_update_statuses')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                 </fieldset>
             </x-section>
 
@@ -185,6 +186,7 @@
                                 <option value="{{ $value }}" @selected(old('container_cost_split', $setting->container_cost_split) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
+                        @error('container_cost_split')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         <div class="form-text">{{ __('Between the clients and orders inside it, on the Profit screen.') }}</div>
                     </div>
                     <div class="col-md-6">
@@ -211,9 +213,9 @@
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-3">
                         <label class="form-label" for="payroll_currency">{{ __('Payroll currency') }}</label>
-                        <select id="payroll_currency" name="payroll_currency" class="form-select">
+                        <select id="payroll_currency" name="payroll_currency" class="form-select @error('payroll_currency') is-invalid @enderror">
                             @foreach($currencies as $code => $name)<option value="{{ $code }}" @selected(old('payroll_currency', $setting->payroll_currency) === $code)>{{ $code }} · {{ $name }}</option>@endforeach
-                        </select>
+                        </select>@error('payroll_currency')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 col-lg-3">
                         <label class="form-label" for="payroll_days_per_month">{{ __('Working days a month (daily rate)') }}</label>

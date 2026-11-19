@@ -121,7 +121,7 @@
                         @endif
                     </tr>
                     @if($editable)
-                        <tr id="ql-{{ $line->id }}" class="d-none app-q-editrow">
+                        <tr id="ql-{{ $line->id }}" class="{{ old('_form') === 'ql'.$line->id ? '' : 'd-none' }} app-q-editrow">
                             <td colspan="{{ $seesSupplier ? 10 : 9 }}">
                                 <form method="POST" action="{{ route('quotations.lines.update', [$quotation, $line]) }}">
                                     @csrf @method('PUT')
@@ -140,9 +140,6 @@
         <form method="POST" action="{{ route('quotations.lines.store', $quotation) }}" class="app-hr-inlineform border-top">
             @csrf
             <div class="app-hr-inlineform__title"><i class="bi bi-plus-circle" aria-hidden="true"></i>{{ __('Add a line') }}</div>
-            @foreach(['product_id', 'description', 'unit', 'unit_price', 'qty_per_carton', 'moq', 'cartons', 'cbm_per_carton', 'kg_per_carton', 'supplier_id', 'supplier_price'] as $field)
-                @error($field)<div class="text-danger small">{{ $message }}</div>@enderror
-            @endforeach
             @include('quotations._line-form', ['line' => null, 'prefix' => 'qn'])
             <button class="btn btn-primary btn-sm mt-2"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __('Add the line') }}</button>
         </form>

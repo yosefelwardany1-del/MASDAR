@@ -53,10 +53,9 @@
             <form method="POST" action="{{ route('fixed-assets.dispose', $asset) }}" class="app-card p-3 app-form" onsubmit="return confirm(@js(__('Mark this asset as gone?')));">
                 @csrf
                 <h2 class="h6">{{ __('Sold, scrapped or lost') }}</h2>
-                <input type="date" name="disposed_on" value="{{ now()->toDateString() }}" class="form-control mb-2 @error('disposed_on') is-invalid @enderror" aria-label="{{ __('Date') }}">
-                <input name="disposal_note" class="form-control mb-2 @error('disposal_note') is-invalid @enderror" placeholder="{{ __('How it left') }}" aria-label="{{ __('How it left') }}" dir="auto">
-                @error('disposed_on')<div class="text-danger small">{{ $message }}</div>@enderror
-                @error('disposal_note')<div class="text-danger small">{{ $message }}</div>@enderror
+                {{-- Each message under its own field, with what was typed. --}}
+                <div class="mb-2"><input type="date" name="disposed_on" value="{{ old('disposed_on', now()->toDateString()) }}" class="form-control @error('disposed_on') is-invalid @enderror" aria-label="{{ __('Date') }}">@error('disposed_on')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="mb-2"><input name="disposal_note" value="{{ old('disposal_note') }}" class="form-control @error('disposal_note') is-invalid @enderror" placeholder="{{ __('How it left') }}" aria-label="{{ __('How it left') }}" dir="auto">@error('disposal_note')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
                 <button class="btn btn-outline-danger btn-sm">{{ __('Mark as gone') }}</button>
                 <div class="form-text">{{ __('Depreciation stops. Record any sale price or write-off on the Journal screen.') }}</div>
             </form>

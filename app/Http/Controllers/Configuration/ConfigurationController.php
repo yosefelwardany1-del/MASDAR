@@ -119,7 +119,9 @@ class ConfigurationController extends Controller
         if ($request->has('whatsapp_update_statuses')) {
             // The form sends one empty value so that unticking every status clears them.
             $statuses = array_values(array_filter((array) $request->input('whatsapp_update_statuses'), 'filled'));
-            validator(['statuses' => $statuses], ['statuses.*' => [Rule::in(array_keys(Lookup::options('container_status')))]])->validate();
+            if (array_diff($statuses, array_keys(Lookup::options('container_status'))) !== []) {
+                throw ValidationException::withMessages(['whatsapp_update_statuses' => __('Choose the statuses from the list.')]);
+            }
             $data['whatsapp_update_statuses'] = implode(',', $statuses);
         }
 

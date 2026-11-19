@@ -2756,5 +2756,7 @@
     "{1} :count error|[0,*] :count errors": "{1} خطأ واحد|[2,10] :count أخطاء|[0,*] :count خطأ",
     "{1} :count row|[0,*] :count rows": "{1} صف واحد|[2,10] :count صفوف|[0,*] :count صفاً",
     "This file is bigger than the :max MB limit.": "هذا الملف أكبر من الحد المسموح به وهو :max ميغابايت.",
-    "This file could not be uploaded. Try again.": "تعذر رفع هذا الملف. حاول مرة أخرى."
+    "This file could not be uploaded. Try again.": "تعذر رفع هذا الملف. حاول مرة أخرى.",
+    "Choose the statuses from the list.": "اختر الحالات من القائمة.",
+    "{1} One amount is not a number we can save: it is marked below. Nothing was saved.|[2,*] :count amounts are not numbers we can save: they are marked below. Nothing was saved.": "{1} أحد المبالغ ليس رقماً يمكن حفظه: وهو محدد أدناه. لم يُحفظ شيء.|[2,10] :count مبالغ ليست أرقاماً يمكن حفظها: وهي محددة أدناه. لم يُحفظ شيء.|[11,*] :count مبلغاً ليست أرقاماً يمكن حفظها: وهي محددة أدناه. لم يُحفظ شيء."
 }

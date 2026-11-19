@@ -53,6 +53,7 @@ class BudgetService
         $this->authorize($by);
         $allowed = Account::query()->where('is_postable', true)->whereIn('type', ['income', 'expense'])->pluck('id')->all();
         $clean = [];
+        $errors = [];
         foreach ($amounts as $accountId => $months) {
             if (! in_array((int) $accountId, $allowed, true)) {
                 continue;
@@ -62,8 +63,16 @@ class BudgetService
                 if ($month < 1 || $month > 12) {
                     continue;
                 }
-                $clean[(int) $accountId][$month] = filled($value) ? Money::amount($value, "amounts.{$accountId}.{$month}", decimals: 2) : '0';
+                // Every cell is checked, so each wrong one is marked at once, not one per save.
+                try {
+                    $clean[(int) $accountId][$month] = filled($value) ? Money::amount($value, "amounts.{$accountId}.{$month}", decimals: 2) : '0';
+                } catch (ValidationException $e) {
+                    $errors += $e->errors();
+                }
             }
+        }
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
         }
 
         DB::transaction(function () use ($budget, $clean) {
