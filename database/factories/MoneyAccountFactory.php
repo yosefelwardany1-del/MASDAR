@@ -20,7 +20,16 @@ class MoneyAccountFactory extends Factory
             'location' => 'hong_kong',
             'ledger_account_id' => Account::where('code', '1101')->value('id'),
             'active' => true,
+            // Fixtures pay out of accounts nobody funded first; an account made on the screen
+            // never goes below zero unless switched (B06). strict() gives a test that rule.
+            'allow_negative' => true,
         ];
+    }
+
+    /** An account that refuses money out it does not hold, as every account does by default (B06). */
+    public function strict(): static
+    {
+        return $this->state(['allow_negative' => false]);
     }
 
     public function rmb(): static

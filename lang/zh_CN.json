@@ -2598,5 +2598,8 @@
     "That PI is of another client. Choose the PI's client, or another PI.": "该形式发票属于其他客户。请选择该形式发票的客户，或选择其他形式发票。",
     "That purchase order is with another supplier. Choose its supplier, or another order.": "该采购订单属于其他供应商。请选择其供应商，或选择其他订单。",
     ":document has :left left to pay. Record at most that on it, and money beyond it on the client without a PI (an advance).": ":document 尚余 :left 待付。最多登记该金额，超出部分请登记在客户名下，不关联形式发票（预收款）。",
-    ":document has :left left to pay. A payment against it cannot be more.": ":document 尚余 :left 待付。针对它的付款不能超过此金额。"
+    ":document has :left left to pay. A payment against it cannot be more.": ":document 尚余 :left 待付。针对它的付款不能超过此金额。",
+    ":account holds :available (money out awaiting approval counted as gone), not enough for :amount. Record the money coming in first, or pay from another account.": ":account 现有 :available（待审批的付出款项视为已付出），不足以支付 :amount。请先登记入账款项，或从其他账户付款。",
+    "May go below zero (e.g. a payment agent who advances the money)": "允许余额低于零（例如垫付款项的付款代理）",
+    "Off: money out is refused when the account does not hold it.": "关闭时：账户余额不足的付出款项将被拒绝。"
 }

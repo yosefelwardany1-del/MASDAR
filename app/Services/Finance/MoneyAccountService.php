@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
  */
 class MoneyAccountService
 {
-    public const FIELDS = ['name', 'kind', 'currency', 'location', 'ledger_account_id', 'details', 'active'];
+    public const FIELDS = ['name', 'kind', 'currency', 'location', 'ledger_account_id', 'details', 'active', 'allow_negative'];
 
     /** @param array<string, mixed> $data validated fields (FIELDS) */
     public function create(array $data): MoneyAccount
@@ -57,6 +57,7 @@ class MoneyAccountService
         $data['ledger_account_id'] = ($data['ledger_account_id'] ?? null) ?: null;
         $data['details'] = ($data['details'] ?? null) ?: null;
         $data['active'] = (bool) ($data['active'] ?? true);
+        $data['allow_negative'] = (bool) ($data['allow_negative'] ?? false);
 
         $errors = [];
         if (trim((string) ($data['name'] ?? '')) === '') {

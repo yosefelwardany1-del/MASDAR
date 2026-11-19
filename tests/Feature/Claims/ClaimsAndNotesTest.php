@@ -151,8 +151,10 @@ class ClaimsAndNotesTest extends TestCase
         // Paying the rest (16,992 − 5,000 deposit − 892.80 debit note) completes every payment step.
         $payments = app(PaymentService::class);
         $rmb = MoneyAccount::where('name', 'Yiwu bank — RMB')->sole();
-        app(PaymentService::class)->transfer(['from_account_id' => MoneyAccount::where('name', 'HSBC Hong Kong — USD')->value('id'),
+        ['out' => $out] = app(PaymentService::class)->transfer(['from_account_id' => MoneyAccount::where('name', 'HSBC Hong Kong — USD')->value('id'),
             'to_account_id' => $rmb->id, 'paid_on' => now()->toDateString(), 'amount' => '1600.00', 'in_amount' => '11099.20'], $this->manager);
+        // The RMB has arrived once the transfer is approved; until then it cannot be paid on (B06).
+        $payments->approve($out, $this->manager);
         $payment = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '11099.20',
             'party_id' => $this->order->supplier_id, 'supplier_order_id' => $this->order->id], $this->manager);
         $payments->approve($payment, $this->manager);

@@ -117,6 +117,7 @@ class MoneyAccountController extends Controller
             'details' => ['nullable', 'string', 'max:2000'],
         ]);
         $data['active'] = $request->boolean('active');
+        $data['allow_negative'] = $request->boolean('allow_negative');
 
         return $data;
     }

@@ -79,6 +79,9 @@ class PaymentService
         return DB::transaction(function () use ($kind, $paidOn, $account, $amount, $rate, $links, $data, $by, $evidence) {
             $this->holdAccounts($account);
             $this->assertNotOverpaid($kind, $links, $account, $amount);
+            if (! in_array($kind, Payment::KINDS_IN, true)) {
+                $this->assertCovers($account, $amount);
+            }
             $payment = Payment::create([
                 'number' => $this->numbers->next('payment', $paidOn),
                 'paid_on' => $paidOn->toDateString(),
@@ -136,6 +139,7 @@ class PaymentService
 
         return DB::transaction(function () use ($from, $to, $paidOn, $arrivedOn, $outAmount, $inAmount, $outRate, $inRate, $data, $by, $evidence) {
             $this->holdAccounts($from, $to);
+            $this->assertCovers($from, $outAmount, 'amount');
             $common = [
                 'transfer_group' => (string) Str::uuid(),
                 'reference' => $this->text($data['reference'] ?? null, 120),
@@ -184,6 +188,11 @@ class PaymentService
             if ($refuse) {
                 throw ValidationException::withMessages(['payment' => $refuse]);
             }
+            // The balance may have changed since it was recorded: it still has to be there (B06).
+            $account = MoneyAccount::query()->whereKey($payment->money_account_id)->lockForUpdate()->firstOrFail();
+            if ($payment->reverses_payment_id === null) {
+                $this->assertCovers($account, '0', 'payment');
+            }
 
             $approval = PaymentApproval::create([
                 'payment_id' => $payment->id,
@@ -223,6 +232,12 @@ class PaymentService
                 ->orderBy('id')->lockForUpdate()->get();
             if (Payment::query()->whereIn('reverses_payment_id', $legs->pluck('id'))->exists()) {
                 throw ValidationException::withMessages(['reason' => __('This payment has already been reversed.')]);
+            }
+
+            // Reversing money in takes it out again: it must still be there (B06).
+            $held = MoneyAccount::query()->whereKey($legs->pluck('money_account_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            foreach ($legs->where('direction', 'in') as $leg) {
+                $this->assertCovers($held[$leg->money_account_id], (string) $leg->amount, 'reason');
             }
 
             $today = CarbonImmutable::now();
@@ -453,13 +468,33 @@ class PaymentService
     }
 
     /**
-     * Hold the accounts' rows (FOR SHARE, in id order) until the payment commits, so an account's
+     * B06: what $account holds covers $amount more going out, unless it may go below zero. What it
+     * holds is what has arrived (money_account_available, which the trigger reads too): money out
+     * awaiting approval already counts as gone, so nothing waiting can overdraw it later.
+     */
+    private function assertCovers(MoneyAccount $account, string $amount, string $field = 'amount'): void
+    {
+        if ($account->allow_negative) {
+            return;
+        }
+        $available = (string) DB::selectOne('SELECT money_account_available(?)::numeric(18,4) AS a', [$account->id])->a;
+        if (bccomp(bcsub($available, $amount, 4), '0', 4) < 0) {
+            $format = fn (string $v) => $account->currency.' '.Decimal::format($v);
+            throw ValidationException::withMessages([$field => __(':account holds :available (money out awaiting approval counted as gone), not enough for :amount. Record the money coming in first, or pay from another account.', [
+                'account' => $account->name, 'available' => $format($available), 'amount' => $format($amount),
+            ])]);
+        }
+    }
+
+    /**
+     * Hold the accounts' rows (FOR UPDATE, in id order) until the payment commits, so an account's
      * currency cannot change between the check above and the insert (money_accounts_currency_guard).
      */
     private function holdAccounts(MoneyAccount ...$accounts): void
     {
         $ids = collect($accounts)->pluck('id')->sort()->values();
-        $held = MoneyAccount::query()->whereKey($ids)->orderBy('id')->sharedLock()->get(['id', 'currency', 'active'])->keyBy('id');
+        // FOR UPDATE: two payments out of one account wait for each other, so both cannot pass the balance check.
+        $held = MoneyAccount::query()->whereKey($ids)->orderBy('id')->lockForUpdate()->get(['id', 'currency', 'active'])->keyBy('id');
         foreach ($accounts as $account) {
             $now = $held->get($account->id);
             if (! $now || ! $now->active || $now->currency !== $account->currency) {

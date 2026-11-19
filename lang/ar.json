@@ -2598,5 +2598,8 @@
     "That PI is of another client. Choose the PI's client, or another PI.": "هذه الفاتورة المبدئية لعميل آخر. اختر عميلها أو فاتورة أخرى.",
     "That purchase order is with another supplier. Choose its supplier, or another order.": "أمر الشراء هذا مع مورد آخر. اختر مورده أو أمراً آخر.",
     ":document has :left left to pay. Record at most that on it, and money beyond it on the client without a PI (an advance).": "المتبقي للدفع على :document هو :left. سجّل هذا المبلغ كحد أقصى عليه، وما زاد عنه على العميل دون فاتورة مبدئية (دفعة مقدمة).",
-    ":document has :left left to pay. A payment against it cannot be more.": "المتبقي للدفع على :document هو :left. لا يجوز أن تزيد الدفعة عليه."
+    ":document has :left left to pay. A payment against it cannot be more.": "المتبقي للدفع على :document هو :left. لا يجوز أن تزيد الدفعة عليه.",
+    ":account holds :available (money out awaiting approval counted as gone), not enough for :amount. Record the money coming in first, or pay from another account.": "رصيد :account هو :available (مع احتساب المدفوعات الصادرة التي تنتظر الموافقة كأنها خرجت)، وهو لا يكفي لـ :amount. سجّل المبلغ الوارد أولاً، أو ادفع من حساب آخر.",
+    "May go below zero (e.g. a payment agent who advances the money)": "يجوز أن يصبح رصيده سالباً (مثل وكيل دفع يقدّم المال مسبقاً)",
+    "Off: money out is refused when the account does not hold it.": "عند الإيقاف: يُرفض الصرف إذا لم يكن المبلغ متوفراً في الحساب."
 }
