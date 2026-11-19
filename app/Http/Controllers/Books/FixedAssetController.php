@@ -77,10 +77,11 @@ class FixedAssetController extends Controller
 
     private function formData(): array
     {
-        $postable = fn (string $type) => Account::query()->where('type', $type)->where('is_postable', true)->where('active', true)->orderBy('code')->get();
-
+        // B20: each list holds only the accounts of its kind.
         return [
-            'assetAccounts' => $postable('asset'), 'expenseAccounts' => $postable('expense'),
+            'assetAccounts' => $this->service->accountChoices('asset_account_id'),
+            'contraAccounts' => $this->service->accountChoices('depreciation_account_id'),
+            'expenseAccounts' => $this->service->accountChoices('expense_account_id'),
             'defaults' => [
                 'asset_account_id' => Account::query()->where('code', '1801')->value('id'),
                 'depreciation_account_id' => Account::query()->where('code', '1802')->value('id'),

@@ -2645,5 +2645,8 @@
     ":month has not begun: depreciation is posted for this month or earlier.": ":month 尚未开始：折旧只能计提本月或更早的月份。",
     "Depreciation goes month by month: post :first first (:assets).": "折旧须逐月计提：请先计提 :first（:assets）。",
     "Months not depreciated yet": "尚未计提折旧的月份",
-    "{1} one month|[2,*] :count months": "{1} 1 个月|[2,*] :count 个月"
+    "{1} one month|[2,*] :count months": "{1} 1 个月|[2,*] :count 个月",
+    "The purchase date cannot be in the future.": "购置日期不能是将来。",
+    "Choose a fixed-asset account (under :heading), not a bank or a receivable.": "请选择固定资产科目（属于 :heading），不能选银行或应收科目。",
+    "Choose the accumulated-depreciation account.": "请选择累计折旧科目。"
 }

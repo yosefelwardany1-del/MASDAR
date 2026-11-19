@@ -218,6 +218,30 @@ class BooksCompletionTest extends TestCase
         $this->assertTrue(JournalEntry::where('event', 'depreciation')->exists());
     }
 
+    /** B20: each account of an asset is one of its kind, and it is bought on a day that has come. */
+    public function test_an_asset_takes_a_fixed_asset_account_its_contra_and_an_expense_account(): void
+    {
+        app()->setLocale('en');
+        $service = app(FixedAssetService::class);
+        $id = fn (string $code) => Account::where('code', $code)->value('id');
+        $data = ['name' => 'Desk', 'acquired_on' => now()->toDateString(), 'depreciation_starts_on' => now()->toDateString(), 'cost' => '600', 'useful_life_months' => '12',
+            'asset_account_id' => $id('1801'), 'depreciation_account_id' => $id('1802'), 'expense_account_id' => $id('6601')];
+
+        foreach ([
+            'asset_account_id' => [$id('1101'), 'Choose a fixed-asset account (under 18), not a bank or a receivable.'],
+            'depreciation_account_id' => [$id('1801'), 'Choose the accumulated-depreciation account.'],
+            'expense_account_id' => [$id('1401'), 'Choose an expense account that takes postings.'],
+            'acquired_on' => ['2030-01-01', 'The purchase date cannot be in the future.'],
+        ] as $field => [$value, $message]) {
+            $this->assertThrows(fn () => $service->create([$field => $value] + $data, $this->accountant), ValidationException::class, $message);
+        }
+
+        // The form offers only those accounts.
+        $form = $this->actingAs($this->accountant)->get(route('fixed-assets.create'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('value="'.$id('1101').'"', $form, 'no bank in the lists');
+        $this->assertSame('FA-0001', $service->create($data, $this->accountant)->code);
+    }
+
     /** B19: month by month from the first, never a month that has not begun; the screen lists what is missing. */
     public function test_depreciation_goes_month_by_month_and_never_ahead(): void
     {

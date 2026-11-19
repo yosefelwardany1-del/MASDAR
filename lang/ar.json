@@ -2645,5 +2645,8 @@
     ":month has not begun: depreciation is posted for this month or earlier.": "لم يبدأ :month بعد: يُرحَّل الإهلاك لهذا الشهر أو ما قبله.",
     "Depreciation goes month by month: post :first first (:assets).": "يُرحَّل الإهلاك شهراً بعد شهر: رحّل :first أولاً (:assets).",
     "Months not depreciated yet": "أشهر لم يُرحَّل إهلاكها بعد",
-    "{1} one month|[2,*] :count months": "{1} شهر واحد|[2,*] :count أشهر"
+    "{1} one month|[2,*] :count months": "{1} شهر واحد|[2,*] :count أشهر",
+    "The purchase date cannot be in the future.": "لا يجوز أن يكون تاريخ الشراء في المستقبل.",
+    "Choose a fixed-asset account (under :heading), not a bank or a receivable.": "اختر حساب أصل ثابت (تحت :heading)، لا حساباً بنكياً ولا ذمة مدينة.",
+    "Choose the accumulated-depreciation account.": "اختر حساب مجمع الإهلاك."
 }
