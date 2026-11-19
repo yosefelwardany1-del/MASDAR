@@ -36,6 +36,7 @@ class CancelledOrderLinesTest extends TestCase
         $this->pi = ProformaInvoice::factory()->create();
         PiLine::factory()->create(['proforma_invoice_id' => $this->pi->id, 'line_no' => 1]);
         $this->pi->update(['status' => 'issued', 'issued_at' => now(), 'issued_by' => $this->manager->id]);
+        $this->pi->update(['status' => 'confirmed', 'confirmed_at' => now()]);
     }
 
     private function orderFrom(Party $factory)

@@ -108,7 +108,7 @@ class SupplierOrderScreensTest extends TestCase
     {
         $sales = $this->user(Roles::SALES);
         $client = Party::factory()->client()->create(['account_manager_id' => $sales->id]);
-        $pi = $this->issuedPi([['supplier_price' => '13.5791']], ['client_id' => $client->id]);
+        $pi = $this->orderablePi([['supplier_price' => '13.5791']], ['client_id' => $client->id]);
         $supplier = $this->supplier(['name' => 'Hidden Factory Ltd']);
         $order = $this->orderWithLines(0, 10, ['supplier_id' => $supplier->id]);
         SupplierOrderLine::factory()->create(['supplier_order_id' => $order->id, 'pi_line_id' => $pi->lines()->first()->id, 'unit_price' => '13.5791']);

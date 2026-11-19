@@ -56,17 +56,32 @@ class SupplierOrderController extends Controller
                 : collect(),
             'clients' => Visibility::scopeClients(Party::query()->whereIn('id', $clientIds), $user)->orderBy('name')->get(['id', 'name']),
             'merchandisers' => User::query()->whereIn('id', SupplierOrder::query()->whereNotNull('merchandiser_id')->select('merchandiser_id'))->orderBy('name')->get(['id', 'name']),
+            // Sales orders with lines not yet on a purchase order (B01): where new orders start.
+            'waiting' => $seeSuppliers && $user->can('supplier_orders.edit') ? $this->waitingPis($user)->limit(10)->get() : collect(),
+            'waitingCount' => $seeSuppliers && $user->can('supplier_orders.edit') ? $this->waitingPis($user)->count() : 0,
         ]);
+    }
+
+    /** PIs the user may see that can be ordered and still have lines on no purchase order, newest first. */
+    private function waitingPis(User $user)
+    {
+        return $this->orders->piQueryWithUnassignedLines()->with('client:id,name')
+            ->whereHas('client', fn ($q) => Visibility::scopeClients($q, $user))
+            ->orderByDesc('id');
     }
 
     /** Make supplier orders from a PI: its unassigned lines, grouped by planned supplier. */
     public function create(Request $request)
     {
         $this->abortUnlessSeesSuppliers($request->user());
+        if (! $request->filled('pi')) {
+            // "New purchase order" without a PI: choose the sales order it is made from.
+            return view('supplier-orders.pick-pi', ['pis' => $this->waitingPis($request->user())->get()]);
+        }
         $pi = ProformaInvoice::with('client')->findOrFail((int) $request->query('pi'));
         $this->abortUnlessClientVisible($pi, $request->user());
-        if (! in_array($pi->status, SupplierOrderService::PI_STATUSES, true)) {
-            return redirect()->route('supplier-orders.index')->with('error', __('Only an issued, accepted or confirmed PI can be ordered from.'));
+        if (! SupplierOrderService::isOrderable($pi)) {
+            return redirect()->route('proforma-invoices.show', $pi)->with('error', SupplierOrderService::notOrderableMessage());
         }
 
         $lines = $this->orders->unassignedLines($pi);
@@ -260,7 +275,7 @@ class SupplierOrderController extends Controller
         $this->abortUnlessSeesSuppliers($request->user());
         $pi = ProformaInvoice::with('client')->findOrFail((int) $request->query('pi'));
         $this->abortUnlessClientVisible($pi, $request->user());
-        if (! $supplierOrder->isOpen() || ! in_array($pi->status, SupplierOrderService::PI_STATUSES, true)) {
+        if (! $supplierOrder->isOpen() || ! SupplierOrderService::isOrderable($pi)) {
             return redirect()->route('supplier-orders.show', $supplierOrder)->with('error', __('Lines can be added only to an open order, from an issued, accepted or confirmed PI.'));
         }
 

@@ -10,7 +10,7 @@ use App\Models\SupplierOrder;
 use App\Models\SupplierOrderLine;
 use App\Models\User;
 
-/** Fixtures for module 3's tests: users by role, issued PIs with planned suppliers, orders. */
+/** Fixtures for module 3's tests: users by role, confirmed PIs with planned suppliers, orders. */
 trait BuildsSupplierOrders
 {
     protected function user(string ...$roles): User
@@ -24,15 +24,16 @@ trait BuildsSupplierOrders
     }
 
     /**
-     * An issued PI (lines added while it is a draft, then issued — as the service does).
+     * A confirmed PI — the sales order purchase orders are made from (B01): lines added while it is a
+     * draft, then issued and confirmed, as the service does.
      *
      * @param  list<array<string, mixed>>  $lines  PiLine attributes per line
      */
-    protected function issuedPi(array $lines, array $attributes = []): ProformaInvoice
+    protected function orderablePi(array $lines, array $attributes = []): ProformaInvoice
     {
         $sequence = array_map(fn ($line, $i) => $line + ['line_no' => $i + 1], $lines, array_keys($lines));
 
-        return ProformaInvoice::factory()->issued()
+        return ProformaInvoice::factory()->confirmed()
             ->has(PiLine::factory()->count(count($lines))->sequence(...$sequence), 'lines')
             ->create($attributes);
     }

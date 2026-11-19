@@ -63,6 +63,7 @@ class BusinessSetting extends Model
         'sample_prefix' => 'SMP',
         'service_invoice_prefix' => 'INV',
         'client_portal_enabled' => false,
+        'orders_from_issued_pi' => false,
     ];
 
     protected function casts(): array
@@ -78,6 +79,7 @@ class BusinessSetting extends Model
             'eta_warning_days' => 'integer',
             'whatsapp_container_updates' => 'boolean',
             'client_portal_enabled' => 'boolean',
+            'orders_from_issued_pi' => 'boolean',
             'hr_document_warning_days' => 'integer',
             'crm_quiet_days' => 'integer',
             'quotation_valid_days' => 'integer',

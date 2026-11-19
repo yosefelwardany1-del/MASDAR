@@ -33,4 +33,13 @@ class ProformaInvoiceFactory extends Factory
             $pi->update(['status' => 'issued', 'issued_at' => now(), 'issued_by' => $pi->created_by]);
         });
     }
+
+    /** Issued, then confirmed (the client's deposit in): the sales order purchase orders are made from. */
+    public function confirmed(): static
+    {
+        return $this->afterCreating(function (ProformaInvoice $pi) {
+            $pi->update(['status' => 'issued', 'issued_at' => now(), 'issued_by' => $pi->created_by]);
+            $pi->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+        });
+    }
 }

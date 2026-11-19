@@ -2568,5 +2568,16 @@
     "Your goods inside": "بضاعتك داخلها",
     "Booked; not loaded yet.": "محجوزة؛ لم تُحمّل بعد.",
     "Invoices, payments and credits over the last year, in :book. A positive balance is what you owe us.": "الفواتير والمدفوعات والإشعارات الدائنة خلال العام الماضي، بعملة :book. الرصيد الموجب هو ما تدين به لنا.",
-    "Service invoice": "فاتورة خدمات"
+    "Service invoice": "فاتورة خدمات",
+    "Purchase orders are made from a confirmed PI: confirm the client's deposit first.": "تُنشأ أوامر الشراء من فاتورة مبدئية مؤكدة: أكِّد وصول عربون العميل أولاً.",
+    "One purchase order per factory, made from an issued PI, followed step by step: one row per order, one column per step. Late rows come first.": "أمر شراء لكل مصنع، يُنشأ من فاتورة مبدئية صادرة ويُتابَع خطوة بخطوة: صف لكل أمر وعمود لكل خطوة. الصفوف المتأخرة أولاً.",
+    "New purchase orders": "أوامر شراء جديدة",
+    "Sales orders waiting for purchase orders": "أوامر بيع تنتظر أوامر الشراء",
+    "See all :count": "عرض الكل (:count)",
+    "Purchase orders are made from an issued PI and appear here, one row each.": "تُنشأ أوامر الشراء من فاتورة مبدئية صادرة وتظهر هنا، صف لكل أمر.",
+    "Purchase orders are made from a confirmed PI and appear here, one row each.": "تُنشأ أوامر الشراء من فاتورة مبدئية مؤكدة وتظهر هنا، صف لكل أمر.",
+    "Purchase orders are made from a sales order (PI): choose the PI, then one order is made per factory.": "تُنشأ أوامر الشراء من أمر بيع (فاتورة مبدئية): اختر الفاتورة، ثم يُنشأ أمر لكل مصنع.",
+    "Make purchase orders": "إنشاء أوامر الشراء",
+    "No sales order is waiting for purchase orders.": "لا يوجد أمر بيع ينتظر أوامر الشراء.",
+    "Purchase orders may be made from an issued PI, before the client's deposit (otherwise from a confirmed PI only)": "يجوز إنشاء أوامر الشراء من فاتورة مبدئية صادرة قبل عربون العميل (وإلا فمن فاتورة مؤكدة فقط)"
 }

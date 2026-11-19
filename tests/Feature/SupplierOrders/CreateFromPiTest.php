@@ -21,11 +21,11 @@ class CreateFromPiTest extends TestCase
 {
     use BuildsSupplierOrders, RefreshDatabase, SeedsReference;
 
-    public function test_an_issued_pi_with_two_planned_suppliers_gives_two_numbered_orders(): void
+    public function test_a_confirmed_pi_with_two_planned_suppliers_gives_two_numbered_orders(): void
     {
         $merch = $this->user(Roles::MERCHANDISER);
         [$alpha, $beta] = [$this->supplier(['name' => 'Alpha Toys']), $this->supplier(['name' => 'Beta Bags'])];
-        $pi = $this->issuedPi([
+        $pi = $this->orderablePi([
             ['supplier_id' => $alpha->id, 'supplier_price' => '6.5000', 'cartons' => 10, 'qty_per_carton' => 48],
             ['supplier_id' => $beta->id, 'supplier_price' => '3.2000', 'cartons' => 5, 'qty_per_carton' => 100],
             ['supplier_id' => $alpha->id, 'supplier_price' => '2.0000', 'cartons' => 8, 'qty_per_carton' => 12],
@@ -74,7 +74,7 @@ class CreateFromPiTest extends TestCase
     {
         $merch = $this->user(Roles::MERCHANDISER);
         $chosen = $this->supplier();
-        $pi = $this->issuedPi([['supplier_id' => $this->supplier()->id, 'supplier_price' => '1'], ['supplier_id' => null, 'supplier_price' => '2']]);
+        $pi = $this->orderablePi([['supplier_id' => $this->supplier()->id, 'supplier_price' => '1'], ['supplier_id' => null, 'supplier_price' => '2']]);
         [$l1, $l2] = $pi->lines->all();
 
         $orders = app(SupplierOrderService::class)->createFromPi($pi, [
@@ -91,7 +91,7 @@ class CreateFromPiTest extends TestCase
     {
         $merch = $this->user(Roles::MERCHANDISER);
         $supplier = $this->supplier();
-        $pi = $this->issuedPi([['supplier_id' => $supplier->id, 'supplier_price' => '1'], ['supplier_id' => $supplier->id, 'supplier_price' => '2']]);
+        $pi = $this->orderablePi([['supplier_id' => $supplier->id, 'supplier_price' => '1'], ['supplier_id' => $supplier->id, 'supplier_price' => '2']]);
         [$l1, $l2] = $pi->lines->all();
         $service = app(SupplierOrderService::class);
         $service->createFromPi($pi, [['supplier_id' => $supplier->id, 'lines' => [$l1->id => null]]], $merch);
@@ -116,7 +116,7 @@ class CreateFromPiTest extends TestCase
     {
         $merch = $this->user(Roles::MERCHANDISER);
         $supplier = $this->supplier();
-        $rev1 = $this->issuedPi([['supplier_id' => $supplier->id, 'supplier_price' => '1']]);
+        $rev1 = $this->orderablePi([['supplier_id' => $supplier->id, 'supplier_price' => '1']]);
         $ordered = $rev1->lines->first();
         app(SupplierOrderService::class)->createFromPi($rev1, [['supplier_id' => $supplier->id, 'lines' => [$ordered->id => null]]], $merch);
 
@@ -147,7 +147,7 @@ class CreateFromPiTest extends TestCase
         $pi = ProformaInvoice::factory()->create();
         $line = PiLine::factory()->create(['proforma_invoice_id' => $pi->id, 'supplier_price' => '1']);
 
-        $this->actingAs($merch)->get(route('supplier-orders.create', ['pi' => $pi->id]))->assertRedirect(route('supplier-orders.index'));
+        $this->actingAs($merch)->get(route('supplier-orders.create', ['pi' => $pi->id]))->assertRedirect(route('proforma-invoices.show', $pi));
         $this->expectException(ValidationException::class);
         app(SupplierOrderService::class)->createFromPi($pi, [['supplier_id' => $this->supplier()->id, 'lines' => [$line->id => null]]], $merch);
     }
@@ -155,7 +155,7 @@ class CreateFromPiTest extends TestCase
     public function test_a_group_without_a_supplier_or_a_price_is_refused(): void
     {
         $merch = $this->user(Roles::MERCHANDISER);
-        $pi = $this->issuedPi([['supplier_id' => null, 'supplier_price' => null]]);
+        $pi = $this->orderablePi([['supplier_id' => null, 'supplier_price' => null]]);
         $line = $pi->lines->first();
 
         $this->actingAs($merch)->post(route('supplier-orders.store'), ['pi' => $pi->id, 'groups' => [
@@ -173,7 +173,7 @@ class CreateFromPiTest extends TestCase
     {
         $merch = $this->user(Roles::MERCHANDISER);
         $supplier = $this->supplier();
-        $pi = $this->issuedPi([['supplier_id' => $supplier->id, 'supplier_price' => '1'], ['supplier_id' => $supplier->id, 'supplier_price' => '5']]);
+        $pi = $this->orderablePi([['supplier_id' => $supplier->id, 'supplier_price' => '1'], ['supplier_id' => $supplier->id, 'supplier_price' => '5']]);
         [$l1, $l2] = $pi->lines->all();
         $order = app(SupplierOrderService::class)->createFromPi($pi, [['supplier_id' => $supplier->id, 'lines' => [$l1->id => null]]], $merch)->first();
 

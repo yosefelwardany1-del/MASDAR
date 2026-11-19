@@ -108,7 +108,7 @@ class ConfigurationController extends Controller
             $data['hr_work_days'] = implode(',', $days);
         }
 
-        foreach (['pi_issue_requires_approval', 'payments_out_require_approval', 'sales_see_supplier_prices', 'sales_own_clients_only', 'block_loading_unpaid', 'whatsapp_container_updates', 'client_portal_enabled'] as $flag) {
+        foreach (['pi_issue_requires_approval', 'payments_out_require_approval', 'sales_see_supplier_prices', 'sales_own_clients_only', 'block_loading_unpaid', 'whatsapp_container_updates', 'client_portal_enabled', 'orders_from_issued_pi'] as $flag) {
             $data[$flag] = $request->boolean($flag);
         }
         // Which container statuses send clients a WhatsApp update (spec Q-C4).

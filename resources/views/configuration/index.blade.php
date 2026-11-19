@@ -71,6 +71,7 @@
                     'sales_see_supplier_prices' => __('Sales staff see suppliers and supplier prices'),
                     'sales_own_clients_only' => __('Sales staff see only the clients they manage'),
                     'block_loading_unpaid' => __('Goods are not loaded until the client has paid in full (a manager can override)'),
+                    'orders_from_issued_pi' => __('Purchase orders may be made from an issued PI, before the client\'s deposit (otherwise from a confirmed PI only)'),
                 ] as $flag => $label)
                     <div class="app-switch">
                         <div class="form-check form-switch">

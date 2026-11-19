@@ -23,14 +23,35 @@ use Illuminate\Validation\ValidationException;
 /**
  * The only writer of supplier_orders, supplier_order_lines and supplier_order_date_changes
  * (spec §5.3). A supplier order is one factory's part of a client order: its lines are PI lines
- * at the supplier's price, taken from an issued (accepted, confirmed) PI. A PI line is ordered
+ * at the supplier's price, taken from a confirmed PI (or an issued one, by a setting). A PI line is ordered
  * once across its revisions (trigger). The promised delivery date is never overwritten without a
  * date-change row, so slippage can be measured. Every write is audited in its transaction.
  */
 class SupplierOrderService
 {
-    /** A PI's lines can be ordered once the client has it (spec §5.2 workflow). */
-    public const PI_STATUSES = ['issued', 'accepted', 'confirmed'];
+    /**
+     * The PI statuses whose lines can be ordered (B01): a confirmed PI — the sales order, its
+     * deposit in — or, when the business orders before the deposit, any issued PI.
+     *
+     * @return list<string>
+     */
+    public static function orderablePiStatuses(): array
+    {
+        return BusinessSetting::current()->orders_from_issued_pi ? ['issued', 'accepted', 'confirmed'] : ['confirmed'];
+    }
+
+    /** Why a PI of another status cannot be ordered from, in the words of the rule in force. */
+    public static function notOrderableMessage(): string
+    {
+        return BusinessSetting::current()->orders_from_issued_pi
+            ? __('Only an issued, accepted or confirmed PI can be ordered from.')
+            : __('Purchase orders are made from a confirmed PI: confirm the client\'s deposit first.');
+    }
+
+    public static function isOrderable(ProformaInvoice $pi): bool
+    {
+        return in_array($pi->status, self::orderablePiStatuses(), true);
+    }
 
     /** The header fields a person edits (the delivery date and merchandiser have their own writers). */
     public const HEADER_FIELDS = ['confirmation_date', 'currency', 'deposit_percent', 'payment_terms', 'notes'];
@@ -72,7 +93,7 @@ class SupplierOrderService
     public function piQueryWithUnassignedLines(): Builder
     {
         return ProformaInvoice::query()
-            ->whereIn('status', self::PI_STATUSES)
+            ->whereIn('status', self::orderablePiStatuses())
             ->whereExists(fn ($q) => $q->selectRaw('1')->from('pi_lines')
                 ->whereColumn('pi_lines.proforma_invoice_id', 'proforma_invoices.id')
                 ->whereRaw('pi_lines.id NOT IN ('.self::blockedLineIdsSql().')'));
@@ -329,8 +350,8 @@ class SupplierOrderService
     private function lockOrderablePi(ProformaInvoice $pi): ProformaInvoice
     {
         $pi = ProformaInvoice::query()->whereKey($pi->id)->lockForUpdate()->firstOrFail();
-        if (! in_array($pi->status, self::PI_STATUSES, true)) {
-            throw ValidationException::withMessages(['pi' => __('Only an issued, accepted or confirmed PI can be ordered from.')]);
+        if (! self::isOrderable($pi)) {
+            throw ValidationException::withMessages(['pi' => self::notOrderableMessage()]);
         }
 
         return $pi;

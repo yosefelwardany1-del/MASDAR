@@ -59,19 +59,19 @@ class OrderToCashTest extends TestCase
         $this->assertSame('852.0000', (string) DB::table('pi_lines')->where('proforma_invoice_id', $pi->id)->sum('amount'));
         $this->assertSame('30% DEPOSIT 70% FINAL PAYMENT BEFORE SHIPPING', $pi->terms_text);
 
-        // 2. The factory order, from the PI's lines.
-        $order = app(SupplierOrderService::class)->createFromPi($pi, [[
-            'supplier_id' => $factory->id, 'lines' => $pi->lines->mapWithKeys(fn ($l) => [$l->id => null])->all(),
-            'confirmation_date' => now()->toDateString(), 'delivery_date' => now()->addDays(25)->toDateString(),
-            'currency' => 'CNY', 'merchandiser_id' => $manager->id,
-        ]], $manager)->first();
-
-        // 3. The client's 30% deposit arrives in Hong Kong (USD).
+        // 2. The client's 30% deposit arrives in Hong Kong (USD).
         $usd = MoneyAccount::factory()->create();
         $rmb = MoneyAccount::factory()->rmb()->create();
         $payments = app(PaymentService::class);
         $payments->record(['kind' => 'client_receipt', 'paid_on' => now()->toDateString(), 'money_account_id' => $usd->id, 'amount' => '255.60', 'party_id' => $client->id, 'proforma_invoice_id' => $pi->id], $manager);
         $pis->confirm($pi->fresh(), $manager);
+
+        // 3. The factory order, from the confirmed PI's lines (B01: the sales order).
+        $order = app(SupplierOrderService::class)->createFromPi($pi, [[
+            'supplier_id' => $factory->id, 'lines' => $pi->lines->mapWithKeys(fn ($l) => [$l->id => null])->all(),
+            'confirmation_date' => now()->toDateString(), 'delivery_date' => now()->addDays(25)->toDateString(),
+            'currency' => 'CNY', 'merchandiser_id' => $manager->id,
+        ]], $manager)->first();
 
         // 4. Goods received and inspected: the receive-goods step completes itself.
         foreach ($order->lines as $line) {

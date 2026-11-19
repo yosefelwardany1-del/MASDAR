@@ -27,7 +27,7 @@ class SupplierOrderHeaderTest extends TestCase
         $follower = $this->user(Roles::MERCHANDISER);
         $sales = $this->user(Roles::SALES);
         $order = $this->orderWithLines(0, 10, ['delivery_date' => '2026-12-01', 'merchandiser_id' => $follower->id]);
-        $pi = $this->issuedPi([['supplier_price' => '1']], ['client_id' => Party::factory()->client()->create(['account_manager_id' => $sales->id])->id]);
+        $pi = $this->orderablePi([['supplier_price' => '1']], ['client_id' => Party::factory()->client()->create(['account_manager_id' => $sales->id])->id]);
         SupplierOrderLine::factory()->create(['supplier_order_id' => $order->id, 'pi_line_id' => $pi->lines->first()->id]);
 
         $this->actingAs($merch)->post(route('supplier-orders.delivery-date', $order), ['delivery_date' => '2026-12-15', 'reason' => 'Fabric arrived late'])

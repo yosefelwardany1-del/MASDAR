@@ -81,13 +81,6 @@ class MasdarDemoSeeder extends Seeder
         ], 'GH-2026-077');
         $make($clients[1], [['Ceramic mug 350ml', 150, 36, '0.640', '2.30', $factories[0]]], 'NK-114');
 
-        $orders = app(SupplierOrderService::class)->createFromPi($pi1, collect($factories)->map(fn ($f) => [
-            'supplier_id' => $f->id,
-            'lines' => $pi1->lines->where('supplier_id', $f->id)->mapWithKeys(fn ($l) => [$l->id => null])->all(),
-            'confirmation_date' => now()->subDays(20)->toDateString(), 'delivery_date' => now()->addDays(6)->toDateString(),
-            'currency' => 'CNY', 'merchandiser_id' => $merch->id,
-        ])->all(), $manager);
-
         $accounts = app(MoneyAccountService::class);
         $usd = MoneyAccount::where('name', 'HSBC Hong Kong — USD')->first()
             ?? $accounts->create(['name' => 'HSBC Hong Kong — USD', 'kind' => 'bank', 'currency' => 'USD', 'location' => 'hong_kong', 'ledger_account_id' => Account::where('code', '1101')->value('id'), 'active' => true]);
@@ -99,6 +92,13 @@ class MasdarDemoSeeder extends Seeder
         // The client's 30% deposit (of 10,728.00 USD), then RMB for the factories: 1,400 USD → 10,000 CNY at 0.14.
         $payments->record(['kind' => 'client_receipt', 'paid_on' => now()->subDays(18)->toDateString(), 'money_account_id' => $usd->id, 'amount' => '3218.40', 'party_id' => $clients[0]->id, 'proforma_invoice_id' => $pi1->id, 'reference' => 'TT deposit'], $manager);
         $pis->confirm($pi1->fresh(), $manager);
+        // Purchase orders are made from the confirmed PI (B01).
+        $orders = app(SupplierOrderService::class)->createFromPi($pi1, collect($factories)->map(fn ($f) => [
+            'supplier_id' => $f->id,
+            'lines' => $pi1->lines->where('supplier_id', $f->id)->mapWithKeys(fn ($l) => [$l->id => null])->all(),
+            'confirmation_date' => now()->subDays(20)->toDateString(), 'delivery_date' => now()->addDays(6)->toDateString(),
+            'currency' => 'CNY', 'merchandiser_id' => $merch->id,
+        ])->all(), $manager);
         ['out' => $transferOut] = $payments->transfer(['from_account_id' => $usd->id, 'to_account_id' => $rmb->id, 'paid_on' => now()->subDays(18)->toDateString(), 'amount' => '1400.00', 'in_amount' => '10000.00', 'reference' => 'RMB for factory deposits'], $manager);
         if (! app(PaymentQueries::class)->isEffective($transferOut->fresh())) {
             $payments->approve($transferOut->fresh(), $manager);

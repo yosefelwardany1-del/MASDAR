@@ -2568,5 +2568,16 @@
     "Your goods inside": "柜内你的货物",
     "Booked; not loaded yet.": "已订舱，尚未装柜。",
     "Invoices, payments and credits over the last year, in :book. A positive balance is what you owe us.": "过去一年的发票、付款和贷项，以 :book 计。余额为正数表示你欠我们的金额。",
-    "Service invoice": "服务发票"
+    "Service invoice": "服务发票",
+    "Purchase orders are made from a confirmed PI: confirm the client's deposit first.": "采购订单由已确认的形式发票生成：请先确认客户定金已到账。",
+    "One purchase order per factory, made from an issued PI, followed step by step: one row per order, one column per step. Late rows come first.": "每家工厂一张采购订单，由已开具的形式发票生成，逐步跟进：每张订单一行，每个步骤一列。延误的行排在最前。",
+    "New purchase orders": "新建采购订单",
+    "Sales orders waiting for purchase orders": "等待生成采购订单的销售订单",
+    "See all :count": "查看全部（:count）",
+    "Purchase orders are made from an issued PI and appear here, one row each.": "采购订单由已开具的形式发票生成，并在此显示，每张一行。",
+    "Purchase orders are made from a confirmed PI and appear here, one row each.": "采购订单由已确认的形式发票生成，并在此显示，每张一行。",
+    "Purchase orders are made from a sales order (PI): choose the PI, then one order is made per factory.": "采购订单由销售订单（形式发票）生成：选择形式发票后，每家工厂生成一张订单。",
+    "Make purchase orders": "生成采购订单",
+    "No sales order is waiting for purchase orders.": "没有等待生成采购订单的销售订单。",
+    "Purchase orders may be made from an issued PI, before the client's deposit (otherwise from a confirmed PI only)": "允许在客户付定金前由已开具的形式发票生成采购订单（否则仅限已确认的形式发票）"
 }

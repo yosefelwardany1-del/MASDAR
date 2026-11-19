@@ -77,6 +77,9 @@
         @if(Gate::allows('profit.view') && \App\Support\Access\Visibility::canSeeSupplierPrices(auth()->user()) && $pi->status !== 'draft')
             <a href="{{ route('profit.pi', $pi) }}" class="btn btn-light"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i>{{ __('Profit') }}</a>
         @endif
+        @if($makeOrders)
+            <a href="{{ route('supplier-orders.create', ['pi' => $pi->id]) }}" class="btn btn-primary"><i class="bi bi-cart-plus" aria-hidden="true"></i>{{ __('Make purchase orders') }}</a>
+        @endif
         @if($canEdit)
             @if($pi->isDraft())
                 <a href="{{ route('proforma-invoices.edit', $pi) }}" class="btn btn-light"><i class="bi bi-pencil" aria-hidden="true"></i>{{ __('Edit header') }}</a>
