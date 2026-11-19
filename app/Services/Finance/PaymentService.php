@@ -16,6 +16,7 @@ use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
 use App\Services\Accounting\Decimal;
+use App\Services\Accounting\OpenPeriods;
 use App\Services\Attachments\AttachmentService;
 use App\Services\Claims\NoteQueries;
 use App\Services\Numbering\NumberingService;
@@ -71,6 +72,7 @@ class PaymentService
             throw ValidationException::withMessages(['kind' => __('Choose what the payment is.')]);
         }
         $paidOn = $this->date($data['paid_on'] ?? null, 'paid_on');
+        OpenPeriods::assert($paidOn->toDateString(), 'paid_on');
         $account = $this->activeAccount($data['money_account_id'] ?? null, 'money_account_id');
         $amount = $this->amount($data['amount'] ?? null, 'amount');
         $rate = $this->rate($account->currency, $paidOn, $data['rate'] ?? null, 'rate');
@@ -125,6 +127,8 @@ class PaymentService
         if ($arrivedOn->lt($paidOn)) {
             throw ValidationException::withMessages(['in_paid_on' => __('The money cannot arrive before it leaves.')]);
         }
+        OpenPeriods::assert($paidOn->toDateString(), 'paid_on');
+        OpenPeriods::assert($arrivedOn->toDateString(), 'in_paid_on');
         $outAmount = $this->amount($data['amount'] ?? null, 'amount');
         if ($from->currency === $to->currency) {
             $inAmount = filled($data['in_amount'] ?? null) ? $this->amount($data['in_amount'], 'in_amount') : $outAmount;
@@ -243,6 +247,7 @@ class PaymentService
             }
 
             $today = CarbonImmutable::now();
+            OpenPeriods::assert($today->toDateString(), 'reason');
             $reversals = [];
             foreach ($legs as $leg) {
                 $reversal = Payment::create([

@@ -9,6 +9,7 @@ use App\Models\Lookup;
 use App\Models\PayrollLine;
 use App\Models\PayrollRun;
 use App\Models\User;
+use App\Services\Accounting\OpenPeriods;
 use App\Services\Accounting\PostingService;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
@@ -43,6 +44,7 @@ class PayrollService
         if (! array_key_exists($currency, Lookup::options('currency'))) {
             throw ValidationException::withMessages(['currency' => __('Choose a currency from the list of currencies.')]);
         }
+        OpenPeriods::assert(CarbonImmutable::parse($period)->endOfMonth()->toDateString(), 'period');
         $existing = PayrollRun::query()->where('period', $period)->where('currency', $currency)->where('status', '<>', 'void')->first();
         if ($existing) {
             throw ValidationException::withMessages(['period' => __('The :currency payroll of this month is :number already.', ['currency' => $currency, 'number' => $existing->number])]);

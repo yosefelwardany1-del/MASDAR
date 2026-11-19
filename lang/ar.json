@@ -2640,5 +2640,6 @@
     "Withdrawal": "سحب",
     "Withdraw this payment? It was never approved, so it never counted.": "سحب هذه الدفعة؟ لم تتم الموافقة عليها قط، لذا لم تُحتسب أبداً.",
     "Why is it withdrawn?": "لماذا تُسحب؟",
-    "Withdraw": "سحب"
+    "Withdraw": "سحب",
+    "The period :period (:from – :to) is closed. Choose a date in an open period, or ask the accountant to reopen it.": "الفترة :period (:from – :to) مغلقة. اختر تاريخاً في فترة مفتوحة، أو اطلب من المحاسب إعادة فتحها."
 }

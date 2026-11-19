@@ -2640,5 +2640,6 @@
     "Withdrawal": "撤回",
     "Withdraw this payment? It was never approved, so it never counted.": "撤回此付款？它从未获批，因此从未计入。",
     "Why is it withdrawn?": "为何撤回？",
-    "Withdraw": "撤回"
+    "Withdraw": "撤回",
+    "The period :period (:from – :to) is closed. Choose a date in an open period, or ask the accountant to reopen it.": "会计期间 :period（:from – :to）已关闭。请选择开放期间内的日期，或请会计重新打开该期间。"
 }

@@ -10,6 +10,7 @@ use App\Models\TradeNote;
 use App\Models\TradeNoteLine;
 use App\Models\User;
 use App\Services\Accounting\Decimal;
+use App\Services\Accounting\OpenPeriods;
 use App\Services\Finance\PaymentService;
 use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
@@ -136,6 +137,7 @@ class TradeNoteService
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $on)) {
             throw ValidationException::withMessages(['issued_on' => __('Enter a valid date.')]);
         }
+        OpenPeriods::assert($on, 'issued_on');
 
         $note = $this->write(function () use ($note, $by, $on) {
             $note = $this->lockedDraft($note);

@@ -7,6 +7,7 @@ use App\Models\ExpenseClaimDecision;
 use App\Models\ExpenseClaimLine;
 use App\Models\Lookup;
 use App\Models\User;
+use App\Services\Accounting\OpenPeriods;
 use App\Services\Hr\Money;
 use App\Services\Notifications\NotificationService;
 use App\Services\Numbering\NumberingService;
@@ -152,6 +153,10 @@ class ExpenseClaimService
         $date = (string) ($data['spent_on'] ?? '');
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             $errors['spent_on'] = __('Enter a valid date.');
+        } elseif ($closed = OpenPeriods::closedOn($date)) {
+            $errors['spent_on'] = __('The period :period (:from – :to) is closed. Choose a date in an open period, or ask the accountant to reopen it.', [
+                'period' => $closed->name, 'from' => $closed->starts_on->toDateString(), 'to' => $closed->ends_on->toDateString(),
+            ]);
         }
         $description = trim((string) ($data['description'] ?? ''));
         if ($description === '') {

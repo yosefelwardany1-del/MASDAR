@@ -8,6 +8,7 @@ use App\Models\ProformaInvoice;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoiceLine;
 use App\Models\User;
+use App\Services\Accounting\OpenPeriods;
 use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
 use App\Support\Access\Visibility;
@@ -91,6 +92,7 @@ class ServiceInvoiceService
     {
         $this->authorize($by, 'service_invoices.approve');
         $on = filled($on) ? $on : now()->toDateString();
+        OpenPeriods::assert($on, 'issued_on');
         // B10: said before the database's CHECK would refuse it.
         if (filled($due) && $due < $on) {
             throw ValidationException::withMessages(['due_on' => __('The due date can\'t be before the invoice date.')]);

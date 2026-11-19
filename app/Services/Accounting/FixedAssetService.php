@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -108,6 +109,7 @@ class FixedAssetService
         if (! preg_match('/^\d{4}-\d{2}$/', $month)) {
             throw ValidationException::withMessages(['month' => __('Choose a month.')]);
         }
+        OpenPeriods::assert(CarbonImmutable::parse($month.'-01')->endOfMonth()->toDateString(), 'month');
         $charges = $this->charges($month);
         if ($charges->isEmpty()) {
             throw ValidationException::withMessages(['month' => __('Nothing to depreciate for :month.', ['month' => $month])]);
