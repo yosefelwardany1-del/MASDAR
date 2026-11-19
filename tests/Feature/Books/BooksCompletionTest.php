@@ -218,6 +218,30 @@ class BooksCompletionTest extends TestCase
         $this->assertTrue(JournalEntry::where('event', 'depreciation')->exists());
     }
 
+    /** B21: a statement is imported once; lines already on another statement need "Import anyway". */
+    public function test_the_same_statement_is_not_imported_twice(): void
+    {
+        app()->setLocale('en');
+        $usd = MoneyAccount::where('name', 'HSBC Hong Kong — USD')->sole();
+        $d = fn (int $daysAgo) => now()->subDays($daysAgo)->format('d/m/Y');
+        $post = fn (string $csv, array $extra = []) => $this->actingAs($this->accountant)->post(route('bank-reconciliation.store'), $extra + [
+            'money_account_id' => $usd->id, 'file' => UploadedFile::fake()->createWithContent('stmt.csv', $csv), 'date_format' => 'd/m/Y',
+            'layout' => 'one', 'col_date' => 1, 'col_description' => 2, 'col_amount' => 3, 'skip_header' => '1',
+        ]);
+        $csv = "Date,Details,Amount\n".$d(18).",TT GULF HOME TRADING,3218.40\n".$d(17).",TRANSFER TO MAINLAND,-1400.00\n".$d(3).",SERVICE CHARGE,-15.00\n";
+
+        $post($csv)->assertRedirect()->assertSessionHasNoErrors();
+        $post($csv)->assertSessionHasErrors('file');
+        $this->assertStringStartsWith('This statement is already imported (stmt.csv', session('errors')->first('file'));
+        $this->assertSame(1, BankStatement::count());
+
+        // A later statement that repeats two of those lines: refused until "Import anyway".
+        $later = "Date,Details,Amount\n".$d(17).",TRANSFER TO MAINLAND,-1400.00\n".$d(3).",SERVICE CHARGE,-15.00\n".$d(1).",INTEREST,0.42\n";
+        $post($later)->assertSessionHasErrors(['file' => '2 of these lines are already on another statement of this account (the dates overlap). Check the file, or tick "Import anyway".']);
+        $post($later, ['anyway' => '1'])->assertSessionHasNoErrors();
+        $this->assertSame(2, BankStatement::count());
+    }
+
     /** B20: each account of an asset is one of its kind, and it is bought on a day that has come. */
     public function test_an_asset_takes_a_fixed_asset_account_its_contra_and_an_expense_account(): void
     {

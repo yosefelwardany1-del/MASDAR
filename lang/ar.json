@@ -2648,5 +2648,8 @@
     "{1} one month|[2,*] :count months": "{1} شهر واحد|[2,*] :count أشهر",
     "The purchase date cannot be in the future.": "لا يجوز أن يكون تاريخ الشراء في المستقبل.",
     "Choose a fixed-asset account (under :heading), not a bank or a receivable.": "اختر حساب أصل ثابت (تحت :heading)، لا حساباً بنكياً ولا ذمة مدينة.",
-    "Choose the accumulated-depreciation account.": "اختر حساب مجمع الإهلاك."
+    "Choose the accumulated-depreciation account.": "اختر حساب مجمع الإهلاك.",
+    "This statement is already imported (:file, :from – :to). Nothing was added.": "هذا الكشف مستورد بالفعل (:file، :from – :to). لم يُضَف شيء.",
+    ":count of these lines are already on another statement of this account (the dates overlap). Check the file, or tick \"Import anyway\".": ":count من هذه الأسطر موجودة بالفعل في كشف آخر لهذا الحساب (التواريخ متداخلة). تحقق من الملف، أو حدّد \"استيراد على أي حال\".",
+    "Import anyway (some lines are already on another statement)": "استيراد على أي حال (بعض الأسطر موجودة في كشف آخر)"
 }

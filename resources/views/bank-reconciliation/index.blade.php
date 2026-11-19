@@ -46,6 +46,9 @@
             </fieldset>
         </div>
     </div>
+    @error('file')
+        <div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="anyway" id="anyway" value="1"><label class="form-check-label" for="anyway">{{ __('Import anyway (some lines are already on another statement)') }}</label></div>
+    @enderror
     <button class="btn btn-primary mt-3"><i class="bi bi-upload" aria-hidden="true"></i>{{ __('Import') }}</button>
 </form>
 @endcan

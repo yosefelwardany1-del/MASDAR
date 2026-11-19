@@ -2648,5 +2648,8 @@
     "{1} one month|[2,*] :count months": "{1} 1 个月|[2,*] :count 个月",
     "The purchase date cannot be in the future.": "购置日期不能是将来。",
     "Choose a fixed-asset account (under :heading), not a bank or a receivable.": "请选择固定资产科目（属于 :heading），不能选银行或应收科目。",
-    "Choose the accumulated-depreciation account.": "请选择累计折旧科目。"
+    "Choose the accumulated-depreciation account.": "请选择累计折旧科目。",
+    "This statement is already imported (:file, :from – :to). Nothing was added.": "此对账单已导入（:file，:from – :to）。未添加任何内容。",
+    ":count of these lines are already on another statement of this account (the dates overlap). Check the file, or tick \"Import anyway\".": "其中 :count 行已在该账户的另一份对账单中（日期重叠）。请检查文件，或勾选“仍然导入”。",
+    "Import anyway (some lines are already on another statement)": "仍然导入（部分行已在另一份对账单中）"
 }
