@@ -2714,5 +2714,8 @@
     "Step not applicable": "الخطوة لا تنطبق",
     "Step reopened": "أُعيد فتح الخطوة",
     "Unmatched": "أُلغيت المطابقة",
-    "Voided": "أُلغي"
+    "Voided": "أُلغي",
+    "A sample that is :from cannot become :to.": "العيّنة التي حالتها :from لا يمكن أن تصبح :to.",
+    "The date needed by can't be before the date it was requested.": "لا يجوز أن يسبق تاريخ الحاجة تاريخ الطلب.",
+    "This sample is :status and closed. Reopen it first.": "هذه العيّنة :status ومغلقة. أعد فتحها أولاً."
 }

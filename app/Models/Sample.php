@@ -21,6 +21,24 @@ class Sample extends Model
 
     public const STATUSES = ['requested', 'at_factory', 'received', 'sent', 'approved', 'rejected', 'cancelled'];
 
+    /** B26: approved, rejected and cancelled close the sample until it is reopened (requested again). */
+    public const FINAL = ['approved', 'rejected', 'cancelled'];
+
+    /** B26: what may follow each status — forward along the way, or cancelled; a closed sample only reopens. */
+    public const NEXT = [
+        'requested' => ['at_factory', 'received', 'sent', 'cancelled'],
+        'at_factory' => ['received', 'sent', 'cancelled'],
+        'received' => ['sent', 'approved', 'rejected', 'cancelled'],
+        'sent' => ['approved', 'rejected', 'cancelled'],
+        'approved' => ['requested'], 'rejected' => ['requested'], 'cancelled' => ['requested'],
+    ];
+
+    /** @return list<string> */
+    public function nextStatuses(): array
+    {
+        return self::NEXT[$this->status()] ?? [];
+    }
+
     protected function casts(): array
     {
         return ['requested_on' => 'date', 'needed_by' => 'date', 'quantity' => 'decimal:4'];

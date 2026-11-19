@@ -17,6 +17,7 @@
                 __('Factory') => $seesSuppliers ? $sample->supplier?->name : null,
                 __('PI') => $sample->proformaInvoice?->reference(),
                 __('Product') => $sample->product?->name,
+                __('Quantity') => $sample->quantity !== null ? rtrim(rtrim((string) $sample->quantity, '0'), '.') : null,
                 __('Requested on') => $sample->requested_on->format('Y-m-d'),
                 __('Needed by') => $sample->needed_by?->format('Y-m-d'),
                 __('Courier') => $sent ? trim($sent->courier.' '.$sent->tracking_no) : null,
@@ -28,9 +29,10 @@
             <x-section :title="__('What happened')" icon="signpost-split" class="mb-3">
                 <form method="POST" action="{{ route('samples.record', $sample) }}" class="app-form">
                     @csrf
-                    <select name="status" class="form-select mb-2" aria-label="{{ __('Status') }}" required>
-                        @foreach(array_diff(Sample::STATUSES, ['requested']) as $s)<option value="{{ $s }}">{{ Sample::statusLabel($s) }}</option>@endforeach
+                    <select name="status" class="form-select mb-2 @error('status') is-invalid @enderror" aria-label="{{ __('Status') }}" required>
+                        @foreach($sample->nextStatuses() as $s)<option value="{{ $s }}">{{ $s === 'requested' ? __('Reopen') : Sample::statusLabel($s) }}</option>@endforeach
                     </select>
+                    @error('status')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                     <div class="row g-2 mb-2">
                         <div class="col-6"><input type="date" name="happened_on" value="{{ now()->toDateString() }}" class="form-control" aria-label="{{ __('Date') }}"></div>
                         <div class="col-6"><input name="courier" class="form-control @error('courier') is-invalid @enderror" placeholder="{{ __('Courier (when sent)') }}" aria-label="{{ __('Courier') }}"></div>
