@@ -113,12 +113,18 @@ class PaymentQueries
         return ($approvalRequired ?? $this->approvalRequired()) && $this->canBeApproved($payment);
     }
 
-    /** One of: reversal, reversed, approved, effective, awaiting (a reversal may also await: awaitsApproval). */
+    /**
+     * One of: reversal, reversed, approved, effective, awaiting (a reversal may also await:
+     * awaitsApproval) — and withdrawn / withdrawal (B17): a payment out reversed before it was ever
+     * approved was withdrawn; neither row ever counts, posts or waits for approval.
+     */
     public function status(Payment $payment, ?bool $approvalRequired = null): string
     {
+        $approvalRequired ??= $this->approvalRequired();
+
         return match (true) {
-            $payment->reverses_payment_id !== null => 'reversal',
-            $payment->reversal !== null => 'reversed',
+            $payment->reverses_payment_id !== null => $payment->reverses && ! $this->isEffective($payment->reverses, $approvalRequired) ? 'withdrawal' : 'reversal',
+            $payment->reversal !== null => $this->isEffective($payment, $approvalRequired) ? 'reversed' : 'withdrawn',
             $payment->approval !== null => 'approved',
             $this->isEffective($payment, $approvalRequired) => 'effective',
             default => 'awaiting',

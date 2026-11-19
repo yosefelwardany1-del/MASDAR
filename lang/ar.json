@@ -2635,5 +2635,10 @@
     "Nothing is loaded in this container yet. Load its goods before marking it :status.": "لم يُحمَّل شيء في هذه الحاوية بعد. حمّل بضائعها قبل وضعها في حالة :status.",
     "Skipped": "تم تخطيها",
     "You recorded this payment, so another manager approves it.": "أنت من سجّل هذه الدفعة، لذا يوافق عليها مدير آخر.",
-    "A payment is approved by someone other than the person who recorded it (switch off only with a single manager)": "يوافق على الدفعة شخص غير الذي سجّلها (أوقف هذا فقط إذا كان هناك مدير واحد)"
+    "A payment is approved by someone other than the person who recorded it (switch off only with a single manager)": "يوافق على الدفعة شخص غير الذي سجّلها (أوقف هذا فقط إذا كان هناك مدير واحد)",
+    "Withdrawn": "مسحوبة",
+    "Withdrawal": "سحب",
+    "Withdraw this payment? It was never approved, so it never counted.": "سحب هذه الدفعة؟ لم تتم الموافقة عليها قط، لذا لم تُحتسب أبداً.",
+    "Why is it withdrawn?": "لماذا تُسحب؟",
+    "Withdraw": "سحب"
 }

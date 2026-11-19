@@ -2635,5 +2635,10 @@
     "Nothing is loaded in this container yet. Load its goods before marking it :status.": "此集装箱尚未装货。请先装货，再标记为“:status”。",
     "Skipped": "已跳过",
     "You recorded this payment, so another manager approves it.": "此付款由您登记，须由另一位经理审批。",
-    "A payment is approved by someone other than the person who recorded it (switch off only with a single manager)": "付款须由登记人以外的人审批（仅在只有一位经理时关闭）"
+    "A payment is approved by someone other than the person who recorded it (switch off only with a single manager)": "付款须由登记人以外的人审批（仅在只有一位经理时关闭）",
+    "Withdrawn": "已撤回",
+    "Withdrawal": "撤回",
+    "Withdraw this payment? It was never approved, so it never counted.": "撤回此付款？它从未获批，因此从未计入。",
+    "Why is it withdrawn?": "为何撤回？",
+    "Withdraw": "撤回"
 }

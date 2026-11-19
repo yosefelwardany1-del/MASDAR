@@ -200,12 +200,13 @@
                     <p class="text-muted small mb-3">{{ __('A payment is never edited or deleted. To correct it, reverse it (a new row cancelling it) and record it again.') }}
                         @if($payment->transfer_group) {{ __('Both sides of the transfer are reversed together.') }} @endif</p>
                     @can('payments.edit')
-                        <form method="POST" action="{{ route('payments.reverse', $payment) }}" onsubmit="return confirm(@js(__('Reverse this payment?')));">
+                        @php $withdraw = app(\App\Services\Finance\PaymentQueries::class)->awaitsApproval($payment); @endphp
+                        <form method="POST" action="{{ route('payments.reverse', $payment) }}" onsubmit="return confirm(@js($withdraw ? __('Withdraw this payment? It was never approved, so it never counted.') : __('Reverse this payment?')));">
                             @csrf
-                            <label class="form-label" for="reverse-reason">{{ __('Why is it reversed?') }}<span class="app-req" aria-hidden="true">*</span></label>
+                            <label class="form-label" for="reverse-reason">{{ $withdraw ? __('Why is it withdrawn?') : __('Why is it reversed?') }}<span class="app-req" aria-hidden="true">*</span></label>
                             <textarea name="reason" id="reverse-reason" rows="2" maxlength="1000" class="form-control mb-2 @error('reason') is-invalid @enderror" required>{{ old('reason') }}</textarea>
                             @error('reason')<div class="app-field-error mb-2">{{ $message }}</div>@enderror
-                            <button class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>{{ __('Reverse') }}</button>
+                            <button class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>{{ $withdraw ? __('Withdraw') : __('Reverse') }}</button>
                         </form>
                     @endcan
                 @endif
