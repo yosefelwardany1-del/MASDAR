@@ -2608,5 +2608,8 @@
     "The :currency rate of :date was :old; it is now :new.": "كان سعر :currency بتاريخ :date هو :old؛ وأصبح الآن :new.",
     "Rate deleted.": "حُذف السعر.",
     "Delete this rate? Nothing has used it.": "حذف هذا السعر؟ لم يستخدمه أي شيء.",
-    "Delete rate": "حذف السعر"
+    "Delete rate": "حذف السعر",
+    "Line :n: an amount has at most 2 decimals.": "السطر :n: للمبلغ منزلتان عشريتان على الأكثر.",
+    "The amount is a number greater than zero, with up to 2 decimals.": "المبلغ رقم أكبر من صفر، بمنزلتين عشريتين على الأكثر.",
+    "Debits equal credits exactly. The cents shown differ by :diff because older entries carry amounts below a cent.": "المدين يساوي الدائن تماماً. تختلف السنتات المعروضة بمقدار :diff لأن قيوداً أقدم تحمل مبالغ أقل من سنت."
 }

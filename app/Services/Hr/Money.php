@@ -14,6 +14,10 @@ final class Money
         if ($value === '') {
             $value = '0';
         }
+        // Zeros past the decimals allowed change nothing: "7000.0000" is a cent amount.
+        if (preg_match('/^\d+\.\d+$/', $value)) {
+            $value = rtrim(rtrim($value, '0'), '.');
+        }
         if (! preg_match('/^\d{1,14}(\.\d{1,'.$decimals.'})?$/', $value)) {
             throw ValidationException::withMessages([$field => __('Enter a number of up to :n decimals, without a minus sign.', ['n' => $decimals])]);
         }

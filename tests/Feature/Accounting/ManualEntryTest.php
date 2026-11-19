@@ -139,7 +139,7 @@ class ManualEntryTest extends TestCase
         $this->assertSame('CNY', $line->currency);
         $this->assertSame('1000.0500', $line->amount_currency);
         $this->assertSame('0.138765', $line->rate);
-        $this->assertSame('138.7719', $line->debit); // 1000.05 × 0.138765 = 138.771938…
+        $this->assertSame('138.7700', $line->debit); // 1000.05 × 0.138765 = 138.771938…, to the cent (B09)
 
         $this->expectException(AccountingException::class);
         $this->posting()->createDraft(['entry_date' => '2026-11-10', 'lines' => [

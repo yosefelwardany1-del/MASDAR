@@ -146,7 +146,7 @@ class ClaimsAndNotesTest extends TestCase
         $entry = app(PostingService::class)->postTradeNote($note, $this->manager);
         $lines = $entry->lines()->with('account')->get()->keyBy(fn ($l) => $l->account->code);
         $this->assertSame($this->order->supplier_id, $lines['2201']->party_id);
-        $this->assertSame('124.9920', $lines['5102']->credit, '892.80 CNY at 0.14');
+        $this->assertSame('124.9900', $lines['5102']->credit, '892.80 CNY at 0.14 = 124.992, to the cent (B09)');
 
         // Paying the rest (16,992 − 5,000 deposit − 892.80 debit note) completes every payment step.
         $payments = app(PaymentService::class);

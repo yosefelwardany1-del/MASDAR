@@ -196,7 +196,7 @@ class ClaimService
 
     private function amount(mixed $value, string $field, bool $zeroAllowed = false): string
     {
-        return Money::amount($value, $field, ! $zeroAllowed);
+        return Money::amount($value, $field, ! $zeroAllowed, decimals: 2);
     }
 
     private function assertVisible(Claim $claim, User $by): void

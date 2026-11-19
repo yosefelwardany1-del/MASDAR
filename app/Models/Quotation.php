@@ -26,6 +26,12 @@ class Quotation extends Model
         return $this->belongsTo(Party::class, 'client_id');
     }
 
+    /** The sum of its priced lines, each to the cent (B09); '0' when no line has a quantity. */
+    public function total(): string
+    {
+        return $this->lines->filter(fn ($l) => $l->cartons !== null)->reduce(fn ($c, $l) => bcadd($c, $l->amount(), 2), '0.00');
+    }
+
     public function lines(): HasMany
     {
         return $this->hasMany(QuotationLine::class)->orderBy('line_no');

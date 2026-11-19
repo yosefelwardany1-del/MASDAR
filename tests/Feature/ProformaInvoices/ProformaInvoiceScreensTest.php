@@ -216,6 +216,8 @@ class ProformaInvoiceScreensTest extends TestCase
         $this->assertSame('288', PiAmounts::number('288.0000'));
         $this->assertSame('0.504', PiAmounts::number('0.5040'));
         $this->assertSame('75.6000', PiAmounts::depositRequired('252.0000', '30.00'));
-        $this->assertSame('0.0002', PiAmounts::depositRequired('0.0005', '33.33'));
+        // To the cent (B09): 431.355 × 40% = 172.542 asks 172.54; half a cent rounds up.
+        $this->assertSame('172.5400', PiAmounts::depositRequired('431.3550', '40.00'));
+        $this->assertSame('0.0100', PiAmounts::depositRequired('0.0250', '20.00'));
     }
 }

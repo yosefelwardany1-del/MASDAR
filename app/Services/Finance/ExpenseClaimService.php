@@ -163,7 +163,7 @@ class ExpenseClaimService
 
         return [
             'spent_on' => $date, 'category' => $category, 'description' => mb_substr($description, 0, 2000),
-            'amount' => Money::amount($data['amount'] ?? null, 'amount', true),
+            'amount' => Money::amount($data['amount'] ?? null, 'amount', true, decimals: 2),
             'proforma_invoice_id' => filled($data['proforma_invoice_id'] ?? null) ? (int) $data['proforma_invoice_id'] : null,
             'container_id' => filled($data['container_id'] ?? null) ? (int) $data['container_id'] : null,
         ];

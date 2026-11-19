@@ -62,7 +62,7 @@ class BudgetService
                 if ($month < 1 || $month > 12) {
                     continue;
                 }
-                $clean[(int) $accountId][$month] = filled($value) ? Money::amount($value, "amounts.{$accountId}.{$month}") : '0';
+                $clean[(int) $accountId][$month] = filled($value) ? Money::amount($value, "amounts.{$accountId}.{$month}", decimals: 2) : '0';
             }
         }
 

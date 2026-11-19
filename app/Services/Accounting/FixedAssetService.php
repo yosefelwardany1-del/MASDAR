@@ -150,8 +150,8 @@ class FixedAssetService
         if ($errors) {
             throw ValidationException::withMessages($errors);
         }
-        $cost = Money::amount($data['cost'] ?? null, 'cost', true);
-        $residual = Money::amount($data['residual_value'] ?? '0', 'residual_value');
+        $cost = Money::amount($data['cost'] ?? null, 'cost', true, decimals: 2);
+        $residual = Money::amount($data['residual_value'] ?? '0', 'residual_value', decimals: 2);
         if (bccomp($residual, $cost, 4) >= 0) {
             throw ValidationException::withMessages(['residual_value' => __('The residual value is less than the cost.')]);
         }

@@ -2608,5 +2608,8 @@
     "The :currency rate of :date was :old; it is now :new.": ":date 的 :currency 汇率原为 :old，现为 :new。",
     "Rate deleted.": "汇率已删除。",
     "Delete this rate? Nothing has used it.": "删除此汇率？尚无任何记录使用它。",
-    "Delete rate": "删除汇率"
+    "Delete rate": "删除汇率",
+    "Line :n: an amount has at most 2 decimals.": "第 :n 行：金额最多两位小数。",
+    "The amount is a number greater than zero, with up to 2 decimals.": "金额须为大于零的数字，最多两位小数。",
+    "Debits equal credits exactly. The cents shown differ by :diff because older entries carry amounts below a cent.": "借贷完全相等。所显示的分位相差 :diff，因为较早的分录含有不足一分的金额。"
 }

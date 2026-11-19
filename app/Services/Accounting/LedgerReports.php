@@ -63,6 +63,10 @@ class LedgerReports
 
         $rows = [];
         $totals = array_fill_keys(['opening_dr', 'opening_cr', 'debit', 'credit', 'closing_dr', 'closing_cr'], '0');
+        // The figures shown are to the cent, and the totals are the sum of those figures (B09);
+        // the exact sums stay in 'exact', to tell sub-cent amounts posted before that from an error.
+        $exact = $totals;
+        $cent = fn (string $v) => Decimal::normalize(Decimal::round($v, 2));
         foreach (Account::query()->where('is_postable', true)->orderBy('code')->get() as $account) {
             $sum = $sums->get($account->id);
             $opening = Decimal::normalize((string) ($sum->opening ?? '0'));
@@ -82,12 +86,14 @@ class LedgerReports
                 'closing_cr' => Decimal::isPositive($closing) ? '0' : Decimal::abs($closing),
             ];
             foreach ($totals as $key => $total) {
+                $exact[$key] = Decimal::add($exact[$key], $row[$key]);
+                $row[$key] = $cent($row[$key]);
                 $totals[$key] = Decimal::add($total, $row[$key]);
             }
             $rows[] = $row;
         }
 
-        return ['rows' => $rows, 'totals' => $totals];
+        return ['rows' => $rows, 'totals' => $totals, 'exact' => $exact];
     }
 
     /** Income and expense accounts for a period, grouped by heading, and the net result. */

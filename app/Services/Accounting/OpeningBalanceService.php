@@ -81,7 +81,7 @@ class OpeningBalanceService
                 'account_id' => $account->id, 'party_id' => $party?->id, 'currency' => $currency, 'rate' => $rate,
                 'debit' => $negative ? null : $abs, 'credit' => $negative ? $abs : null,
                 'memo' => filled($row['memo'] ?? null) ? mb_substr(trim($row['memo']), 0, 255) : null,
-                'book' => $currency === $book ? $abs : Decimal::mul($abs, (string) $rate), 'negative' => $negative,
+                'book' => $currency === $book ? $abs : Decimal::round(Decimal::mul($abs, (string) $rate, 10), 2), 'negative' => $negative,
             ];
         }
         if ($errors) {

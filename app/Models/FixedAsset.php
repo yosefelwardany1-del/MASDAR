@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAttachments;
+use App\Services\Hr\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -60,7 +61,8 @@ class FixedAsset extends Model
     /** The straight-line charge for a full month, to 4 places. */
     public function monthlyCharge(): string
     {
-        return bcdiv(bcsub((string) $this->cost, (string) $this->residual_value, 8), (string) $this->useful_life_months, 4);
+        // To the cent (B09); the last month takes what is left, so the cents add up to the cost.
+        return bcadd(Money::div(bcsub((string) $this->cost, (string) $this->residual_value, 8), (string) $this->useful_life_months), '0', 4);
     }
 
     public function attachmentModule(): string

@@ -528,12 +528,16 @@ class PaymentService
         return $date;
     }
 
-    /** A positive amount with up to 4 decimals, as a string (never a float). */
+    /** A positive amount to the cent (B09: every listed currency has 2 decimals), as a string (never a float). */
     private function amount(mixed $value, string $field): string
     {
-        $value = trim((string) $value);
-        if (! preg_match('/^\d{1,14}(\.\d{1,4})?$/', $value) || bccomp($value, '0', 4) <= 0) {
-            throw ValidationException::withMessages([$field => __('The amount is a number greater than zero, with up to 4 decimals.')]);
+        $value = trim(str_replace(',', '', (string) $value));
+        // "1200.5000" is a cent amount too: zeros past the cents are dropped.
+        if (preg_match('/^\d+\.\d+$/', $value)) {
+            $value = rtrim(rtrim($value, '0'), '.');
+        }
+        if (! preg_match('/^\d{1,14}(\.\d{1,2})?$/', $value) || bccomp($value, '0', 2) <= 0) {
+            throw ValidationException::withMessages([$field => __('The amount is a number greater than zero, with up to 2 decimals.')]);
         }
 
         return $value;

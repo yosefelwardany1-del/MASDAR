@@ -8,7 +8,7 @@
     $f = fn ($v) => Decimal::format($v);
     $plain = fn ($v) => $v === null ? '—' : (rtrim(rtrim((string) $v, '0'), '.') ?: '0');
     $editable = $quotation->isDraft() && Gate::allows('quotations.edit');
-    $total = $quotation->lines->filter(fn ($l) => $l->cartons !== null)->reduce(fn ($c, $l) => bcadd($c, $l->amount(), 4), '0');
+    $total = $quotation->total();
 @endphp
 
 @section('title', $title)

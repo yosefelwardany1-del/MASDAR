@@ -19,10 +19,10 @@ final class PiAmounts
             : bcadd($value, $half, $scale);
     }
 
-    /** What the client pays before production: total × deposit % ÷ 100, to 4 decimals. */
+    /** What the client pays before production: total × deposit % ÷ 100, to the cent (B09). */
     public static function depositRequired(string $total, string $depositPercent): string
     {
-        return self::round(bcdiv(bcmul(self::normalise($total), self::normalise($depositPercent), 8), '100', 8));
+        return bcadd(self::round(bcdiv(bcmul(self::normalise($total), self::normalise($depositPercent), 8), '100', 8), 2), '0', 4);
     }
 
     public static function subtract(string $a, string $b): string

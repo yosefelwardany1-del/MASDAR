@@ -103,7 +103,7 @@ class PayrollService
         $values = [];
         foreach (PayrollLine::EDITABLE as $field) {
             if (array_key_exists($field, $data)) {
-                $values[$field] = Money::amount($data[$field], $field, decimals: in_array($field, ['overtime_hours', 'unpaid_days'], true) ? 2 : 4);
+                $values[$field] = Money::amount($data[$field], $field, decimals: 2);
             }
         }
         $values['note'] = $this->text($data['note'] ?? null);

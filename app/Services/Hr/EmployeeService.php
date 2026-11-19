@@ -73,8 +73,8 @@ class EmployeeService
     {
         $this->authorize($by, 'payroll.edit');
         $from = $this->date($data['effective_from'] ?? null, 'effective_from', required: true);
-        $base = Money::amount($data['base_salary'] ?? null, 'base_salary', positive: true);
-        $allowances = Money::amount($data['allowances'] ?? null, 'allowances');
+        $base = Money::amount($data['base_salary'] ?? null, 'base_salary', positive: true, decimals: 2);
+        $allowances = Money::amount($data['allowances'] ?? null, 'allowances', decimals: 2);
         $currency = strtoupper((string) ($data['currency'] ?? '') ?: $employee->salary_currency);
         if (! array_key_exists($currency, Lookup::options('currency'))) {
             throw ValidationException::withMessages(['currency' => __('Choose a currency from the list of currencies.')]);
