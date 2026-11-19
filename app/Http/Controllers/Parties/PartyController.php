@@ -17,10 +17,12 @@ use App\Services\Parties\PartyKind;
 use App\Services\Parties\PartyService;
 use App\Services\WhatsApp\PhoneNumber;
 use App\Support\Access\Visibility;
+use App\Support\SameName;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * One controller for the three party screens (spec §5.1): clients, suppliers and shipping
@@ -41,6 +43,24 @@ abstract class PartyController extends Controller
     public function __construct(protected PartyService $parties) {}
 
     abstract protected function kind(): PartyKind;
+
+    /**
+     * B23: another party of this kind with the same name (case and spacing aside) is said before
+     * saving, with a link to it; ticking "Save anyway" saves it all the same.
+     */
+    private function warnIfSameName(Request $request, string $name, ?Party $self): void
+    {
+        if ($request->boolean('save_anyway') || trim($name) === '') {
+            return;
+        }
+        $kind = $this->kind();
+        $same = SameName::scope(Party::query()->where($kind->column(), true), $name)
+            ->when($self, fn ($q) => $q->whereKeyNot($self->id))->first();
+        if ($same) {
+            session()->flash('same_name', ['url' => route($kind->routePrefix().'.show', $same), 'label' => $same->code.' — '.$same->name]);
+            throw ValidationException::withMessages(['name' => __(':name already exists (:code). Open it, or tick "Save anyway" to add another.', ['name' => $same->name, 'code' => $same->code])]);
+        }
+    }
 
     public function index(Request $request)
     {
@@ -99,6 +119,7 @@ abstract class PartyController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request, null);
+        $this->warnIfSameName($request, $data['name'] ?? '', null);
         $party = $this->parties->create($data, $request->user());
 
         return $this->redirectToParty($request, $party, __(':code created.', ['code' => $party->code]));
@@ -147,6 +168,7 @@ abstract class PartyController extends Controller
     {
         $party = $this->find($request, $id);
         $data = $this->validated($request, $party);
+        $this->warnIfSameName($request, $data['name'] ?? $party->name, $party);
         $this->parties->update($party, $data, $request->user());
 
         return $this->redirectToParty($request, $party, __(':code saved.', ['code' => $party->code]));

@@ -2655,5 +2655,9 @@
     "This file could not be read. Use the template.": "تعذّرت قراءة هذا الملف. استخدم القالب.",
     "The file has no column for :columns. Use the template.": "لا يحتوي الملف على عمود لـ :columns. استخدم القالب.",
     "These columns are not in the template and were ignored: :columns.": "هذه الأعمدة ليست في القالب وتم تجاهلها: :columns.",
-    "This row fills none of the template's columns.": "هذا السطر لا يملأ أياً من أعمدة القالب."
+    "This row fills none of the template's columns.": "هذا السطر لا يملأ أياً من أعمدة القالب.",
+    ":name already exists (:code). Open it, or tick \"Save anyway\" to add another.": ":name موجود بالفعل (:code). افتحه، أو حدّد \"حفظ على أي حال\" لإضافة آخر.",
+    "There is already a :currency account named :name. Give this one another name.": "يوجد بالفعل حساب :currency باسم :name. أعطِ هذا الحساب اسماً آخر.",
+    "Open :record": "فتح :record",
+    "Save anyway": "حفظ على أي حال"
 }

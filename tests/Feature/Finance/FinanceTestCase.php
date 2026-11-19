@@ -25,14 +25,16 @@ abstract class FinanceTestCase extends TestCase
         return User::factory()->create()->assignRole($roles);
     }
 
+    /** The HSBC USD account — the same one each call (B23: one name per currency). */
     protected function usd(): MoneyAccount
     {
-        return MoneyAccount::factory()->create(['name' => 'HSBC USD']);
+        return MoneyAccount::query()->where('name', 'HSBC USD')->first() ?? MoneyAccount::factory()->create(['name' => 'HSBC USD']);
     }
 
+    /** The ICBC Yiwu RMB account — the same one each call. */
     protected function cny(): MoneyAccount
     {
-        return MoneyAccount::factory()->rmb()->create(['name' => 'ICBC Yiwu RMB']);
+        return MoneyAccount::query()->where('name', 'ICBC Yiwu RMB')->first() ?? MoneyAccount::factory()->rmb()->create(['name' => 'ICBC Yiwu RMB']);
     }
 
     protected function setOptions(array $values): void

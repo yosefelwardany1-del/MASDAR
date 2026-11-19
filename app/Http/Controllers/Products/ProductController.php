@@ -10,9 +10,11 @@ use App\Models\Product;
 use App\Services\Media\ImageStore;
 use App\Services\Products\ProductService;
 use App\Support\Access\Visibility;
+use App\Support\SameName;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The Products screen (spec §3.2): the catalog with each item's photo and carton spec. The
@@ -62,6 +64,7 @@ class ProductController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->warnIfSameName($request, (string) $request->input('name'), null);
         $product = $this->products->create($this->validated($request), $request->user(), $request->file('photo'));
 
         return redirect()->route('products.show', $product)->with('success', __(':code created.', ['code' => $product->code]));
@@ -86,9 +89,23 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product): RedirectResponse
     {
+        $this->warnIfSameName($request, (string) $request->input('name', $product->name), $product);
         $this->products->update($product, $this->validated($request), $request->file('photo'));
 
         return redirect()->route('products.show', $product)->with('success', __(':code saved.', ['code' => $product->code]));
+    }
+
+    /** B23: a product of the same name (case and spacing aside) is said first; "Save anyway" saves it. */
+    private function warnIfSameName(Request $request, string $name, ?Product $self): void
+    {
+        if ($request->boolean('save_anyway') || trim($name) === '') {
+            return;
+        }
+        $same = SameName::scope(Product::query(), $name)->when($self, fn ($q) => $q->whereKeyNot($self->id))->first();
+        if ($same) {
+            session()->flash('same_name', ['url' => route('products.show', $same), 'label' => $same->code.' — '.$same->name]);
+            throw ValidationException::withMessages(['name' => __(':name already exists (:code). Open it, or tick "Save anyway" to add another.', ['name' => $same->name, 'code' => $same->code])]);
+        }
     }
 
     public function deactivate(Product $product): RedirectResponse

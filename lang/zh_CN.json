@@ -2655,5 +2655,9 @@
     "This file could not be read. Use the template.": "无法读取此文件。请使用模板。",
     "The file has no column for :columns. Use the template.": "文件缺少 :columns 列。请使用模板。",
     "These columns are not in the template and were ignored: :columns.": "以下列不在模板中，已忽略：:columns。",
-    "This row fills none of the template's columns.": "此行未填写模板中的任何列。"
+    "This row fills none of the template's columns.": "此行未填写模板中的任何列。",
+    ":name already exists (:code). Open it, or tick \"Save anyway\" to add another.": ":name 已存在（:code）。请打开它，或勾选“仍然保存”以新增一条。",
+    "There is already a :currency account named :name. Give this one another name.": "已有名为 :name 的 :currency 账户。请为此账户另取名称。",
+    "Open :record": "打开 :record",
+    "Save anyway": "仍然保存"
 }
