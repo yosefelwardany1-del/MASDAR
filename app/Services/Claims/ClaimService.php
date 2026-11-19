@@ -13,6 +13,7 @@ use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
 use App\Support\Access\Visibility;
 use App\Support\Audit\AuditTrail;
+use App\Support\Database\Refusal;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -219,16 +220,9 @@ class ClaimService
             return DB::transaction($write);
         } catch (QueryException $e) {
             if (in_array($e->getCode(), ['23514', '23001', 'P0001'], true)) {
-                throw ValidationException::withMessages(['claim' => __('The database refused this change: :reason', ['reason' => self::reason($e)])]);
+                throw ValidationException::withMessages(['claim' => Refusal::message($e)]);
             }
             throw $e;
         }
-    }
-
-    public static function reason(QueryException $e): string
-    {
-        $message = $e->getPrevious()?->getMessage() ?? $e->getMessage();
-
-        return preg_match('/ERROR:\s+(.+?)(?:\n|CONTEXT|$)/s', $message, $m) ? trim($m[1]) : $message;
     }
 }

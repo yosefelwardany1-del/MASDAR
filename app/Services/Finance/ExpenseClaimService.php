@@ -7,11 +7,11 @@ use App\Models\ExpenseClaimDecision;
 use App\Models\ExpenseClaimLine;
 use App\Models\Lookup;
 use App\Models\User;
-use App\Services\Claims\ClaimService;
 use App\Services\Hr\Money;
 use App\Services\Notifications\NotificationService;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
+use App\Support\Database\Refusal;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -185,7 +185,7 @@ class ExpenseClaimService
             return DB::transaction($write);
         } catch (QueryException $e) {
             if (in_array($e->getCode(), ['23514', '23001', 'P0001', '23503'], true)) {
-                throw ValidationException::withMessages(['claim' => __('The database refused this change: :reason', ['reason' => ClaimService::reason($e)])]);
+                throw ValidationException::withMessages(['claim' => Refusal::message($e)]);
             }
             throw $e;
         }

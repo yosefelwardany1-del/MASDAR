@@ -2611,5 +2611,17 @@
     "Delete rate": "حذف السعر",
     "Line :n: an amount has at most 2 decimals.": "السطر :n: للمبلغ منزلتان عشريتان على الأكثر.",
     "The amount is a number greater than zero, with up to 2 decimals.": "المبلغ رقم أكبر من صفر، بمنزلتين عشريتين على الأكثر.",
-    "Debits equal credits exactly. The cents shown differ by :diff because older entries carry amounts below a cent.": "المدين يساوي الدائن تماماً. تختلف السنتات المعروضة بمقدار :diff لأن قيوداً أقدم تحمل مبالغ أقل من سنت."
+    "Debits equal credits exactly. The cents shown differ by :diff because older entries carry amounts below a cent.": "المدين يساوي الدائن تماماً. تختلف السنتات المعروضة بمقدار :diff لأن قيوداً أقدم تحمل مبالغ أقل من سنت.",
+    "Check the dates: the due date can't be before the invoice date.": "تحقق من التواريخ: لا يجوز أن يسبق تاريخ الاستحقاق تاريخ الفاتورة.",
+    "The due date can't be before the invoice date.": "لا يجوز أن يسبق تاريخ الاستحقاق تاريخ الفاتورة.",
+    "This document is posted. Reverse its journal entry on the Accounting screen first.": "هذا المستند مُرحَّل. اعكس قيده من شاشة المحاسبة أولاً.",
+    "This invoice is posted. Reverse its journal entry on the Accounting screen first.": "هذه الفاتورة مُرحَّلة. اعكس قيدها من شاشة المحاسبة أولاً.",
+    "This payment's amount is different from the statement line.": "مبلغ هذه الدفعة يختلف عن سطر الكشف.",
+    "This payment is in another money account than the statement.": "هذه الدفعة في حساب مالي غير حساب الكشف.",
+    "There is not enough money in the account for this.": "لا يوجد مال كافٍ في الحساب لهذا.",
+    "This would come to more than the document allows.": "سيتجاوز هذا ما يسمح به المستند.",
+    "The period of this date is closed. Reopen it or choose another date.": "الفترة التي يقع فيها هذا التاريخ مغلقة. أعد فتحها أو اختر تاريخاً آخر.",
+    "This record is final and never changes. Make a correction instead.": "هذا السجل نهائي ولا يتغير أبداً. سجّل تصحيحاً بدلاً من ذلك.",
+    "This already exists, so it was not saved again.": "هذا موجود بالفعل، لذا لم يُحفَظ مرة أخرى.",
+    "This change was refused because it breaks a rule of the system, so nothing was saved. Check what you entered, or ask your administrator.": "رُفض هذا التغيير لأنه يخالف قاعدة في النظام، فلم يُحفَظ شيء. تحقق مما أدخلته، أو اسأل مسؤول النظام."
 }

@@ -8,8 +8,8 @@ use App\Models\BankStatementLine;
 use App\Models\MoneyAccount;
 use App\Models\Payment;
 use App\Models\User;
-use App\Services\Claims\ClaimService;
 use App\Support\Audit\AuditTrail;
+use App\Support\Database\Refusal;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -111,6 +111,13 @@ class BankReconciliationService
         $this->authorize($by);
         if (! $this->payments->isEffective($payment)) {
             throw ValidationException::withMessages(['payment_id' => __('Payment :number does not count yet (awaiting approval).', ['number' => $payment->number])]);
+        }
+        // B10: the trigger's rule, said first.
+        if ((int) $payment->money_account_id !== (int) $line->statement->money_account_id) {
+            throw ValidationException::withMessages(['payment_id' => __('This payment is in another money account than the statement.')]);
+        }
+        if (bccomp((string) $payment->signed_amount, (string) $line->amount, 4) !== 0) {
+            throw ValidationException::withMessages(['payment_id' => __('This payment\'s amount is different from the statement line.')]);
         }
 
         return $this->write(function () use ($line, $payment, $by) {
@@ -216,7 +223,7 @@ class BankReconciliationService
             if (in_array($e->getCode(), ['23514', '23001', 'P0001', '23505'], true)) {
                 throw ValidationException::withMessages(['statement' => $e->getCode() === '23505'
                     ? __('That line or that payment is already matched.')
-                    : __('The database refused this change: :reason', ['reason' => ClaimService::reason($e)])]);
+                    : Refusal::message($e)]);
             }
             throw $e;
         }

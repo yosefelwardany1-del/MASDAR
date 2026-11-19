@@ -8,11 +8,11 @@ use App\Models\ProformaInvoice;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoiceLine;
 use App\Models\User;
-use App\Services\Claims\ClaimService;
 use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
 use App\Support\Access\Visibility;
 use App\Support\Audit\AuditTrail;
+use App\Support\Database\Refusal;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -91,6 +91,10 @@ class ServiceInvoiceService
     {
         $this->authorize($by, 'service_invoices.approve');
         $on = filled($on) ? $on : now()->toDateString();
+        // B10: said before the database's CHECK would refuse it.
+        if (filled($due) && $due < $on) {
+            throw ValidationException::withMessages(['due_on' => __('The due date can\'t be before the invoice date.')]);
+        }
 
         return $this->write(function () use ($invoice, $by, $on, $due) {
             $invoice = $this->lockedDraft($invoice);
@@ -116,6 +120,11 @@ class ServiceInvoiceService
             $invoice = ServiceInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
             if ($invoice->status !== 'issued') {
                 throw ValidationException::withMessages(['invoice' => __('Only an issued invoice is voided; delete a draft instead.')]);
+            }
+            $posted = DB::table('journal_entries as e')->where('e.source_type', 'service_invoice')->where('e.source_id', $invoice->id)->whereNull('e.reverses_entry_id')
+                ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('journal_entries as r')->whereColumn('r.reverses_entry_id', 'e.id'))->exists();
+            if ($posted) {
+                throw ValidationException::withMessages(['invoice' => __('This invoice is posted. Reverse its journal entry on the Accounting screen first.')]);
             }
             $invoice->update(['status' => 'void', 'voided_by' => $by->id, 'voided_at' => now(), 'void_reason' => mb_substr(trim($reason), 0, 2000)]);
             AuditTrail::record('voided', $invoice, ['status' => 'issued'], ['status' => 'void', 'void_reason' => $reason]);
@@ -193,7 +202,7 @@ class ServiceInvoiceService
             return DB::transaction($write);
         } catch (QueryException $e) {
             if (in_array($e->getCode(), ['23514', '23001', 'P0001'], true)) {
-                throw ValidationException::withMessages(['invoice' => __('The database refused this change: :reason', ['reason' => ClaimService::reason($e)])]);
+                throw ValidationException::withMessages(['invoice' => Refusal::message($e)]);
             }
             throw $e;
         }

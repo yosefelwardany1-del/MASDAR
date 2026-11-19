@@ -79,7 +79,8 @@ class ServiceInvoiceController extends Controller
 
     public function issue(Request $request, ServiceInvoice $invoice)
     {
-        $data = $request->validate(['issued_on' => 'nullable|date_format:Y-m-d', 'due_on' => 'nullable|date_format:Y-m-d']);
+        $data = $request->validate(['issued_on' => 'nullable|date_format:Y-m-d', 'due_on' => 'nullable|date_format:Y-m-d|after_or_equal:'.($request->input('issued_on') ?: now()->toDateString())],
+            ['due_on.after_or_equal' => __('The due date can\'t be before the invoice date.')]);
         $invoice = $this->service->issue($invoice, $request->user(), $data['issued_on'] ?? null, $data['due_on'] ?? null);
 
         return back()->with('success', __('Invoice :number issued.', ['number' => $invoice->number]));

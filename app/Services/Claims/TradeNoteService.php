@@ -15,6 +15,7 @@ use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
 use App\Support\Access\Visibility;
 use App\Support\Audit\AuditTrail;
+use App\Support\Database\Refusal;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -376,7 +377,7 @@ class TradeNoteService
             return DB::transaction($write);
         } catch (QueryException $e) {
             if (in_array($e->getCode(), ['23514', '23001', 'P0001'], true)) {
-                throw ValidationException::withMessages(['note' => __('The database refused this change: :reason', ['reason' => ClaimService::reason($e)])]);
+                throw ValidationException::withMessages(['note' => Refusal::message($e)]);
             }
             throw $e;
         }

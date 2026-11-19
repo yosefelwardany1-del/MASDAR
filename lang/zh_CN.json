@@ -2611,5 +2611,17 @@
     "Delete rate": "删除汇率",
     "Line :n: an amount has at most 2 decimals.": "第 :n 行：金额最多两位小数。",
     "The amount is a number greater than zero, with up to 2 decimals.": "金额须为大于零的数字，最多两位小数。",
-    "Debits equal credits exactly. The cents shown differ by :diff because older entries carry amounts below a cent.": "借贷完全相等。所显示的分位相差 :diff，因为较早的分录含有不足一分的金额。"
+    "Debits equal credits exactly. The cents shown differ by :diff because older entries carry amounts below a cent.": "借贷完全相等。所显示的分位相差 :diff，因为较早的分录含有不足一分的金额。",
+    "Check the dates: the due date can't be before the invoice date.": "请检查日期：到期日不能早于发票日期。",
+    "The due date can't be before the invoice date.": "到期日不能早于发票日期。",
+    "This document is posted. Reverse its journal entry on the Accounting screen first.": "此单据已过账。请先在“会计”页面冲销其分录。",
+    "This invoice is posted. Reverse its journal entry on the Accounting screen first.": "此发票已过账。请先在“会计”页面冲销其分录。",
+    "This payment's amount is different from the statement line.": "此付款金额与对账单行不一致。",
+    "This payment is in another money account than the statement.": "此付款所在的资金账户与对账单不同。",
+    "There is not enough money in the account for this.": "账户余额不足。",
+    "This would come to more than the document allows.": "这将超过该单据允许的金额。",
+    "The period of this date is closed. Reopen it or choose another date.": "该日期所在期间已关闭。请重新打开期间或选择其他日期。",
+    "This record is final and never changes. Make a correction instead.": "此记录为最终记录，不会更改。请改为登记更正。",
+    "This already exists, so it was not saved again.": "该记录已存在，因此未再次保存。",
+    "This change was refused because it breaks a rule of the system, so nothing was saved. Check what you entered, or ask your administrator.": "此更改违反系统规则，已被拒绝，未保存任何内容。请检查您输入的内容，或联系管理员。"
 }
