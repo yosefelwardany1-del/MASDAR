@@ -81,6 +81,19 @@ class CrmQueries
     }
 
     /**
+     * B11: the ids of the clients in $query whose stage now (stagesFor — what the client page and
+     * the Pipeline show) is $stage, for the client list's filter.
+     *
+     * @return list<int>
+     */
+    public function clientIdsAtStage(Builder $query, string $stage): array
+    {
+        $ids = (clone $query)->reorder()->pluck('parties.id')->map(fn ($id) => (int) $id)->all();
+
+        return array_keys(array_filter($this->stagesFor($ids), fn ($s) => $s['stage'] === $stage));
+    }
+
+    /**
      * The stage each client's latest live PI has reached in the documents.
      *
      * @param  list<int>  $clientIds

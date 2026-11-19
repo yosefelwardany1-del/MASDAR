@@ -69,15 +69,20 @@ abstract class PartyController extends Controller
         $query->when($filters['active'] !== 'all', fn ($q) => $q->where('active', $filters['active'] === '1'))
             ->when($filters['country'] !== '', fn ($q) => $q->where('country', $filters['country']));
         if ($kind === PartyKind::Client) {
-            $query->when($filters['stage'] !== '', fn ($q) => $q->where('stage', $filters['stage']))
-                ->when($filters['manager'], fn ($q) => $q->where('account_manager_id', $filters['manager']));
+            $query->when($filters['manager'], fn ($q) => $q->where('account_manager_id', $filters['manager']));
+            // B11: the stage now — typed, or read from the documents — as on the client page and the Pipeline.
+            if ($filters['stage'] !== '') {
+                $query->whereIn('parties.id', app(CrmQueries::class)->clientIdsAtStage($query, $filters['stage']));
+            }
         }
 
         $parties = $query->orderBy('name')->paginate(25)->withQueryString();
+        $crmStages = $kind === PartyKind::Client ? app(CrmQueries::class)->stagesFor($parties->pluck('id')->all()) : [];
 
         return view('parties.index', [
             'kind' => $kind,
             'parties' => $parties,
+            'crmStages' => $crmStages,
             'filters' => $filters,
             'countries' => Lookup::options('country'),
             'stages' => Lookup::options('client_stage'),
