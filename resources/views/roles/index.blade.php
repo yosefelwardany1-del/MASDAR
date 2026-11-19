@@ -3,7 +3,7 @@
 @section('title', __('Roles and permissions'))
 
 @section('content')
-<x-page-header :title="__('Roles and permissions')" :subtitle="__('Ten fixed roles. A user may hold several; their permissions add up.')" />
+<x-page-header :title="__('Roles and permissions')" :subtitle="trans_choice('{1} One role. A user may hold several; their permissions add up.|[2,*] :count roles. A user may hold several; their permissions add up.', $roles->count(), ['count' => $roles->count()])" />
 <x-section :title="__('Roles')" icon="shield-lock" flush>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">

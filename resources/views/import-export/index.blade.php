@@ -107,7 +107,6 @@
         'choose' => __('Choose a file first.'),
         'previewing' => __('Previewing…'),
         'failed' => __('Preview failed.'),
-        'summary' => __(':created new, :updated updates, :failed errors (:total rows)'),
         'row' => __('Row :row'),
         'notes' => __('Notes'),
     ];
@@ -143,7 +142,7 @@ document.querySelectorAll('.io-preview-btn').forEach(function (btn) {
                     out.innerHTML = '<span class="text-danger">' + ioEsc([].concat.apply([], Object.values(d.errors)).join(' ')) + '</span>';
                     return;
                 }
-                var html = '<div class="text-success">' + ioFill(ioText.summary, { created: d.created, updated: d.updated, failed: d.failed, total: d.total_rows }) + '</div>';
+                var html = '<div class="text-success">' + ioEsc(d.summary) + '</div>';
                 if (d.errors && d.errors.length) {
                     html += '<ul class="text-danger mb-0">';
                     d.errors.slice(0, 20).forEach(function (e) {

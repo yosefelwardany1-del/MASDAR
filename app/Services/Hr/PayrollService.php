@@ -47,7 +47,11 @@ class PayrollService
         OpenPeriods::assert(CarbonImmutable::parse($period)->endOfMonth()->toDateString(), 'period');
         $existing = PayrollRun::query()->where('period', $period)->where('currency', $currency)->where('status', '<>', 'void')->first();
         if ($existing) {
-            throw ValidationException::withMessages(['period' => __('The :currency payroll of this month is :number already.', ['currency' => $currency, 'number' => $existing->number])]);
+            // B33: say which run, in words; the screen links to it (PayrollController::store).
+            $month = CarbonImmutable::parse($period)->locale(app()->getLocale())->isoFormat('MMMM YYYY');
+            throw ValidationException::withMessages(['period' => $existing->status === 'draft'
+                ? __('There is already a draft :currency payroll for :month.', ['currency' => $currency, 'month' => $month])
+                : __('There is already an approved :currency payroll for :month (:number).', ['currency' => $currency, 'month' => $month, 'number' => $existing->number])]);
         }
         $payDate = $this->optionalDate($data['pay_date'] ?? null, 'pay_date');
 

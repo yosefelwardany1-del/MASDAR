@@ -193,6 +193,7 @@ class ImportRun extends Model
             'created' => $this->created_count,
             'updated' => $this->updated_count,
             'failed' => $this->failed_count,
+            'summary' => ImportResult::summary((int) $this->created_count, (int) $this->updated_count, (int) $this->failed_count, (int) $this->total_rows),
             'errors' => $this->inProgress() ? [] : ($this->errors ?? []),
             'notices' => $this->inProgress() ? [] : ($this->notices ?? []),
         ];

@@ -14,6 +14,7 @@ use App\Services\Hr\HrCalendar;
 use App\Services\Hr\PayrollQueries;
 use App\Services\Hr\PayrollService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Payroll (spec §5.7): the monthly runs, a run with its lines, a line's form while the run is a
@@ -48,7 +49,15 @@ class PayrollController extends Controller
             'pay_date' => ['nullable', 'date_format:Y-m-d'],
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
-        $run = $this->service->prepare($data, $request->user());
+        try {
+            $run = $this->service->prepare($data, $request->user());
+        } catch (ValidationException $e) {
+            // B33: a month already prepared links to its run.
+            $existing = PayrollRun::query()->where('period', $data['period'].'-01')->where('currency', strtoupper((string) ($data['currency'] ?? '') ?: BusinessSetting::current()->payroll_currency))
+                ->where('status', '<>', 'void')->value('id');
+
+            return back()->withErrors($e->errors())->withInput()->with('existing_payroll', $existing);
+        }
 
         return redirect()->route('payroll.show', $run)->with('success', __('Payroll prepared as a draft: check each line, then send it for approval.'));
     }
