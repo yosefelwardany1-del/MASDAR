@@ -2626,5 +2626,7 @@
     "This change was refused because it breaks a rule of the system, so nothing was saved. Check what you entered, or ask your administrator.": "رُفض هذا التغيير لأنه يخالف قاعدة في النظام، فلم يُحفَظ شيء. تحقق مما أدخلته، أو اسأل مسؤول النظام.",
     "This quotation was valid until :date, which has passed. Extend its date before sending it, or send it anyway.": "كان عرض السعر هذا سارياً حتى :date، وقد انقضى هذا التاريخ. مدّد تاريخه قبل إرساله، أو أرسله على أي حال.",
     "This quotation was valid until :date, which has passed. Send it anyway?": "كان عرض السعر هذا سارياً حتى :date، وقد انقضى هذا التاريخ. إرساله على أي حال؟",
-    "This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.": "انتهت صلاحية عرض السعر هذا في :date. انسخه (نسخ للتعديل)، وأعطِ النسخة تاريخاً جديداً وأرسلها بدلاً منه."
+    "This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.": "انتهت صلاحية عرض السعر هذا في :date. انسخه (نسخ للتعديل)، وأعطِ النسخة تاريخاً جديداً وأرسلها بدلاً منه.",
+    "The amount agreed can't be more than the :amount claimed.": "لا يجوز أن يزيد المبلغ المتفق عليه عن المبلغ المطالب به :amount.",
+    "Above zero and at most the :amount claimed.": "أكبر من صفر وبحد أقصى المبلغ المطالب به :amount."
 }

@@ -9,6 +9,7 @@ use App\Models\Party;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
+use App\Services\Accounting\Decimal;
 use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
 use App\Support\Access\Visibility;
@@ -88,7 +89,13 @@ class ClaimService
             }
             $amount = null;
             if ($status === 'agreed' && filled($agreedAmount)) {
-                $amount = $this->amount($agreedAmount, 'agreed_amount', true);
+                // B14: above zero, and never more than what was claimed.
+                $amount = Money::amount($agreedAmount, 'agreed_amount', true, decimals: 2);
+                if ($claim->claimed_amount !== null && bccomp($amount, (string) $claim->claimed_amount, 4) > 0) {
+                    throw ValidationException::withMessages(['agreed_amount' => __('The amount agreed can\'t be more than the :amount claimed.', [
+                        'amount' => Decimal::format((string) $claim->claimed_amount).' '.$claim->currency,
+                    ])]);
+                }
             }
             $event = ClaimEvent::create([
                 'claim_id' => $claim->id, 'status' => $status, 'agreed_amount' => $amount,

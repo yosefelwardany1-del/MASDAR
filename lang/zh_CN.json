@@ -2626,5 +2626,7 @@
     "This change was refused because it breaks a rule of the system, so nothing was saved. Check what you entered, or ask your administrator.": "此更改违反系统规则，已被拒绝，未保存任何内容。请检查您输入的内容，或联系管理员。",
     "This quotation was valid until :date, which has passed. Extend its date before sending it, or send it anyway.": "此报价有效期至 :date，已过期。请先延长日期再发送，或仍然发送。",
     "This quotation was valid until :date, which has passed. Send it anyway?": "此报价有效期至 :date，已过期。仍然发送吗？",
-    "This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.": "此报价已于 :date 过期。请复制（复制以修改），为副本设定新日期后改发副本。"
+    "This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.": "此报价已于 :date 过期。请复制（复制以修改），为副本设定新日期后改发副本。",
+    "The amount agreed can't be more than the :amount claimed.": "约定金额不能超过索赔金额 :amount。",
+    "Above zero and at most the :amount claimed.": "须大于零，且不超过索赔金额 :amount。"
 }
