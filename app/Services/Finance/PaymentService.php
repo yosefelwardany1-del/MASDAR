@@ -183,6 +183,8 @@ class PaymentService
                 $payment->reversal()->exists() => __('This payment has been reversed.'),
                 $payment->reverses_payment_id !== null && ! PaymentApproval::query()->where('payment_id', $payment->reverses_payment_id)->exists() => __('The payment this reverses was never approved, so neither of them counts and there is nothing to approve.'),
                 $payment->approval()->exists() => __('This payment is already approved.'),
+                // B16: as with expense claims, nobody approves their own.
+                BusinessSetting::current()->payments_approved_by_another && (int) $payment->user_id === (int) $by->id => __('You recorded this payment, so another manager approves it.'),
                 default => null,
             };
             if ($refuse) {

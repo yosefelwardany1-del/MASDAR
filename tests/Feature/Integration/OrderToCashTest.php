@@ -98,8 +98,8 @@ class OrderToCashTest extends TestCase
         app(FxRateService::class)->set('CNY', now()->toDateString(), '0.140000', $manager);
         $payments->record(['kind' => 'client_receipt', 'paid_on' => now()->toDateString(), 'money_account_id' => $usd->id, 'amount' => '596.40', 'party_id' => $client->id, 'proforma_invoice_id' => $pi->id], $manager);
         $this->assertSame(0, bccomp(app(PaymentQueries::class)->paidForPiNumber($pi->pi_number, 'USD'), '852', 4), 'the PI is paid in full');
-        $factoryPayment = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '3580.80', 'rate' => '0.140000', 'party_id' => $factory->id, 'supplier_order_id' => $order->id], $manager);
-        $payments->approve($factoryPayment, $manager);
+        $factoryPayment = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '3580.80', 'rate' => '0.140000', 'party_id' => $factory->id, 'supplier_order_id' => $order->id], $accountant = User::factory()->create()->assignRole(Roles::ACCOUNTANT));
+        $payments->approve($factoryPayment, $manager); // the accountant records, a manager approves (B16)
 
         // 7. The books: invoice the client, bill the factory's goods, post every payment.
         $posting = app(PostingService::class);

@@ -129,8 +129,8 @@ class PayrollFlowTest extends TestCase
         // Paid from an RMB account; the run shows what is still to pay.
         $rmb = MoneyAccount::factory()->rmb()->create();
         $payment = app(PaymentService::class)->record(['kind' => 'salary_payment', 'paid_on' => '2026-11-05', 'money_account_id' => $rmb->id,
-            'amount' => $totals['net'], 'payroll_run_id' => $run->id], $this->manager);
-        app(PaymentService::class)->approve($payment, $this->manager);
+            'amount' => $totals['net'], 'payroll_run_id' => $run->id], $this->hr);
+        app(PaymentService::class)->approve($payment, $this->manager); // recorded by HR, approved by a manager (B16)
         $this->assertSame(0, bccomp('0', app(PayrollQueries::class)->unpaid($run), 4));
         $paymentEntry = app(PostingService::class)->postPayment($payment->fresh(), $accountant);
         $this->assertSame('2402', JournalLine::query()->where('journal_entry_id', $paymentEntry->id)->where('debit', '>', 0)->sole()->account->code);

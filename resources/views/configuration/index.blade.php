@@ -68,6 +68,7 @@
                 @foreach([
                     'pi_issue_requires_approval' => __('Issuing a Proforma Invoice needs a manager\'s approval'),
                     'payments_out_require_approval' => __('Every payment out needs a manager\'s approval'),
+                    'payments_approved_by_another' => __('A payment is approved by someone other than the person who recorded it (switch off only with a single manager)'),
                     'sales_see_supplier_prices' => __('Sales staff see suppliers and supplier prices'),
                     'sales_own_clients_only' => __('Sales staff see only the clients they manage'),
                     'block_loading_unpaid' => __('Goods are not loaded until the client has paid in full (a manager can override)'),

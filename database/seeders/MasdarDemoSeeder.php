@@ -48,6 +48,8 @@ class MasdarDemoSeeder extends Seeder
             throw new RuntimeException('MasdarDemoSeeder never runs in production.');
         }
         $manager = User::role(Roles::MANAGER)->first() ?? throw new RuntimeException('Run DemoUsersSeeder first.');
+        // The accountant records money out and the manager approves it: nobody approves their own (B16).
+        $accountant = User::role(Roles::ACCOUNTANT)->first() ?? throw new RuntimeException('Run DemoUsersSeeder first.');
         $sales = User::role(Roles::SALES)->first() ?? $manager;
         $merch = User::role(Roles::MERCHANDISER)->first() ?? $manager;
         Auth::setUser($manager);
@@ -99,11 +101,11 @@ class MasdarDemoSeeder extends Seeder
             'confirmation_date' => now()->subDays(20)->toDateString(), 'delivery_date' => now()->addDays(6)->toDateString(),
             'currency' => 'CNY', 'merchandiser_id' => $merch->id,
         ])->all(), $manager);
-        ['out' => $transferOut] = $payments->transfer(['from_account_id' => $usd->id, 'to_account_id' => $rmb->id, 'paid_on' => now()->subDays(18)->toDateString(), 'amount' => '1400.00', 'in_amount' => '10000.00', 'reference' => 'RMB for factory deposits'], $manager);
+        ['out' => $transferOut] = $payments->transfer(['from_account_id' => $usd->id, 'to_account_id' => $rmb->id, 'paid_on' => now()->subDays(18)->toDateString(), 'amount' => '1400.00', 'in_amount' => '10000.00', 'reference' => 'RMB for factory deposits'], $accountant);
         if (! app(PaymentQueries::class)->isEffective($transferOut->fresh())) {
             $payments->approve($transferOut->fresh(), $manager);
         }
-        $deposit = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->subDays(17)->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '5000.00', 'party_id' => $factories[0]->id, 'supplier_order_id' => $orders[0]->id, 'reference' => 'Deposit'], $manager);
+        $deposit = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->subDays(17)->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '5000.00', 'party_id' => $factories[0]->id, 'supplier_order_id' => $orders[0]->id, 'reference' => 'Deposit'], $accountant);
         $payments->approve($deposit, $manager);
 
         // The first factory's goods are in, booked, loaded and at sea; the second is still in production.
@@ -247,13 +249,13 @@ class MasdarDemoSeeder extends Seeder
         $inject = $payments->record(['kind' => 'other_in', 'paid_on' => $lastMonth->toDateString(), 'money_account_id' => $usd->id, 'amount' => '10000.00',
             'counter_account_id' => Account::where('code', '2501')->value('id'), 'reference' => 'Owners\' funds'], $manager);
         ['out' => $out] = $payments->transfer(['from_account_id' => $usd->id, 'to_account_id' => $rmb->id, 'paid_on' => $lastMonth->copy()->addDays(2)->toDateString(),
-            'amount' => '6300.00', 'in_amount' => '45000.00', 'reference' => 'RMB for salaries'], $manager);
+            'amount' => '6300.00', 'in_amount' => '45000.00', 'reference' => 'RMB for salaries'], $accountant);
         if (! app(PaymentQueries::class)->isEffective($out->fresh())) {
             $payments->approve($out->fresh(), $manager);
         }
         $net = app(PayrollQueries::class)->totals($run)['net'];
         $salaries = $payments->record(['kind' => 'salary_payment', 'paid_on' => min($today->toDateString(), $run->pay_date->toDateString()), 'money_account_id' => $rmb->id,
-            'amount' => $net, 'payroll_run_id' => $run->id, 'reference' => 'Salaries '.$lastMonth->format('Y-m')], $manager);
+            'amount' => $net, 'payroll_run_id' => $run->id, 'reference' => 'Salaries '.$lastMonth->format('Y-m')], $accountant);
         if (! app(PaymentQueries::class)->isEffective($salaries->fresh())) {
             $payments->approve($salaries->fresh(), $manager);
         }

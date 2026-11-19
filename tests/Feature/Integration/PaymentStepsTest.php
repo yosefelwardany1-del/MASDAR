@@ -46,7 +46,7 @@ class PaymentStepsTest extends TestCase
         return app(PaymentService::class)->record([
             'kind' => 'supplier_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $this->rmb->id,
             'amount' => $amount, 'party_id' => $this->order->supplier_id, 'supplier_order_id' => $this->order->id,
-        ], $this->manager);
+        ], User::factory()->create()->assignRole(Roles::ACCOUNTANT)); // a manager approves what another recorded (B16)
     }
 
     private function state(string $code): ?string

@@ -64,6 +64,7 @@ class BusinessSetting extends Model
         'service_invoice_prefix' => 'INV',
         'client_portal_enabled' => false,
         'orders_from_issued_pi' => false,
+        'payments_approved_by_another' => true,
     ];
 
     protected function casts(): array
@@ -80,6 +81,7 @@ class BusinessSetting extends Model
             'whatsapp_container_updates' => 'boolean',
             'client_portal_enabled' => 'boolean',
             'orders_from_issued_pi' => 'boolean',
+            'payments_approved_by_another' => 'boolean',
             'hr_document_warning_days' => 'integer',
             'crm_quiet_days' => 'integer',
             'quotation_valid_days' => 'integer',

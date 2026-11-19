@@ -2633,5 +2633,7 @@
     "The container is already :status.": "الحاوية بالفعل في حالة :status.",
     "This is earlier than the status before it (:date). Check the date, or record it as a correction.": "هذا أبكر من الحالة التي قبلها (:date). تحقق من التاريخ، أو سجّله كتصحيح.",
     "Nothing is loaded in this container yet. Load its goods before marking it :status.": "لم يُحمَّل شيء في هذه الحاوية بعد. حمّل بضائعها قبل وضعها في حالة :status.",
-    "Skipped": "تم تخطيها"
+    "Skipped": "تم تخطيها",
+    "You recorded this payment, so another manager approves it.": "أنت من سجّل هذه الدفعة، لذا يوافق عليها مدير آخر.",
+    "A payment is approved by someone other than the person who recorded it (switch off only with a single manager)": "يوافق على الدفعة شخص غير الذي سجّلها (أوقف هذا فقط إذا كان هناك مدير واحد)"
 }

@@ -2633,5 +2633,7 @@
     "The container is already :status.": "该集装箱已处于“:status”状态。",
     "This is earlier than the status before it (:date). Check the date, or record it as a correction.": "此时间早于上一状态（:date）。请检查日期，或将其登记为更正。",
     "Nothing is loaded in this container yet. Load its goods before marking it :status.": "此集装箱尚未装货。请先装货，再标记为“:status”。",
-    "Skipped": "已跳过"
+    "Skipped": "已跳过",
+    "You recorded this payment, so another manager approves it.": "此付款由您登记，须由另一位经理审批。",
+    "A payment is approved by someone other than the person who recorded it (switch off only with a single manager)": "付款须由登记人以外的人审批（仅在只有一位经理时关闭）"
 }
