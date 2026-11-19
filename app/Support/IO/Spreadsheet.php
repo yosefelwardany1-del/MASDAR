@@ -29,6 +29,26 @@ class Spreadsheet
     }
 
     /**
+     * B22: the file really is a spreadsheet (not a text file named .xlsx), and its header row's
+     * columns; null when it cannot be read as one.
+     *
+     * @return list<string>|null
+     */
+    public static function header(string $path): ?array
+    {
+        try {
+            if (! in_array(IOFactory::identify($path), ['Xlsx', 'Xls', 'Ods'], true)) {
+                return null;
+            }
+            $first = IOFactory::load($path)->getActiveSheet()->rangeToArray('A1:'.'ZZ1', null, true, false, false)[0] ?? [];
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return array_values(array_filter(array_map(fn ($h) => trim((string) $h), $first), fn ($h) => $h !== ''));
+    }
+
+    /**
      * Parse the first worksheet into header-keyed rows. Blank rows and '#'-prefixed
      * (template hint) rows are skipped — identical semantics to Csv::parseAssoc.
      *

@@ -19,6 +19,18 @@ class Csv
         return $out;
     }
 
+    /** The header row's columns, trimmed; [] when there is none (B22). @return list<string> */
+    public static function header(string $content): array
+    {
+        $fh = fopen('php://temp', 'r+');
+        fwrite($fh, $content);
+        rewind($fh);
+        $header = fgetcsv($fh);
+        fclose($fh);
+
+        return is_array($header) ? array_values(array_filter(array_map(fn ($h) => trim((string) $h), $header), fn ($h) => $h !== '')) : [];
+    }
+
     /**
      * Parse CSV into header-keyed associative rows. Blank lines and rows whose first
      * cell starts with '#' (template hint/comment rows) are skipped.

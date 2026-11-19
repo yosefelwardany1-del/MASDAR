@@ -136,6 +136,8 @@ class ImportExportController extends Controller
             return $this->respondSynchronously($request, $schema, $file, $result, $preview);
         }
 
+        // B22: an unreadable file, or one without the template's required columns, goes no further.
+        $unknown = $this->runner->checkHeader($schema, $file->getRealPath(), $extension);
         $rows = $this->runner->parse($file->getRealPath(), $extension);
 
         if ($this->runner->shouldQueue($schema, count($rows))) {
@@ -143,6 +145,9 @@ class ImportExportController extends Controller
         }
 
         $result = $this->runner->runRows($schema, $rows, ! $preview);
+        if ($unknown !== []) {
+            array_unshift($result->notices, ['row' => 1, 'messages' => [__('These columns are not in the template and were ignored: :columns.', ['columns' => implode(', ', $unknown)])]]);
+        }
 
         return $this->respondSynchronously($request, $schema, $file, $result, $preview);
     }

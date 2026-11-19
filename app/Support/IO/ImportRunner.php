@@ -2,6 +2,8 @@
 
 namespace App\Support\IO;
 
+use Illuminate\Validation\ValidationException;
+
 /**
  * Turns a FILE into an ImportResult, for whoever is driving — a request or a queued
  * worker.
@@ -28,6 +30,41 @@ class ImportRunner
         }
 
         return Csv::parseAssoc(file_get_contents($path));
+    }
+
+    /**
+     * B22: the file's header against the template, before anything is imported. A file that cannot
+     * be read, or lacks a required column, is refused in words; the columns the template does not
+     * know are returned, to be reported (they are ignored).
+     *
+     * @return list<string> the unknown columns
+     */
+    public function checkHeader(ResourceSchema $schema, string $path, string $extension): array
+    {
+        $unreadable = ValidationException::withMessages(['file' => __('This file could not be read. Use the template.')]);
+        if (in_array(strtolower($extension), ['xlsx', 'xls'], true)) {
+            $header = Spreadsheet::header($path) ?? throw $unreadable;
+        } else {
+            $content = (string) @file_get_contents($path);
+            if ($content === '' || ! mb_check_encoding($content, 'UTF-8') && ! mb_check_encoding($content, 'Windows-1252')) {
+                throw $unreadable;
+            }
+            $header = Csv::header($content);
+        }
+        if ($header === []) {
+            throw $unreadable;
+        }
+
+        $known = array_map(fn ($f) => $f->key, $schema->fields());
+        $missing = array_values(array_diff(array_map(fn ($f) => $f->key, array_filter($schema->fields(), fn ($f) => $f->required)), $header));
+        if (array_intersect($header, $known) === []) {
+            throw $unreadable;
+        }
+        if ($missing !== []) {
+            throw ValidationException::withMessages(['file' => __('The file has no column for :columns. Use the template.', ['columns' => implode(', ', $missing)])]);
+        }
+
+        return array_values(array_diff($header, $known));
     }
 
     /**

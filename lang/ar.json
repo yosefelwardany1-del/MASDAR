@@ -2651,5 +2651,9 @@
     "Choose the accumulated-depreciation account.": "اختر حساب مجمع الإهلاك.",
     "This statement is already imported (:file, :from – :to). Nothing was added.": "هذا الكشف مستورد بالفعل (:file، :from – :to). لم يُضَف شيء.",
     ":count of these lines are already on another statement of this account (the dates overlap). Check the file, or tick \"Import anyway\".": ":count من هذه الأسطر موجودة بالفعل في كشف آخر لهذا الحساب (التواريخ متداخلة). تحقق من الملف، أو حدّد \"استيراد على أي حال\".",
-    "Import anyway (some lines are already on another statement)": "استيراد على أي حال (بعض الأسطر موجودة في كشف آخر)"
+    "Import anyway (some lines are already on another statement)": "استيراد على أي حال (بعض الأسطر موجودة في كشف آخر)",
+    "This file could not be read. Use the template.": "تعذّرت قراءة هذا الملف. استخدم القالب.",
+    "The file has no column for :columns. Use the template.": "لا يحتوي الملف على عمود لـ :columns. استخدم القالب.",
+    "These columns are not in the template and were ignored: :columns.": "هذه الأعمدة ليست في القالب وتم تجاهلها: :columns.",
+    "This row fills none of the template's columns.": "هذا السطر لا يملأ أياً من أعمدة القالب."
 }

@@ -5,6 +5,10 @@
 @section('content')
 <x-page-header :title="__('Import / Export')" :subtitle="__('Download a template, export existing data, or bulk-import CSV / XLSX.')" />
 
+@if($errors->any())
+    <div class="alert alert-danger" role="alert"><ul class="mb-0 ps-3">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>
+@endif
+
 @if(session('import_result'))
 @php $r = session('import_result'); @endphp
 <div class="alert {{ $r['failed'] ? 'alert-warning' : 'alert-success' }} app-io-result" role="status">
@@ -134,6 +138,11 @@ document.querySelectorAll('.io-preview-btn').forEach(function (btn) {
             .then(function (d) {
                 // A large file is previewed by a worker: say so rather than a fake result.
                 if (d.queued) { out.textContent = d.message; return; }
+                // Refused before any row (an unreadable file, a header not the template's): say why.
+                if (d.errors && !Array.isArray(d.errors)) {
+                    out.innerHTML = '<span class="text-danger">' + ioEsc([].concat.apply([], Object.values(d.errors)).join(' ')) + '</span>';
+                    return;
+                }
                 var html = '<div class="text-success">' + ioFill(ioText.summary, { created: d.created, updated: d.updated, failed: d.failed, total: d.total_rows }) + '</div>';
                 if (d.errors && d.errors.length) {
                     html += '<ul class="text-danger mb-0">';

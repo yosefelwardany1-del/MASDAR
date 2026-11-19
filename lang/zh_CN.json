@@ -2651,5 +2651,9 @@
     "Choose the accumulated-depreciation account.": "请选择累计折旧科目。",
     "This statement is already imported (:file, :from – :to). Nothing was added.": "此对账单已导入（:file，:from – :to）。未添加任何内容。",
     ":count of these lines are already on another statement of this account (the dates overlap). Check the file, or tick \"Import anyway\".": "其中 :count 行已在该账户的另一份对账单中（日期重叠）。请检查文件，或勾选“仍然导入”。",
-    "Import anyway (some lines are already on another statement)": "仍然导入（部分行已在另一份对账单中）"
+    "Import anyway (some lines are already on another statement)": "仍然导入（部分行已在另一份对账单中）",
+    "This file could not be read. Use the template.": "无法读取此文件。请使用模板。",
+    "The file has no column for :columns. Use the template.": "文件缺少 :columns 列。请使用模板。",
+    "These columns are not in the template and were ignored: :columns.": "以下列不在模板中，已忽略：:columns。",
+    "This row fills none of the template's columns.": "此行未填写模板中的任何列。"
 }
