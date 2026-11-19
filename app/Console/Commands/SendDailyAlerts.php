@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Security\Roles;
 use App\Services\Dashboard\AttentionQueries;
 use App\Services\Notifications\NotificationService;
+use App\Support\Text;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
 
@@ -27,21 +28,19 @@ class SendDailyAlerts extends Command
 
         $documents = $attention->expiringDocuments(1000);
         $pendingLeave = $attention->pendingLeave(1000);
-        $default = app()->getLocale();
 
         foreach (User::where('status', 'active')->get() as $user) {
-            // Each summary is stored as text: write it in its reader's language.
-            app()->setLocale($user->locale ?: $default);
+            // B31: each line is kept as a text key, shown in the reader's language when read.
             $lines = [];
 
             if ($user->can('supplier_orders.view')) {
                 $mine = $user->hasRole(Roles::MERCHANDISER) && ! $managers->contains($user) ? $user->id : null;
                 $steps = $mine || $managers->contains($user) ? $attention->steps($mine, 1000) : collect();
                 if ($late = $steps->where('late', true)->count()) {
-                    $lines[] = trans_choice('{1} One order step is late.|[2,*] :count order steps are late.', $late, ['count' => $late]);
+                    $lines[] = Text::choice('{1} One order step is late.|[2,*] :count order steps are late.', $late, ['count' => $late]);
                 }
                 if ($due = $steps->where('late', false)->count()) {
-                    $lines[] = trans_choice('{1} One order step is due soon.|[2,*] :count order steps are due soon.', $due, ['count' => $due]);
+                    $lines[] = Text::choice('{1} One order step is due soon.|[2,*] :count order steps are due soon.', $due, ['count' => $due]);
                 }
             }
 
@@ -49,10 +48,10 @@ class SendDailyAlerts extends Command
                 $own = $user->hasRole(Roles::SALES) && ! $user->hasRole([Roles::LOGISTICS, Roles::MANAGER]) ? $user->id : null;
                 $containers = $attention->containers($own, 1000);
                 if ($late = $containers->where('late', true)->count()) {
-                    $lines[] = trans_choice('{1} One container is past its ETA.|[2,*] :count containers are past their ETA.', $late, ['count' => $late]);
+                    $lines[] = Text::choice('{1} One container is past its ETA.|[2,*] :count containers are past their ETA.', $late, ['count' => $late]);
                 }
                 if ($soon = $containers->where('late', false)->count()) {
-                    $lines[] = trans_choice('{1} One container arrives soon.|[2,*] :count containers arrive soon.', $soon, ['count' => $soon]);
+                    $lines[] = Text::choice('{1} One container arrives soon.|[2,*] :count containers arrive soon.', $soon, ['count' => $soon]);
                 }
             }
 
@@ -62,36 +61,35 @@ class SendDailyAlerts extends Command
             if ($user->can('proforma_invoices.view') && ($everyone || $user->hasRole(Roles::SALES))) {
                 $unpaid = $attention->unpaidBooked($everyone ? null : $user->id, 1000)->count();
                 if ($unpaid) {
-                    $lines[] = trans_choice('{1} One PI is booked to ship but not paid in full.|[2,*] :count PIs are booked to ship but not paid in full.', $unpaid, ['count' => $unpaid]);
+                    $lines[] = Text::choice('{1} One PI is booked to ship but not paid in full.|[2,*] :count PIs are booked to ship but not paid in full.', $unpaid, ['count' => $unpaid]);
                 }
             }
 
             // HR (spec §5.7): documents to renew for those who keep the employee file; leave to decide.
             if ($user->can('employees.edit') && $documents->isNotEmpty()) {
                 if ($expired = $documents->where('days_left', '<', 0)->count()) {
-                    $lines[] = trans_choice('{1} One employee document has expired.|[2,*] :count employee documents have expired.', $expired, ['count' => $expired]);
+                    $lines[] = Text::choice('{1} One employee document has expired.|[2,*] :count employee documents have expired.', $expired, ['count' => $expired]);
                 }
                 if ($soon = $documents->where('days_left', '>=', 0)->count()) {
-                    $lines[] = trans_choice('{1} One employee document expires soon.|[2,*] :count employee documents expire soon.', $soon, ['count' => $soon]);
+                    $lines[] = Text::choice('{1} One employee document expires soon.|[2,*] :count employee documents expire soon.', $soon, ['count' => $soon]);
                 }
             }
             if ($user->can('leave.approve') && ($leave = $pendingLeave->reject(fn ($r) => $r->employee?->user_id === $user->id)->count())) {
-                $lines[] = trans_choice('{1} One leave request waits for a decision.|[2,*] :count leave requests wait for a decision.', $leave, ['count' => $leave]);
+                $lines[] = Text::choice('{1} One leave request waits for a decision.|[2,*] :count leave requests wait for a decision.', $leave, ['count' => $leave]);
             }
 
             if ($user->can('crm.view') && ($tasks = $attention->tasks($user->id, 1000)->count())) {
-                $lines[] = trans_choice('{1} One task is due.|[2,*] :count tasks are due.', $tasks, ['count' => $tasks]);
+                $lines[] = Text::choice('{1} One task is due.|[2,*] :count tasks are due.', $tasks, ['count' => $tasks]);
             }
 
             if ($lines !== []) {
-                $notifications->send($user, __('Today at MASDAR'), implode(' ', $lines), [
+                $notifications->send($user, Text::of('Today at MASDAR'), Text::join($lines), [
                     'category' => 'masdar.daily', 'icon' => 'calendar-check', 'url' => Route::has('dashboard') ? route('dashboard') : null,
                 ]);
                 $sent++;
             }
         }
 
-        app()->setLocale($default);
         $this->info("Daily alerts sent to {$sent} users.");
 
         return self::SUCCESS;

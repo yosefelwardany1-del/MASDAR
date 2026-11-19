@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAttachments;
+use App\Support\Text;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -64,14 +65,20 @@ class ExpenseClaim extends Model
 
     public static function statusLabel(string $status): string
     {
+        return self::statusText($status)->render();
+    }
+
+    /** The status as a Text, for words stored now and read later (B31). */
+    public static function statusText(string $status): Text
+    {
         return match ($status) {
-            'draft' => __('Draft'),
-            'submitted' => __('Waiting for approval'),
-            'approved' => __('Approved'),
-            'rejected' => __('Rejected'),
-            'returned' => __('Returned for changes'),
-            'paid' => __('Paid back'),
-            default => $status,
+            'draft' => Text::of('Draft'),
+            'submitted' => Text::of('Waiting for approval'),
+            'approved' => Text::of('Approved'),
+            'rejected' => Text::of('Rejected'),
+            'returned' => Text::of('Returned for changes'),
+            'paid' => Text::of('Paid back'),
+            default => Text::plain($status),
         };
     }
 

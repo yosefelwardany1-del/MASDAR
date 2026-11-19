@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Notifications\NotificationService;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
+use App\Support\Text;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
@@ -475,8 +476,8 @@ class SupplierOrderService
 
         app(NotificationService::class)->send(
             $recipients,
-            __('Delivery date moved: :number', ['number' => $order->number]),
-            __(':name moved the delivery date of :number from :old to :new. Reason: :reason', [
+            Text::of('Delivery date moved: :number', ['number' => $order->number]),
+            Text::of(':name moved the delivery date of :number from :old to :new. Reason: :reason', [
                 'name' => $by->name,
                 'number' => $order->number,
                 'old' => $change->old_date?->toDateString() ?? '—',

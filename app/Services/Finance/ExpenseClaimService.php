@@ -13,6 +13,7 @@ use App\Services\Notifications\NotificationService;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
 use App\Support\Database\Refusal;
+use App\Support\Text;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -83,11 +84,11 @@ class ExpenseClaimService
             throw ValidationException::withMessages(['claim' => __('Add the receipts before submitting the claim.')]);
         }
         $decision = $this->decide($claim, 'submitted', $by, null);
-        foreach (User::permission('expense_claims.approve')->where('status', 'active')->where('id', '<>', $claim->user_id)->get() as $approver) {
-            $this->inLocale($approver, fn () => app(NotificationService::class)->send($approver, __('Expense claim to decide'),
-                __(':name claims :amount :currency (:number).', ['name' => $claim->user?->name, 'amount' => $claim->total(), 'currency' => $claim->currency, 'number' => $claim->number]),
-                ['icon' => 'receipt-cutoff', 'category' => 'expense_claims', 'url' => route('expense-claims.show', $claim)]));
-        }
+        // B31: stored as text keys, shown in each reader's language.
+        app(NotificationService::class)->send(User::permission('expense_claims.approve')->where('status', 'active')->where('id', '<>', $claim->user_id)->get(),
+            Text::of('Expense claim to decide'),
+            Text::of(':name claims :amount :currency (:number).', ['name' => $claim->user?->name, 'amount' => $claim->total(), 'currency' => $claim->currency, 'number' => $claim->number]),
+            ['icon' => 'receipt-cutoff', 'category' => 'expense_claims', 'url' => route('expense-claims.show', $claim)]);
 
         return $decision;
     }
@@ -111,24 +112,14 @@ class ExpenseClaimService
         $row = $this->decide($claim, $decision, $by, $note);
         $claimant = $claim->user;
         if ($claimant) {
-            $this->inLocale($claimant, fn () => app(NotificationService::class)->send($claimant,
-                __('Your expense claim :number: :status', ['number' => $claim->number, 'status' => mb_strtolower(ExpenseClaim::statusLabel($decision))]),
-                $row->note ?? __('Paid back by the accountant from here.'),
-                ['icon' => 'receipt-cutoff', 'category' => 'expense_claims', 'type' => $decision === 'approved' ? 'success' : 'warning', 'url' => route('my-expenses.show', $claim)]));
+            app(NotificationService::class)->send($claimant,
+                Text::of('Your expense claim :number: :status', ['number' => $claim->number, 'status' => ExpenseClaim::statusText($decision)->lower()]),
+                // The approver's note is their own words, shown as written.
+                $row->note !== null ? Text::plain($row->note) : Text::of('Paid back by the accountant from here.'),
+                ['icon' => 'receipt-cutoff', 'category' => 'expense_claims', 'type' => $decision === 'approved' ? 'success' : 'warning', 'url' => route('my-expenses.show', $claim)]);
         }
 
         return $row;
-    }
-
-    private function inLocale(User $user, callable $send): void
-    {
-        $previous = app()->getLocale();
-        app()->setLocale($user->locale ?: config('app.locale'));
-        try {
-            $send();
-        } finally {
-            app()->setLocale($previous);
-        }
     }
 
     private function decide(ExpenseClaim $claim, string $decision, User $by, ?string $note): ExpenseClaimDecision

@@ -16,6 +16,7 @@ class InAppNotificationChannel implements NotificationChannel
             'user_id' => $payload['user_id'],
             'title' => $payload['title'],
             'message' => $payload['message'],
+            'texts' => $payload['texts'] ?? null,
             'type' => $payload['type'] ?? 'info',
             'category' => $payload['category'] ?? null,
             'icon' => $payload['icon'] ?? 'bell',

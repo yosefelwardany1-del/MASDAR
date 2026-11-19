@@ -5,6 +5,7 @@ namespace App\Services\Notifications;
 use App\Models\ErpNotification;
 use App\Models\User;
 use App\Services\Notifications\Channels\NotificationChannel;
+use App\Support\Text;
 use Illuminate\Support\Collection;
 
 /**
@@ -33,20 +34,31 @@ class NotificationService
     }
 
     /**
-     * Send a notification to one or many recipients.
+     * Send a notification to one or many recipients. B31: pass the title and message as Text, so
+     * each reader sees them in their own language whenever they look; a plain string is stored
+     * as written (for words that are not the system's, such as a person's note).
      *
      * @param  User|int|iterable<User|int|null>|null  $recipients
      * @param  array{type?:string,category?:string,icon?:string,url?:string}  $opts
      * @return int number of recipients notified
      */
-    public function send($recipients, string $title, string $message, array $opts = []): int
+    public function send($recipients, string|Text $title, string|Text $message, array $opts = []): int
     {
+        $texts = array_filter([
+            'title' => $title instanceof Text ? $title->jsonSerialize() : null,
+            'message' => $message instanceof Text ? $message->jsonSerialize() : null,
+        ]);
+        // The English copy, for a reader of the raw row (and rows read before B31).
+        $title = $title instanceof Text ? $title->render('en') : $title;
+        $message = $message instanceof Text ? $message->render('en') : $message;
+
         $sent = 0;
         foreach ($this->normalizeRecipients($recipients) as $userId) {
             $payload = [
                 'user_id' => $userId,
                 'title' => $title,
                 'message' => $message,
+                'texts' => $texts ?: null,
                 'type' => $opts['type'] ?? 'info',
                 'category' => $opts['category'] ?? null,
                 'icon' => $opts['icon'] ?? 'bell',

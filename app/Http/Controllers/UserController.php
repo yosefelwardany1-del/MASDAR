@@ -9,6 +9,7 @@ use App\Services\Auth\SsoSignIn;
 use App\Services\Notifications\NotificationService;
 use App\Services\Notifications\NotificationType;
 use App\Support\Audit\AuditTrail;
+use App\Support\Text;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -151,8 +152,8 @@ class UserController extends Controller
         if ($approving) {
             app(NotificationService::class)->send(
                 $user,
-                __('Your account is ready'),
-                __(':name approved your account. You can sign in now.', ['name' => $request->user()->name]),
+                Text::of('Your account is ready'),
+                Text::of(':name approved your account. You can sign in now.', ['name' => $request->user()->name]),
                 ['type' => 'success', 'category' => NotificationType::USER_APPROVED, 'icon' => 'person-check'],
             );
 

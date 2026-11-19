@@ -744,10 +744,6 @@
     "Import & export": "导入导出",
     "Import / Export": "导入 / 导出",
     "Import complete — :created created, :updated updated, :failed failed.": "导入完成：新建 :created，更新 :updated，失败 :failed。",
-    "import.completed": "已完成",
-    "import.failed": "失败",
-    "import.queued": "已排队",
-    "import.running": "进行中",
     "In :book": "以 :book 计",
     "In the account's currency.": "以账户币种计。",
     "In the ledger": "总账设置",
@@ -2736,5 +2732,11 @@
     "Tick at least one type of account for :kind.": "请为 :kind 至少勾选一种科目类型。",
     "Every line is on account :account. An entry moves an amount from one account to another: put the other side on the account it comes from or goes to.": "所有分录行都记在科目 :account 上。一笔分录是把金额从一个科目转到另一个科目：请把另一方记在款项来源或去向的科目上。",
     "Every line of the entry is on the same account. An entry moves an amount from one account to another.": "这笔分录的所有行都记在同一个科目上。一笔分录是把金额从一个科目转到另一个科目。",
-    "A posting rule debits one account and credits another: choose two different accounts.": "过账规则借记一个科目、贷记另一个科目：请选择两个不同的科目。"
+    "A posting rule debits one account and credits another: choose two different accounts.": "过账规则借记一个科目、贷记另一个科目：请选择两个不同的科目。",
+    "Queued": "已排队",
+    "Running": "进行中",
+    "Pages": "分页",
+    "Previous page": "上一页",
+    "Next page": "下一页",
+    "Showing :first to :last of :total results": "显示第 :first 至 :last 条，共 :total 条"
 }

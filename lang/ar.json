@@ -744,10 +744,6 @@
     "Import & export": "الاستيراد والتصدير",
     "Import / Export": "الاستيراد والتصدير",
     "Import complete — :created created, :updated updated, :failed failed.": "اكتمل الاستيراد — أُنشئ :created، وحُدّث :updated، وفشل :failed.",
-    "import.completed": "مكتمل",
-    "import.failed": "فشل",
-    "import.queued": "في الانتظار",
-    "import.running": "قيد التنفيذ",
     "In :book": "بعملة :book",
     "In the account's currency.": "بعملة الحساب.",
     "In the ledger": "في دفتر الأستاذ",
@@ -2736,5 +2732,11 @@
     "Tick at least one type of account for :kind.": "اختر نوعاً واحداً على الأقل من الحسابات لـ :kind.",
     "Every line is on account :account. An entry moves an amount from one account to another: put the other side on the account it comes from or goes to.": "كل السطور على الحساب :account. القيد ينقل مبلغاً من حساب إلى آخر: ضع الطرف الآخر على الحساب الذي يأتي منه المبلغ أو يذهب إليه.",
     "Every line of the entry is on the same account. An entry moves an amount from one account to another.": "كل سطور القيد على الحساب نفسه. القيد ينقل مبلغاً من حساب إلى آخر.",
-    "A posting rule debits one account and credits another: choose two different accounts.": "قاعدة الترحيل تجعل حساباً مديناً وآخر دائناً: اختر حسابين مختلفين."
+    "A posting rule debits one account and credits another: choose two different accounts.": "قاعدة الترحيل تجعل حساباً مديناً وآخر دائناً: اختر حسابين مختلفين.",
+    "Queued": "في الانتظار",
+    "Running": "قيد التنفيذ",
+    "Pages": "الصفحات",
+    "Previous page": "الصفحة السابقة",
+    "Next page": "الصفحة التالية",
+    "Showing :first to :last of :total results": "عرض :first إلى :last من :total نتيجة"
 }

@@ -89,7 +89,7 @@
                     <td class="text-end"><span class="app-num {{ $run->failed_count ? 'app-fig--neg fw-semibold' : '' }}">{{ $run->failed_count }}</span></td>
                     <td>
                         @php [$tone, $icon] = $run->status === 'completed' ? ['done', 'check-circle'] : ($run->inProgress() ? ['info', 'arrow-repeat'] : ['late', 'x-circle']); @endphp
-                        <x-status :tone="$tone" :icon="$icon">{{ __('import.'.$run->status) }}</x-status>
+                        <x-status :tone="$tone" :icon="$icon">{{ $run->statusLabel() }}</x-status>
                     </td>
                 </tr>
                 @empty

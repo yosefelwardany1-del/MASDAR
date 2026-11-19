@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserSsoIdentity;
 use App\Services\Notifications\NotificationService;
 use App\Services\Notifications\NotificationType;
+use App\Support\Text;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -242,8 +243,8 @@ class SsoSignIn
         try {
             $this->notifications->send(
                 $this->approvers(),
-                __('New sign-in request'),
-                __(':name (:email) signed in with Google and is waiting for a role.', ['name' => $user->name, 'email' => $user->email]),
+                Text::of('New sign-in request'),
+                Text::of(':name (:email) signed in with Google and is waiting for a role.', ['name' => $user->name, 'email' => $user->email]),
                 [
                     'type' => 'info',
                     'category' => NotificationType::USER_PENDING,
