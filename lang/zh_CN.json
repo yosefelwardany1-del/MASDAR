@@ -2579,5 +2579,9 @@
     "Purchase orders are made from a sales order (PI): choose the PI, then one order is made per factory.": "采购订单由销售订单（形式发票）生成：选择形式发票后，每家工厂生成一张订单。",
     "Make purchase orders": "生成采购订单",
     "No sales order is waiting for purchase orders.": "没有等待生成采购订单的销售订单。",
-    "Purchase orders may be made from an issued PI, before the client's deposit (otherwise from a confirmed PI only)": "允许在客户付定金前由已开具的形式发票生成采购订单（否则仅限已确认的形式发票）"
+    "Purchase orders may be made from an issued PI, before the client's deposit (otherwise from a confirmed PI only)": "允许在客户付定金前由已开具的形式发票生成采购订单（否则仅限已确认的形式发票）",
+    "A confirmed PI is the sales order: a manager cancels it.": "已确认的形式发票即销售订单：须由经理取消。",
+    "This PI's invoice :entry is posted. Reverse it on the Accounting screen first.": "此形式发票的发票 :entry 已过账。请先在“会计”页面冲销它。",
+    "Money has been received on this PI (:amount). Refund it to the client, or reverse the receipt and record it again on the client without a PI, first.": "此形式发票已收到款项（:amount）。请先退款给客户，或冲销该收款并重新登记为客户名下的款项（不关联形式发票）。",
+    "This PI has purchase orders (:orders). Cancel them first.": "此形式发票已有采购订单（:orders）。请先取消这些订单。"
 }

@@ -248,7 +248,12 @@ class ProformaInvoiceService
         return $this->move($pi, ['issued', 'accepted'], 'confirmed', ['confirmed_at' => now()], __('Only an issued or accepted PI can be confirmed.'));
     }
 
-    /** Cancel a PI (a draft, or an issued, accepted or confirmed one) with the reason. */
+    /**
+     * Cancel a PI (a draft, or an issued, accepted or confirmed one) with the reason (B02). A PI that
+     * money or the books still rely on is not cancelled: its client receipts are refunded or moved
+     * to the client's balance, its posted invoice reversed and its purchase orders cancelled first.
+     * A confirmed PI — the sales order — is cancelled by a manager (the approve level).
+     */
     public function cancel(ProformaInvoice $pi, User $by, string $reason): ProformaInvoice
     {
         $reason = trim($reason);
@@ -257,7 +262,50 @@ class ProformaInvoiceService
         }
 
         return $this->move($pi, ['draft', ...self::REVISABLE], 'cancelled', ['cancelled_at' => now(), 'cancel_reason' => $reason],
-            __('This PI is already cancelled or superseded.'));
+            __('This PI is already cancelled or superseded.'), function (ProformaInvoice $pi) use ($by) {
+                if ($pi->status === 'confirmed' && ! $by->can('proforma_invoices.approve')) {
+                    throw ValidationException::withMessages(['pi' => __('A confirmed PI is the sales order: a manager cancels it.')]);
+                }
+                // A draft — a first draft, or a revision being prepared — is dropped freely: money and
+                // invoices belong to the PI number, which lives on in its current revision.
+                if ($pi->status !== 'draft' && ($why = $this->whyNotCancellable($pi))) {
+                    throw ValidationException::withMessages(['pi' => $why]);
+                }
+            });
+    }
+
+    /** Null when $pi may be cancelled; otherwise what has to be done first (B02; the trigger holds the same rule). */
+    public function whyNotCancellable(ProformaInvoice $pi): ?string
+    {
+        $revisions = ProformaInvoice::query()->where('pi_number', $pi->pi_number)->select('id');
+
+        $invoice = DB::table('journal_entries as e')
+            ->where('e.source_type', 'proforma_invoice')->where('e.event', 'client_invoice')->whereIn('e.source_id', $revisions)
+            ->whereNull('e.reverses_entry_id')
+            ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('journal_entries as r')->whereColumn('r.reverses_entry_id', 'e.id'))
+            ->value('e.number');
+        if ($invoice) {
+            return __('This PI\'s invoice :entry is posted. Reverse it on the Accounting screen first.', ['entry' => $invoice]);
+        }
+
+        $received = DB::table('payments')->whereIn('proforma_invoice_id', $revisions)->where('kind', 'client_receipt')
+            ->groupBy('currency')->havingRaw('SUM(signed_amount) <> 0')
+            ->selectRaw('currency, SUM(signed_amount)::numeric(18,2) AS amount')->get();
+        if ($received->isNotEmpty()) {
+            return __('Money has been received on this PI (:amount). Refund it to the client, or reverse the receipt and record it again on the client without a PI, first.', [
+                'amount' => $received->map(fn ($r) => $r->currency.' '.number_format((float) $r->amount, 2))->implode(', '),
+            ]);
+        }
+
+        $orders = DB::table('supplier_orders as so')->where('so.status', '<>', 'cancelled')
+            ->whereExists(fn ($q) => $q->selectRaw('1')->from('supplier_order_lines as sol')->join('pi_lines as pl', 'pl.id', '=', 'sol.pi_line_id')
+                ->whereColumn('sol.supplier_order_id', 'so.id')->whereNull('sol.released_at')->whereIn('pl.proforma_invoice_id', $revisions))
+            ->orderBy('so.number')->pluck('so.number');
+        if ($orders->isNotEmpty()) {
+            return __('This PI has purchase orders (:orders). Cancel them first.', ['orders' => $orders->implode(', ')]);
+        }
+
+        return null;
     }
 
     /**
@@ -299,12 +347,15 @@ class ProformaInvoiceService
     }
 
     /** One status move, audited. */
-    private function move(ProformaInvoice $pi, array $from, string $to, array $stamps, string $refusal): ProformaInvoice
+    private function move(ProformaInvoice $pi, array $from, string $to, array $stamps, string $refusal, ?callable $guard = null): ProformaInvoice
     {
-        return $this->gate(fn () => DB::transaction(function () use ($pi, $from, $to, $stamps, $refusal) {
+        return $this->gate(fn () => DB::transaction(function () use ($pi, $from, $to, $stamps, $refusal, $guard) {
             $pi = $this->lock($pi);
             if (! in_array($pi->status, $from, true)) {
                 throw ValidationException::withMessages(['pi' => $refusal]);
+            }
+            if ($guard) {
+                $guard($pi);
             }
             $old = ['status' => $pi->status];
             $pi->update(['status' => $to] + $stamps);

@@ -2579,5 +2579,9 @@
     "Purchase orders are made from a sales order (PI): choose the PI, then one order is made per factory.": "تُنشأ أوامر الشراء من أمر بيع (فاتورة مبدئية): اختر الفاتورة، ثم يُنشأ أمر لكل مصنع.",
     "Make purchase orders": "إنشاء أوامر الشراء",
     "No sales order is waiting for purchase orders.": "لا يوجد أمر بيع ينتظر أوامر الشراء.",
-    "Purchase orders may be made from an issued PI, before the client's deposit (otherwise from a confirmed PI only)": "يجوز إنشاء أوامر الشراء من فاتورة مبدئية صادرة قبل عربون العميل (وإلا فمن فاتورة مؤكدة فقط)"
+    "Purchase orders may be made from an issued PI, before the client's deposit (otherwise from a confirmed PI only)": "يجوز إنشاء أوامر الشراء من فاتورة مبدئية صادرة قبل عربون العميل (وإلا فمن فاتورة مؤكدة فقط)",
+    "A confirmed PI is the sales order: a manager cancels it.": "الفاتورة المبدئية المؤكدة هي أمر البيع: يلغيها المدير.",
+    "This PI's invoice :entry is posted. Reverse it on the Accounting screen first.": "فاتورة هذه الفاتورة المبدئية :entry مُرحَّلة. اعكسها من شاشة المحاسبة أولاً.",
+    "Money has been received on this PI (:amount). Refund it to the client, or reverse the receipt and record it again on the client without a PI, first.": "استُلمت أموال على هذه الفاتورة المبدئية (:amount). ردّها إلى العميل، أو اعكس الإيصال وسجّله من جديد على العميل دون فاتورة مبدئية، أولاً.",
+    "This PI has purchase orders (:orders). Cancel them first.": "لهذه الفاتورة المبدئية أوامر شراء (:orders). ألغِها أولاً."
 }
