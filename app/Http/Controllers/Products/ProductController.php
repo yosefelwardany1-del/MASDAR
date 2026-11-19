@@ -175,7 +175,8 @@ class ProductController extends Controller
             'kg_per_carton' => $amount,
             'sale_price' => $amount,
             'sale_currency' => ['nullable', 'string', 'size:3', $lookup('currency'), 'required_with:sale_price'],
-            'hs_code' => ['nullable', 'string', 'max:30'],
+            // B28: an HS code is 4 to 10 digits; dots may group them (6912.00).
+            'hs_code' => ['nullable', 'string', 'max:30', 'regex:/^(?=(?:\D*\d){4,10}\D*$)\d+(\.\d+)*$/'],
             'photo' => array_map(fn ($rule) => $rule === 'required' ? 'nullable' : $rule, ImageStore::rules()),
             'active' => ['boolean'],
         ];
@@ -187,7 +188,7 @@ class ProductController extends Controller
             ];
         }
 
-        $data = $request->validate($rules);
+        $data = $request->validate($rules, ['hs_code.regex' => __('An HS code is 4 to 10 digits; dots may group them, e.g. 6912.00.')]);
         unset($data['photo']);
         $data['active'] = $request->boolean('active');
         foreach ($data as $key => $value) {

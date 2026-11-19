@@ -2719,5 +2719,13 @@
     "The date needed by can't be before the date it was requested.": "لا يجوز أن يسبق تاريخ الحاجة تاريخ الطلب.",
     "This sample is :status and closed. Reopen it first.": "هذه العيّنة :status ومغلقة. أعد فتحها أولاً.",
     "Cartons are whole: enter :whole or :next, not :value.": "الكراتين أعداد صحيحة: أدخل :whole أو :next، لا :value.",
-    "PI and quotation lines may have part cartons (otherwise whole cartons only)": "يجوز أن تحتوي أسطر الفاتورة المبدئية وعرض السعر على أجزاء كراتين (وإلا فكراتين كاملة فقط)"
+    "PI and quotation lines may have part cartons (otherwise whole cartons only)": "يجوز أن تحتوي أسطر الفاتورة المبدئية وعرض السعر على أجزاء كراتين (وإلا فكراتين كاملة فقط)",
+    ":month has not begun: prepare its payroll once it has.": "لم يبدأ :month بعد: جهّز رواتبه عندما يبدأ.",
+    ":number is not a container number. Enter 4 letters and 7 digits as on the container, e.g. MSKU7712342.": ":number ليس رقم حاوية. أدخل 4 أحرف و7 أرقام كما على الحاوية، مثل MSKU7712342.",
+    "A receipt cannot be dated after today.": "لا يجوز أن يكون تاريخ الإيصال بعد اليوم.",
+    "A salary from :date is already recorded. Salaries are kept as a history: give the new one the date it starts.": "يوجد راتب مسجّل بالفعل بدءاً من :date. تُحفظ الرواتب كسجل: أعطِ الراتب الجديد تاريخ بدايته.",
+    "An HS code is 4 to 10 digits; dots may group them, e.g. 6912.00.": "رمز النظام المنسق من 4 إلى 10 أرقام، ويمكن فصلها بنقاط، مثل 6912.00.",
+    "Only {container}, {bl} and {booking} can be filled in; {:name} cannot.": "لا يُملأ إلا {container} و{bl} و{booking}؛ ولا يمكن ملء {:name}.",
+    "Put {container}, {bl} or {booking} where the number goes in the address.": "ضع {container} أو {bl} أو {booking} في موضع الرقم من العنوان.",
+    "The birth date cannot be in the future.": "لا يجوز أن يكون تاريخ الميلاد في المستقبل."
 }

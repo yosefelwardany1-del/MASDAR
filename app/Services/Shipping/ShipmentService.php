@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Numbering\NumberingService;
 use App\Services\SupplierOrders\OrderStepService;
 use App\Support\Audit\AuditTrail;
+use App\Support\ContainerNumber;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -158,6 +159,10 @@ class ShipmentService
                 $value = strtoupper(preg_replace('/\s+/', '', $value));
             }
             $out[$field] = $value === '' ? null : $value;
+        }
+        // B28: a container number given is a real one (ISO 6346: 4 letters, 7 digits, the last a check digit).
+        if (($out['container_no'] ?? null) !== null && ! ContainerNumber::isValid($out['container_no'])) {
+            throw ValidationException::withMessages(['container_no' => __(':number is not a container number. Enter 4 letters and 7 digits as on the container, e.g. MSKU7712342.', ['number' => $out['container_no']])]);
         }
 
         return $out;

@@ -65,7 +65,7 @@ class ProfitAndAgeingTest extends TestCase
         $this->assertCount(1, $byContainer['clients']);
 
         $this->actingAs($this->manager)->get(route('profit.index'))->assertOk()->assertSee($this->pi->reference())->assertSee('3,855.92');
-        $this->actingAs($this->manager)->get(route('profit.containers'))->assertOk()->assertSee('MSKU7712345')->assertSee('1,649.12');
+        $this->actingAs($this->manager)->get(route('profit.containers'))->assertOk()->assertSee('MSKU7712342')->assertSee('1,649.12');
         $this->actingAs($this->manager)->get(route('profit.pi', $this->pi))->assertOk()->assertSee('3,855.92');
         $this->actingAs($this->manager)->get(route('profit.index', ['format' => 'csv']))->assertOk();
     }

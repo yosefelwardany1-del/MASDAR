@@ -135,7 +135,7 @@ class BatchDTest extends TestCase
         $forwarder = Party::where('name', 'Ningbo Fast Forwarding')->sole();
         $forwarder->forceFill(['tracking_url_template' => 'https://track.example/{container}?bl={bl}'])->save();
         $this->actingAs($this->manager)->get(route('containers.show', Container::sole()))->assertOk()
-            ->assertSee('https://track.example/MSKU7712345', false);
+            ->assertSee('https://track.example/MSKU7712342', false);
     }
 
     public function test_ai_drafts_are_proposed_and_saved_only_when_a_person_adds_them(): void
@@ -173,7 +173,7 @@ class BatchDTest extends TestCase
         // Off until switched on.
         $this->actingAs($account)->get(route('portal.home'))->assertForbidden();
         BusinessSetting::current()->fill(['client_portal_enabled' => true])->save();
-        $this->actingAs($account)->get(route('portal.home'))->assertOk()->assertSee($this->pi->reference())->assertSee('MSKU7712345')
+        $this->actingAs($account)->get(route('portal.home'))->assertOk()->assertSee($this->pi->reference())->assertSee('MSKU7712342')
             ->assertDontSee('Nile Kitchenware')->assertDontSee('Yiwu Bright Housewares Factory');
         $this->actingAs($account)->get(route('portal.pi', $this->pi))->assertOk()->assertSee('Proforma Invoice (PI)');
         $this->actingAs($account)->get(route('portal.container', Container::sole()))->assertOk()->assertDontSee('Yiwu Bright');

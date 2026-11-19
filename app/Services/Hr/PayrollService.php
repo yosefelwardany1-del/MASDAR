@@ -264,10 +264,16 @@ class PayrollService
     private function period(mixed $value): string
     {
         try {
-            return CarbonImmutable::createFromFormat('!Y-m', (string) $value)->startOfMonth()->toDateString();
+            $month = CarbonImmutable::createFromFormat('!Y-m', (string) $value)->startOfMonth();
         } catch (\Throwable) {
             throw ValidationException::withMessages(['period' => __('Choose the month.')]);
         }
+        // B28: a month's payroll is prepared once the month has begun.
+        if ($month->gt(CarbonImmutable::today()->startOfMonth())) {
+            throw ValidationException::withMessages(['period' => __(':month has not begun: prepare its payroll once it has.', ['month' => $month->format('Y-m')])]);
+        }
+
+        return $month->toDateString();
     }
 
     private function optionalDate(mixed $value, string $field): ?string

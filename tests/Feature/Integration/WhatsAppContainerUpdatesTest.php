@@ -47,7 +47,7 @@ class WhatsAppContainerUpdatesTest extends TestCase
 
         $shipping = app(ShipmentService::class);
         $shipment = $shipping->create(['mode' => 'sea_fcl', 'port_of_discharge' => 'JEA', 'eta' => now()->addDays(20)->toDateString()], $this->manager);
-        $this->container = $shipping->addContainer($shipment, ['container_no' => 'MSKU7712345', 'container_type' => '40HQ'], $this->manager);
+        $this->container = $shipping->addContainer($shipment, ['container_no' => 'MSKU7712342', 'container_type' => '40HQ'], $this->manager);
         $shipping->bookOrder($shipment, $line->supplierOrder, $this->manager);
         app(ContainerTrackingService::class)->load($this->container, $line, '10', now()->toDateString(), $this->manager);
     }
@@ -78,7 +78,7 @@ class WhatsAppContainerUpdatesTest extends TestCase
         Http::assertSent(fn ($request) => $request['to'] === '971501234567'
             && $request['template']['name'] === 'container_update'
             && $request['template']['components'][0]['parameters'][0]['text'] === 'Gulf Home Trading'
-            && $request['template']['components'][0]['parameters'][1]['text'] === 'MSKU7712345'
+            && $request['template']['components'][0]['parameters'][1]['text'] === 'MSKU7712342'
             && str_contains($request['template']['components'][0]['parameters'][3]['text'], 'Jebel Ali'));
 
         $log = WhatsAppMessage::sole();

@@ -2719,5 +2719,13 @@
     "The date needed by can't be before the date it was requested.": "需要日期不能早于申请日期。",
     "This sample is :status and closed. Reopen it first.": "此样品状态为“:status”，已关闭。请先重新打开。",
     "Cartons are whole: enter :whole or :next, not :value.": "箱数须为整数：请输入 :whole 或 :next，而不是 :value。",
-    "PI and quotation lines may have part cartons (otherwise whole cartons only)": "形式发票和报价的行允许非整箱（否则仅限整箱）"
+    "PI and quotation lines may have part cartons (otherwise whole cartons only)": "形式发票和报价的行允许非整箱（否则仅限整箱）",
+    ":month has not begun: prepare its payroll once it has.": ":month 尚未开始：请在该月开始后再编制工资。",
+    ":number is not a container number. Enter 4 letters and 7 digits as on the container, e.g. MSKU7712342.": ":number 不是有效的集装箱号。请按箱体上的号码输入 4 个字母和 7 位数字，例如 MSKU7712342。",
+    "A receipt cannot be dated after today.": "收据日期不能晚于今天。",
+    "A salary from :date is already recorded. Salaries are kept as a history: give the new one the date it starts.": "已有自 :date 起的薪资记录。薪资按历史保存：请为新薪资填写其生效日期。",
+    "An HS code is 4 to 10 digits; dots may group them, e.g. 6912.00.": "HS 编码为 4 至 10 位数字，可用点分组，例如 6912.00。",
+    "Only {container}, {bl} and {booking} can be filled in; {:name} cannot.": "只能填入 {container}、{bl} 和 {booking}；不能填入 {:name}。",
+    "Put {container}, {bl} or {booking} where the number goes in the address.": "请在地址中放置号码的位置填写 {container}、{bl} 或 {booking}。",
+    "The birth date cannot be in the future.": "出生日期不能是将来。"
 }

@@ -25,7 +25,7 @@ class PossibleHistoryTest extends TestCase
         app()->setLocale('en');
         $user = $this->userWithRole(Roles::LOGISTICS, ['locale' => 'en']);
         $this->actingAs($user);
-        $empty = $this->containerOn($this->shipmentWith(['etd' => now()->addDays(12)->toDateString()]), ['container_no' => 'MSCU1234560']);
+        $empty = $this->containerOn($this->shipmentWith(['etd' => now()->addDays(12)->toDateString()]), ['container_no' => 'MSCU1234566']);
 
         // Nothing loaded: not delivered, nor sealed.
         $this->record($empty, 'delivered', now()->format('Y-m-d\TH:i'))

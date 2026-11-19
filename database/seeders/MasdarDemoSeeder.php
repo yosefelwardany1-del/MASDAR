@@ -113,7 +113,7 @@ class MasdarDemoSeeder extends Seeder
             app(GoodsReceiptService::class)->receive($line, ['received_on' => now()->subDays(4)->toDateString(), 'cartons' => (string) $line->cartons, 'inspection_result' => 'pass'], $manager);
         }
         $shipment = app(ShipmentService::class)->create(['shipping_company_id' => $forwarder->id, 'mode' => 'sea_fcl', 'booking_no' => 'NGB-55831', 'port_of_loading' => 'NGB', 'port_of_discharge' => 'JEA', 'etd' => now()->subDays(2)->toDateString(), 'eta' => now()->addDays(2)->toDateString(), 'vessel' => 'MSC AURORA', 'voyage' => '246W', 'incoterm' => 'FOB Ningbo'], $manager);
-        $container = app(ShipmentService::class)->addContainer($shipment, ['container_no' => 'MSKU7712345', 'container_type' => '40HQ', 'seal_no' => 'ML-449120'], $manager);
+        $container = app(ShipmentService::class)->addContainer($shipment, ['container_no' => 'MSKU7712342', 'container_type' => '40HQ', 'seal_no' => 'ML-449120'], $manager);
         app(ShipmentService::class)->bookOrder($shipment, $orders[0], $manager);
         foreach ($orders[0]->lines as $line) {
             app(ContainerTrackingService::class)->load($container, $line, (string) $line->cartons, now()->subDays(3)->toDateString(), $manager);

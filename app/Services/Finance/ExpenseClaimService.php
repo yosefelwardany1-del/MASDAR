@@ -153,6 +153,9 @@ class ExpenseClaimService
         $date = (string) ($data['spent_on'] ?? '');
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             $errors['spent_on'] = __('Enter a valid date.');
+        } elseif ($date > now()->toDateString()) {
+            // B28: a receipt is for money already spent.
+            $errors['spent_on'] = __('A receipt cannot be dated after today.');
         } elseif ($closed = OpenPeriods::closedOn($date)) {
             $errors['spent_on'] = __('The period :period (:from – :to) is closed. Choose a date in an open period, or ask the accountant to reopen it.', [
                 'period' => $closed->name, 'from' => $closed->starts_on->toDateString(), 'to' => $closed->ends_on->toDateString(),

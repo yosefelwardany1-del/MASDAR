@@ -82,7 +82,7 @@ class OrderToCashTest extends TestCase
 
         // 5. Booked and loaded: the booking and loading steps complete themselves.
         $shipment = app(ShipmentService::class)->create(['shipping_company_id' => $forwarder->id, 'mode' => 'sea_fcl', 'port_of_loading' => 'NGB', 'port_of_discharge' => 'JEA', 'etd' => now()->addDays(3)->toDateString(), 'eta' => now()->addDays(28)->toDateString()], $manager);
-        $container = app(ShipmentService::class)->addContainer($shipment, ['container_no' => 'MSKU1234567', 'container_type' => '40HQ'], $manager);
+        $container = app(ShipmentService::class)->addContainer($shipment, ['container_no' => 'MSKU1234565', 'container_type' => '40HQ'], $manager);
         app(ShipmentService::class)->bookOrder($shipment, $order, $manager);
         foreach ($order->lines as $line) {
             app(ContainerTrackingService::class)->load($container, $line, (string) $line->cartons, now()->toDateString(), $manager);

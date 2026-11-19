@@ -402,7 +402,16 @@ abstract class PartyController extends Controller
         }
         if ($writes(PartyKind::Shipping)) {
             $rules['shipping_kind'] = ['nullable', 'string', $lookup('shipping_company_kind')];
-            $rules['tracking_url_template'] = ['nullable', 'string', 'max:255', 'regex:#^https?://[^\s]+$#'];
+            $rules['tracking_url_template'] = ['nullable', 'string', 'max:255', 'regex:#^https?://[^\s]+$#', function (string $attribute, mixed $value, Closure $fail) {
+                // B28: the address takes the container's own numbers: {container}, {bl} or {booking}, nothing else.
+                preg_match_all('/\{([^}]*)\}/', (string) $value, $m);
+                $unknown = array_diff($m[1], ['container', 'bl', 'booking']);
+                if ($unknown !== []) {
+                    $fail(__('Only {container}, {bl} and {booking} can be filled in; {:name} cannot.', ['name' => reset($unknown)]));
+                } elseif ($m[1] === []) {
+                    $fail(__('Put {container}, {bl} or {booking} where the number goes in the address.'));
+                }
+            }];
         }
 
         $data = $request->validate($rules);

@@ -46,7 +46,8 @@ class ShippingPermissionsTest extends TestCase
 
     public function test_logistics_and_warehouse_qc_can_edit(): void
     {
-        foreach ([Roles::LOGISTICS, Roles::WAREHOUSE_QC] as $i => $role) {
+        // Two real container numbers (ISO 6346 check digits, B28), typed in lower case with a space.
+        foreach ([Roles::LOGISTICS => 'msku 7712342', Roles::WAREHOUSE_QC => 'cosu 6300114'] as $role => $number) {
             $user = $this->userWithRole($role);
             $company = Party::factory()->shippingCompany()->create();
 
@@ -54,10 +55,10 @@ class ShippingPermissionsTest extends TestCase
                 ->assertSessionHasNoErrors()->assertRedirect();
             $shipment = $company->shipments()->firstOrFail();
 
-            $this->post(route('containers.store', $shipment), ['container_no' => 'msku 123456'.$i, 'container_type' => '40HQ', 'seal_no' => 'S-1'])
+            $this->post(route('containers.store', $shipment), ['container_no' => $number, 'container_type' => '40HQ', 'seal_no' => 'S-1'])
                 ->assertSessionHasNoErrors()->assertRedirect(route('shipments.show', $shipment));
             $container = $shipment->containers()->firstOrFail();
-            $this->assertSame('MSKU123456'.$i, $container->container_no);
+            $this->assertSame(strtoupper(str_replace(' ', '', $number)), $container->container_no);
 
             $this->post(route('containers.events.store', $container), ['status' => 'booked', 'happened_at' => now()->format('Y-m-d\TH:i')])
                 ->assertSessionHasNoErrors();
