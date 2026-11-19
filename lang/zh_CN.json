@@ -2717,5 +2717,7 @@
     "Voided": "已作废",
     "A sample that is :from cannot become :to.": "处于“:from”状态的样品不能变为“:to”。",
     "The date needed by can't be before the date it was requested.": "需要日期不能早于申请日期。",
-    "This sample is :status and closed. Reopen it first.": "此样品状态为“:status”，已关闭。请先重新打开。"
+    "This sample is :status and closed. Reopen it first.": "此样品状态为“:status”，已关闭。请先重新打开。",
+    "Cartons are whole: enter :whole or :next, not :value.": "箱数须为整数：请输入 :whole 或 :next，而不是 :value。",
+    "PI and quotation lines may have part cartons (otherwise whole cartons only)": "形式发票和报价的行允许非整箱（否则仅限整箱）"
 }

@@ -165,6 +165,9 @@ class ProformaInvoiceService
                     $data[$measure] = '0';
                 }
             }
+            if (array_key_exists('cartons', $data) && ($error = PiAmounts::partCartonError($data['cartons']))) {
+                throw ValidationException::withMessages(['cartons' => $error]);
+            }
             $data = $this->withSupplierCurrency($data, $line->supplier_currency);
 
             $old = $this->lineAudit($line);
@@ -527,6 +530,9 @@ class ProformaInvoiceService
             if (blank($values[$field])) {
                 throw ValidationException::withMessages([$field => $message]);
             }
+        }
+        if ($error = PiAmounts::partCartonError($values['cartons'])) {
+            throw ValidationException::withMessages(['cartons' => $error]);
         }
 
         return $this->withSupplierCurrency($values);

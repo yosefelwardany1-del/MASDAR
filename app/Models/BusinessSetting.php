@@ -65,6 +65,7 @@ class BusinessSetting extends Model
         'client_portal_enabled' => false,
         'orders_from_issued_pi' => false,
         'payments_approved_by_another' => true,
+        'part_cartons_allowed' => false,
     ];
 
     protected function casts(): array
@@ -82,6 +83,7 @@ class BusinessSetting extends Model
             'client_portal_enabled' => 'boolean',
             'orders_from_issued_pi' => 'boolean',
             'payments_approved_by_another' => 'boolean',
+            'part_cartons_allowed' => 'boolean',
             'hr_document_warning_days' => 'integer',
             'crm_quiet_days' => 'integer',
             'quotation_valid_days' => 'integer',

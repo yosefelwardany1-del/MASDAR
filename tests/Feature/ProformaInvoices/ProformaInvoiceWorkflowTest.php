@@ -3,6 +3,7 @@
 namespace Tests\Feature\ProformaInvoices;
 
 use App\Models\AuditLog;
+use App\Models\BusinessSetting;
 use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\PiLine;
@@ -13,6 +14,7 @@ use App\Security\Roles;
 use App\Services\Configuration\BusinessSettingsService;
 use App\Services\Finance\PaymentService;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
+use App\Services\Quotations\QuotationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -230,6 +232,27 @@ class ProformaInvoiceWorkflowTest extends TestCase
         $this->assertSame(1, PiLine::count());
         $this->assertNull($pi->fresh()->po_number);
         $this->get(route('proforma-invoices.edit', $pi))->assertRedirect(route('proforma-invoices.show', $pi));
+    }
+
+    /** B27: whole cartons on PI and quotation lines, unless the business allows part cartons. */
+    public function test_part_cartons_are_refused_unless_allowed(): void
+    {
+        app()->setLocale('en');
+        $manager = $this->make(Roles::MANAGER);
+        $pi = $this->draftWithLine($manager);
+        $product = Product::factory()->create();
+        $message = 'Cartons are whole: enter 2 or 3, not 2.5.';
+
+        $this->assertThrows(fn () => $this->service()->addLine($pi, ['product_id' => $product->id, 'cartons' => '2.5', 'unit_price' => '1'], $manager), ValidationException::class, $message);
+        $this->assertThrows(fn () => $this->service()->updateLine($pi->lines()->first(), ['cartons' => '2.5'], $manager), ValidationException::class, $message);
+        $quotation = app(QuotationService::class)->create(['client_id' => $pi->client_id, 'currency' => 'USD'], $manager);
+        $this->assertThrows(fn () => app(QuotationService::class)->addLine($quotation, ['description' => 'Jar', 'unit' => 'pcs', 'cartons' => '2.5', 'qty_per_carton' => '10', 'unit_price' => '1'], $manager),
+            ValidationException::class, $message);
+        $this->assertSame(1, $pi->lines()->count());
+
+        BusinessSetting::current()->fill(['part_cartons_allowed' => true])->save();
+        $this->service()->addLine($pi, ['product_id' => $product->id, 'cartons' => '2.5', 'unit_price' => '1'], $manager);
+        $this->assertSame('2.5000', (string) $pi->lines()->reorder('line_no', 'desc')->first()->cartons);
     }
 
     public function test_accept_confirm_and_cancel(): void

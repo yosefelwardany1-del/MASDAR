@@ -2717,5 +2717,7 @@
     "Voided": "أُلغي",
     "A sample that is :from cannot become :to.": "العيّنة التي حالتها :from لا يمكن أن تصبح :to.",
     "The date needed by can't be before the date it was requested.": "لا يجوز أن يسبق تاريخ الحاجة تاريخ الطلب.",
-    "This sample is :status and closed. Reopen it first.": "هذه العيّنة :status ومغلقة. أعد فتحها أولاً."
+    "This sample is :status and closed. Reopen it first.": "هذه العيّنة :status ومغلقة. أعد فتحها أولاً.",
+    "Cartons are whole: enter :whole or :next, not :value.": "الكراتين أعداد صحيحة: أدخل :whole أو :next، لا :value.",
+    "PI and quotation lines may have part cartons (otherwise whole cartons only)": "يجوز أن تحتوي أسطر الفاتورة المبدئية وعرض السعر على أجزاء كراتين (وإلا فكراتين كاملة فقط)"
 }

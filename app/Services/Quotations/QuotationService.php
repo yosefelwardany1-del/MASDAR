@@ -11,6 +11,7 @@ use App\Models\Quotation;
 use App\Models\QuotationLine;
 use App\Models\User;
 use App\Services\Numbering\NumberingService;
+use App\Services\ProformaInvoices\PiAmounts;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
 use App\Support\Access\Visibility;
 use App\Support\Audit\AuditTrail;
@@ -227,6 +228,16 @@ class QuotationService
         });
     }
 
+    /** B27: whole cartons, unless the business sells part cartons. */
+    private function wholeCartons(string $cartons): string
+    {
+        if ($error = PiAmounts::partCartonError($cartons)) {
+            throw ValidationException::withMessages(['cartons' => $error]);
+        }
+
+        return $cartons;
+    }
+
     private function expiredMessage(Quotation $quotation): string
     {
         return __('This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.', ['date' => $quotation->valid_until->toDateString()]);
@@ -289,7 +300,7 @@ class QuotationService
             'description' => trim((string) $pick('description', $productText)),
             'unit' => (string) $pick('unit', $product?->unit),
             'qty_per_carton' => $this->decimal($pick('qty_per_carton', $product?->qty_per_carton ?? '0'), 'qty_per_carton'),
-            'cartons' => array_key_exists('cartons', $data) ? (filled($data['cartons']) ? $this->decimal($data['cartons'], 'cartons', positive: true) : null) : $line?->cartons,
+            'cartons' => array_key_exists('cartons', $data) ? (filled($data['cartons']) ? $this->wholeCartons($this->decimal($data['cartons'], 'cartons', positive: true)) : null) : $line?->cartons,
             'moq' => array_key_exists('moq', $data) ? (filled($data['moq']) ? $this->decimal($data['moq'], 'moq') : null) : $line?->moq,
             'unit_price' => $this->decimal($pick('unit_price', $product?->sale_price), 'unit_price', required: true),
             'cbm_per_carton' => $this->decimal($pick('cbm_per_carton', $product?->cbm_per_carton ?? '0'), 'cbm_per_carton'),
