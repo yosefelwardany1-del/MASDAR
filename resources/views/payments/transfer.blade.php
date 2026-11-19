@@ -29,7 +29,7 @@
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label" for="tr-date">{{ __('Date') }}<span class="app-req" aria-hidden="true">*</span></label>
-                    <input type="date" name="paid_on" id="tr-date" class="form-control @error('paid_on') is-invalid @enderror" value="{{ old('paid_on', now()->toDateString()) }}" required>
+                    <input type="date" max="{{ now()->toDateString() }}" name="paid_on" id="tr-date" class="form-control @error('paid_on') is-invalid @enderror" value="{{ old('paid_on', now()->toDateString()) }}" required>
                     @error('paid_on')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-sm-6">
@@ -65,7 +65,7 @@
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label" for="tr-in-date">{{ __('Arrival date') }}</label>
-                    <input type="date" name="in_paid_on" id="tr-in-date" class="form-control @error('in_paid_on') is-invalid @enderror" value="{{ old('in_paid_on') }}" aria-describedby="tr-in-date-help">
+                    <input type="date" max="{{ now()->toDateString() }}" name="in_paid_on" id="tr-in-date" class="form-control @error('in_paid_on') is-invalid @enderror" value="{{ old('in_paid_on') }}" aria-describedby="tr-in-date-help">
                     @error('in_paid_on')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     <div class="form-text" id="tr-in-date-help">{{ __('Leave empty when it arrived the same day.') }}</div>
                 </div>

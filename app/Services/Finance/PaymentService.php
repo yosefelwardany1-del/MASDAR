@@ -513,13 +513,19 @@ class PaymentService
         return $account;
     }
 
+    /** A payment's date: today or earlier, by the company's clock (APP_TIMEZONE) — B07. */
     private function date(mixed $value, string $field): CarbonImmutable
     {
         try {
-            return CarbonImmutable::parse((string) $value)->startOfDay();
+            $date = CarbonImmutable::parse((string) $value)->startOfDay();
         } catch (\Throwable) {
             throw ValidationException::withMessages([$field => __('Give a valid date.')]);
         }
+        if ($date->gt(CarbonImmutable::today())) {
+            throw ValidationException::withMessages([$field => __('A payment cannot be dated after today.')]);
+        }
+
+        return $date;
     }
 
     /** A positive amount with up to 4 decimals, as a string (never a float). */
