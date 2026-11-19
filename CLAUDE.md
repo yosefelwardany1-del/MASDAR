@@ -289,3 +289,34 @@ properties, and keep text contrast at 4.5:1.
 `tests/Feature/Integration/` holds the cross-module tests. `OrderToCashTest` runs one order
 through every module. Keep it green.
 
+## Bug-fix brief (2026-11-19)
+
+B01–B33 of MASDAR's test report, one commit each with its test; the decisions are in the spec's
+§12 Readings (dated 2026-11-19). Rules they added that new work follows:
+
+- **Messages:** every refusal is said next to its field, never only at the top. A page with several
+  forms for the same fields names each with a hidden `_form` (quotation lines); a collapsible box
+  holding a form opens when it was refused. Database refusals go through
+  `Support\Database\Refusal` (plain words, details in the log); server setup problems through
+  `Support\SetupNotice` (details for `system_admin` only). No spec question numbers on screens.
+- **Stored text:** what the system stores for a person to read later is a `Support\Text` (key +
+  parameters), rendered in the reader's language: `NotificationService::send` takes Text. Lookup
+  entries go in as `Text::lookup`, a person's own words as `Text::plain`.
+- **Translations:** `lang/ar` and `lang/zh_CN` hold Laravel's own validation, sign-in and password
+  messages (without `:attribute`). `TranslationsTest` also scans `Text::of`/`Text::choice` and fails
+  on a key joined from a prefix and a code (`__('import.'.$status)`): give each value its own key.
+  The pagination views are published (`resources/views/vendor/pagination`).
+- **Dates and periods:** payments, FX rates, receipts, birth dates and payroll months are never ahead
+  of today by the app's clock; `Accounting\OpenPeriods::assert` refuses a date in a closed period at
+  entry. The financial year starts at `BusinessSetting::financialYearStart($date)`.
+- **Money:** to the cent, prices to 4 decimals (B09); a payment never overpays its document (B05) nor
+  overdraws its account unless `money_accounts.allow_negative` (B06); nobody approves their own
+  payment while `payments_approved_by_another` is on (B16); a counter account comes from
+  `PaymentQueries::counterAccounts($kind)` (B29).
+- **New settings** (Business options): `orders_from_issued_pi`, `payments_approved_by_another`,
+  `part_cartons_allowed`, `counter_types_expense|other_in|other_out`, `financial_year_start_month`.
+- **New PostgreSQL gates** (migrations `2026_11_19_*`): PI cancel and confirm, note limits, money
+  accounts never negative, FX rates never ahead or deleted once used, cents checks, claim agreed
+  within claimed, container events in order, own-payment approval, closed periods at entry, bank
+  statements once, money account names per currency, sample events in order, whole cartons, one-
+  account manual entries, counter accounts that fit.
