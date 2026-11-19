@@ -191,6 +191,7 @@
                         @endforeach
                     </select>
                     @error('counter_account_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-text">{{ __('Only accounts that fit this kind of payment are offered (Lists & options); your money accounts are not, as moving money between them is a transfer.') }}</div>
                 </div>
             @endif
         </div>

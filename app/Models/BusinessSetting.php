@@ -66,6 +66,16 @@ class BusinessSetting extends Model
         'orders_from_issued_pi' => false,
         'payments_approved_by_another' => true,
         'part_cartons_allowed' => false,
+        'counter_types_expense' => 'expense',
+        'counter_types_other_in' => 'income,liability,equity',
+        'counter_types_other_out' => 'asset,liability,equity',
+    ];
+
+    /** B29: the payment kinds that name the account the money is for, and the setting of each. */
+    public const COUNTER_TYPE_SETTINGS = [
+        'expense' => 'counter_types_expense',
+        'other_in' => 'counter_types_other_in',
+        'other_out' => 'counter_types_other_out',
     ];
 
     protected function casts(): array
@@ -102,6 +112,19 @@ class BusinessSetting extends Model
     public function whatsappUpdateStatuses(): array
     {
         return array_values(array_filter(array_map('trim', explode(',', (string) $this->whatsapp_update_statuses))));
+    }
+
+    /**
+     * B29: the account types a payment of $kind may name as the account the money is for
+     * (Lists & options; the same list the payments_counter_account_fits trigger reads).
+     *
+     * @return list<string>
+     */
+    public function counterAccountTypes(string $kind): array
+    {
+        $column = self::COUNTER_TYPE_SETTINGS[$kind] ?? null;
+
+        return $column === null ? [] : array_values(array_intersect(Account::TYPES, array_map('trim', explode(',', (string) $this->{$column}))));
     }
 
     /**

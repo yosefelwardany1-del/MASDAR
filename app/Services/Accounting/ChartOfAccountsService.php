@@ -103,6 +103,10 @@ class ChartOfAccountsService
             }
             $changes["{$side}_account_id"] = in_array($side, $sides, true) ? $id : null;
         }
+        // B29: a rule that debits and credits the same account would post entries that move nothing.
+        if ($changes['debit_account_id'] !== null && $changes['debit_account_id'] === $changes['credit_account_id']) {
+            throw new AccountingException(__('A posting rule debits one account and credits another: choose two different accounts.'));
+        }
 
         return DB::transaction(function () use ($rule, $changes) {
             $old = $rule->only(array_keys($changes));

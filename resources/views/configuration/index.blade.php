@@ -84,6 +84,26 @@
                 @endforeach
             </x-section>
 
+            <x-section :title="__('Accounts a payment is for')" icon="journal-text" id="counter-accounts">
+                <p class="form-text mt-0 mb-3">{{ __('The types of account offered as "what the money is for" on each kind of payment. Your money accounts are never offered: moving money between them is a transfer.') }}</p>
+                @foreach(\App\Models\BusinessSetting::COUNTER_TYPE_SETTINGS as $kind => $column)
+                    <fieldset class="mb-3">
+                        <legend class="form-label">{{ \App\Models\Payment::kindLabel($kind) }}</legend>
+                        @php $chosen = old($column, $setting->counterAccountTypes($kind)); @endphp
+                        <div class="d-flex flex-wrap gap-3">
+                            @foreach(\App\Models\Account::typeLabels() as $type => $typeName)
+                                <div class="form-check">
+                                    <input class="form-check-input @error($column) is-invalid @enderror" type="checkbox" id="{{ $column }}-{{ $type }}" name="{{ $column }}[]" value="{{ $type }}" @checked(in_array($type, (array) $chosen, true))>
+                                    <label class="form-check-label" for="{{ $column }}-{{ $type }}">{{ $typeName }}</label>
+                                </div>
+                            @endforeach
+                        </div>
+                        <input type="hidden" name="{{ $column }}[]" value="">
+                        @error($column)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    </fieldset>
+                @endforeach
+            </x-section>
+
             <x-section :title="__('Warnings')" icon="bell">
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-4">

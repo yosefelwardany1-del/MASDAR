@@ -2727,5 +2727,14 @@
     "An HS code is 4 to 10 digits; dots may group them, e.g. 6912.00.": "HS 编码为 4 至 10 位数字，可用点分组，例如 6912.00。",
     "Only {container}, {bl} and {booking} can be filled in; {:name} cannot.": "只能填入 {container}、{bl} 和 {booking}；不能填入 {:name}。",
     "Put {container}, {bl} or {booking} where the number goes in the address.": "请在地址中放置号码的位置填写 {container}、{bl} 或 {booking}。",
-    "The birth date cannot be in the future.": "出生日期不能是将来。"
+    "The birth date cannot be in the future.": "出生日期不能是将来。",
+    "Account :account is the ledger account of a money account. Choose the account the money is for; to move money between your own accounts, record a transfer.": "账户 :account 是某个资金账户自身的总账科目。请选择这笔钱的用途科目；在自有账户之间调拨资金，请登记转账。",
+    "A payment of kind “:kind” takes an account of type :types. :account is of type :type.": "“:kind”类付款只能选用类型为 :types 的科目。:account 的类型是 :type。",
+    "Only accounts that fit this kind of payment are offered (Lists & options); your money accounts are not, as moving money between them is a transfer.": "只列出适合此类付款的科目（列表与选项）；不列出您的资金账户，因为在它们之间调拨资金属于转账。",
+    "Accounts a payment is for": "付款用途科目",
+    "The types of account offered as \"what the money is for\" on each kind of payment. Your money accounts are never offered: moving money between them is a transfer.": "每类付款在“款项用途”中可选的科目类型。您的资金账户从不列出：在它们之间调拨资金属于转账。",
+    "Tick at least one type of account for :kind.": "请为 :kind 至少勾选一种科目类型。",
+    "Every line is on account :account. An entry moves an amount from one account to another: put the other side on the account it comes from or goes to.": "所有分录行都记在科目 :account 上。一笔分录是把金额从一个科目转到另一个科目：请把另一方记在款项来源或去向的科目上。",
+    "Every line of the entry is on the same account. An entry moves an amount from one account to another.": "这笔分录的所有行都记在同一个科目上。一笔分录是把金额从一个科目转到另一个科目。",
+    "A posting rule debits one account and credits another: choose two different accounts.": "过账规则借记一个科目、贷记另一个科目：请选择两个不同的科目。"
 }

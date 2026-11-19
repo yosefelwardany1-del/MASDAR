@@ -50,7 +50,7 @@ class NegativeBalanceTest extends FinanceTestCase
         // And the database refuses it whatever the caller.
         DB::beginTransaction();
         try {
-            DB::table('payments')->insert(['number' => 'PAY-X', 'paid_on' => now()->toDateString(), 'kind' => 'other_out', 'direction' => 'out',
+            DB::table('payments')->insert(['number' => 'PAY-X', 'paid_on' => now()->toDateString(), 'kind' => 'expense', 'direction' => 'out',
                 'money_account_id' => $usd->id, 'currency' => 'USD', 'amount' => '300', 'rate' => '1', 'user_id' => $this->user(Roles::MANAGER)->id,
                 'counter_account_id' => Account::where('code', '6601')->value('id')]);
             $this->fail('the database let a payment overdraw its account');
@@ -76,7 +76,7 @@ class NegativeBalanceTest extends FinanceTestCase
 
         // A legacy overdraft (written before this rule) blocks approvals until it is put right.
         DB::statement('ALTER TABLE payments DISABLE TRIGGER payments_never_overdraw');
-        DB::table('payments')->insert(['number' => 'PAY-OLD', 'paid_on' => now()->toDateString(), 'kind' => 'other_out', 'direction' => 'out',
+        DB::table('payments')->insert(['number' => 'PAY-OLD', 'paid_on' => now()->toDateString(), 'kind' => 'expense', 'direction' => 'out',
             'money_account_id' => $cny->id, 'currency' => 'CNY', 'amount' => '300', 'rate' => '0.14', 'user_id' => $this->user(Roles::MANAGER)->id,
             'counter_account_id' => Account::where('code', '6601')->value('id')]);
         DB::statement('ALTER TABLE payments ENABLE TRIGGER payments_never_overdraw');

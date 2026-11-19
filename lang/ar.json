@@ -2727,5 +2727,14 @@
     "An HS code is 4 to 10 digits; dots may group them, e.g. 6912.00.": "رمز النظام المنسق من 4 إلى 10 أرقام، ويمكن فصلها بنقاط، مثل 6912.00.",
     "Only {container}, {bl} and {booking} can be filled in; {:name} cannot.": "لا يُملأ إلا {container} و{bl} و{booking}؛ ولا يمكن ملء {:name}.",
     "Put {container}, {bl} or {booking} where the number goes in the address.": "ضع {container} أو {bl} أو {booking} في موضع الرقم من العنوان.",
-    "The birth date cannot be in the future.": "لا يجوز أن يكون تاريخ الميلاد في المستقبل."
+    "The birth date cannot be in the future.": "لا يجوز أن يكون تاريخ الميلاد في المستقبل.",
+    "Account :account is the ledger account of a money account. Choose the account the money is for; to move money between your own accounts, record a transfer.": "الحساب :account هو حساب الأستاذ لأحد حسابات الأموال. اختر الحساب الذي تُدفع له الأموال؛ ولنقل الأموال بين حساباتك سجّل تحويلاً.",
+    "A payment of kind “:kind” takes an account of type :types. :account is of type :type.": "الدفعة من نوع «:kind» تأخذ حساباً من نوع :types. الحساب :account من نوع :type.",
+    "Only accounts that fit this kind of payment are offered (Lists & options); your money accounts are not, as moving money between them is a transfer.": "لا تظهر إلا الحسابات التي تناسب هذا النوع من الدفعات (القوائم والخيارات)؛ ولا تظهر حسابات أموالك، فنقل الأموال بينها تحويل.",
+    "Accounts a payment is for": "الحسابات التي تُدفع لها الأموال",
+    "The types of account offered as \"what the money is for\" on each kind of payment. Your money accounts are never offered: moving money between them is a transfer.": "أنواع الحسابات التي تظهر في «ما الغرض من المال» لكل نوع من الدفعات. لا تظهر حسابات أموالك أبداً: فنقل الأموال بينها تحويل.",
+    "Tick at least one type of account for :kind.": "اختر نوعاً واحداً على الأقل من الحسابات لـ :kind.",
+    "Every line is on account :account. An entry moves an amount from one account to another: put the other side on the account it comes from or goes to.": "كل السطور على الحساب :account. القيد ينقل مبلغاً من حساب إلى آخر: ضع الطرف الآخر على الحساب الذي يأتي منه المبلغ أو يذهب إليه.",
+    "Every line of the entry is on the same account. An entry moves an amount from one account to another.": "كل سطور القيد على الحساب نفسه. القيد ينقل مبلغاً من حساب إلى آخر.",
+    "A posting rule debits one account and credits another: choose two different accounts.": "قاعدة الترحيل تجعل حساباً مديناً وآخر دائناً: اختر حسابين مختلفين."
 }

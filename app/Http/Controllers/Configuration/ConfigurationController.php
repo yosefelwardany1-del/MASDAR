@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Configuration;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\BusinessSetting;
 use App\Models\Lookup;
 use App\Models\OrderStepDefinition;
+use App\Models\Payment;
 use App\Services\Configuration\BusinessSettingsService;
 use App\Services\Configuration\LookupService;
 use App\Services\Configuration\OrderStepDefinitionService;
@@ -117,6 +119,17 @@ class ConfigurationController extends Controller
             $statuses = array_values(array_filter((array) $request->input('whatsapp_update_statuses'), 'filled'));
             validator(['statuses' => $statuses], ['statuses.*' => [Rule::in(array_keys(Lookup::options('container_status')))]])->validate();
             $data['whatsapp_update_statuses'] = implode(',', $statuses);
+        }
+
+        // B29: the account types each kind of payment may name as what the money is for.
+        foreach (BusinessSetting::COUNTER_TYPE_SETTINGS as $kind => $column) {
+            if ($request->has($column)) {
+                $types = array_values(array_intersect(Account::TYPES, (array) $request->input($column)));
+                if ($types === []) {
+                    throw ValidationException::withMessages([$column => __('Tick at least one type of account for :kind.', ['kind' => Payment::kindLabel($kind)])]);
+                }
+                $data[$column] = implode(',', $types);
+            }
         }
 
         $service->update($data);

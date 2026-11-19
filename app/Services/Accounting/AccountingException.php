@@ -28,6 +28,8 @@ class AccountingException extends \RuntimeException
                 ]), 0, $e),
             (bool) preg_match('/the period containing (\S+) is closed/', $text, $m) => new self(
                 __('The period containing :date is closed. Reopen it or choose another date.', ['date' => $m[1]]), 0, $e),
+            str_contains($text, 'has every line on one account') => new self(
+                __('Every line of the entry is on the same account. An entry moves an amount from one account to another.'), 0, $e),
             str_contains($text, 'is a heading or inactive') => new self(
                 __('One of the accounts is a heading or inactive; post to an active sub-account.'), 0, $e),
             str_contains($text, 'journal_entries_one_posting_per_source') => new self(

@@ -787,6 +787,14 @@ class PostingService
                 filled($row['memo'] ?? null) ? (string) $row['memo'] : null);
         }
 
+        // B29: an entry moves an amount between two accounts, or between two parties of one
+        // account. Every line on the same account and party moves nothing (journal_entries_two_sides).
+        if (count($lines) > 1 && collect($lines)->unique(fn (array $l) => $l['account']->id.'|'.($l['party_id'] ?? ''))->count() === 1) {
+            throw new AccountingException(__('Every line is on account :account. An entry moves an amount from one account to another: put the other side on the account it comes from or goes to.', [
+                'account' => $lines[0]['account']->label(),
+            ]));
+        }
+
         return $lines;
     }
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
-use App\Models\Account;
 use App\Models\BusinessSetting;
 use App\Models\Container;
 use App\Models\ExpenseClaim;
@@ -120,7 +119,7 @@ class PaymentController extends Controller
                 ? PayrollRun::query()->where('status', 'approved')->orderByDesc('period')->limit(24)->get(['id', 'number', 'period', 'currency'])
                 : collect(),
             'counterAccounts' => in_array($kind, ['expense', 'other_in', 'other_out'], true)
-                ? Account::query()->where('is_postable', true)->where('active', true)->orderBy('code')->get()
+                ? $this->queries->counterAccounts($kind)->get()
                 : collect(),
             'book' => BusinessSetting::current()->book_currency,
             'approvalRequired' => $this->queries->approvalRequired(),

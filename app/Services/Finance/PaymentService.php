@@ -404,6 +404,14 @@ class PaymentService
             $counter = $links['counter_account_id'] !== null ? Account::query()->find($links['counter_account_id']) : null;
             if (! $counter || ! $counter->is_postable || ! $counter->active) {
                 $errors['counter_account_id'] = __('Choose the account the money is for: an active account that can be posted to (not a heading).');
+            } elseif (MoneyAccount::query()->where('ledger_account_id', $counter->id)->exists()) {
+                // B29: a money account's own ledger account would debit and credit the same account.
+                $errors['counter_account_id'] = __('Account :account is the ledger account of a money account. Choose the account the money is for; to move money between your own accounts, record a transfer.', ['account' => $counter->label()]);
+            } elseif (! in_array($counter->type, $types = BusinessSetting::current()->counterAccountTypes($kind), true)) {
+                $errors['counter_account_id'] = __('A payment of kind “:kind” takes an account of type :types. :account is of type :type.', [
+                    'account' => $counter->label(), 'type' => $counter->typeLabel(), 'kind' => Payment::kindLabel($kind),
+                    'types' => implode(', ', array_map(fn (string $t) => Account::typeLabels()[$t], $types)),
+                ]);
             }
         }
 
