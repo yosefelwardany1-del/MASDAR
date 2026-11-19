@@ -324,7 +324,13 @@ class ShippingQueries
             ->selectRaw('COALESCE(ROUND(SUM(cl.cartons * pl.qty_per_carton), 4), 0) AS qty')
             ->selectRaw('COALESCE(ROUND(SUM(cl.cartons * pl.cbm_per_carton), 4), 0) AS cbm')
             ->selectRaw('COALESCE(ROUND(SUM(cl.cartons * pl.kg_per_carton), 4), 0) AS kg')
+            ->selectRaw('COUNT(DISTINCT pl.unit) AS units, MIN(pl.unit) AS unit')
             ->first();
+        // B30: quantities in different units do not add up; cartons, CBM and KG do.
+        if ((int) $totals->units > 1) {
+            $totals->qty = null;
+            $totals->unit = null;
+        }
 
         return $totals;
     }

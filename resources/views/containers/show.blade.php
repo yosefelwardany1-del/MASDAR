@@ -292,7 +292,7 @@
                 <tfoot><tr class="fw-semibold">
                     <td colspan="3">{{ __('Total') }}</td>
                     <td class="app-num text-end">{{ $num($totals->cartons) }}</td>
-                    <td class="app-num text-end">{{ $num($totals->qty) }}</td>
+                    <td class="app-num text-end">{{ $totals->qty !== null ? $num($totals->qty) : '' }}</td>
                     <td class="app-num text-end">{{ $num($totals->cbm) }}</td>
                     <td class="app-num text-end">{{ $num($totals->kg) }}</td>
                     @can('containers.edit')<td></td>@endcan

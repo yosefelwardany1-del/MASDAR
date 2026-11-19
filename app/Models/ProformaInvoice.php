@@ -151,13 +151,24 @@ class ProformaInvoice extends Model
      *
      * @return object{total_qty: string, amount: string, total_cbm: string, total_kg: string}
      */
+    /**
+     * The sums of its lines. B30: quantities in different units do not add up, so total_qty is
+     * null unless every line has the same unit (then given as unit); cartons always add up.
+     */
     public function lineTotals(): object
     {
-        return PiLine::query()->toBase()
+        $totals = PiLine::query()->toBase()
             ->where('proforma_invoice_id', $this->id)
             ->selectRaw('COALESCE(SUM(total_qty), 0)::numeric(18,4) AS total_qty, COALESCE(SUM(amount), 0)::numeric(18,4) AS amount,
+                COALESCE(SUM(cartons), 0)::numeric(18,4) AS cartons, COUNT(DISTINCT unit) AS units, MIN(unit) AS unit,
                 COALESCE(SUM(total_cbm), 0)::numeric(18,4) AS total_cbm, COALESCE(SUM(total_kg), 0)::numeric(18,4) AS total_kg')
             ->first();
+        if ((int) $totals->units > 1) {
+            $totals->total_qty = null;
+            $totals->unit = null;
+        }
+
+        return $totals;
     }
 
     /** Every revision of this PI number, oldest first, with their amounts. */

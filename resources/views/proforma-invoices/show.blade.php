@@ -394,9 +394,13 @@
             </tbody>
             @if($pi->lines->isNotEmpty())
                 <tfoot><tr class="app-doc-lines__total">
-                    <th scope="row" colspan="5">{{ __('Total') }}</th>
-                    <td class="app-num text-end" data-label="{{ __('Total qty') }}">{{ PiAmounts::number($totals->total_qty) }}</td>
-                    <td></td><td></td>
+                    <th scope="row" colspan="3">{{ __('Total') }}</th>
+                    <td class="app-num text-end" data-label="{{ __('CTN') }}">{{ PiAmounts::number($totals->cartons) }}</td>
+                    <td></td>
+                    {{-- B30: a total quantity only when every line is in the same unit. --}}
+                    <td class="app-num text-end" data-label="{{ __('Total qty') }}">{{ $totals->total_qty !== null ? PiAmounts::number($totals->total_qty) : '' }}</td>
+                    <td>{{ $totals->unit !== null ? ($units[$totals->unit] ?? $totals->unit) : '' }}</td>
+                    <td></td>
                     <td class="app-num text-end app-doc-lines__amount" data-label="{{ __('Amount') }}">{{ $money($totals->amount) }}</td>
                     <td class="app-num text-end" data-label="{{ __('Total CBM') }}">{{ PiAmounts::number($totals->total_cbm) }}</td>
                     <td class="app-num text-end" data-label="{{ __('Total KG') }}">{{ PiAmounts::number($totals->total_kg) }}</td>
