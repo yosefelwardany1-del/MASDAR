@@ -160,6 +160,24 @@ class PayrollFlowTest extends TestCase
         }
     }
 
+    /** B05: salaries paid against a run never come to more than its unpaid net pay. */
+    public function test_a_salary_payment_cannot_exceed_the_runs_unpaid_net_pay(): void
+    {
+        app()->setLocale('en');
+        $this->employee('Li Wei', '2025-03-01', '8000');
+        $run = app(PayrollService::class)->approve(app(PayrollService::class)->prepare(['period' => '2026-10'], $this->hr), $this->manager);
+        $net = app(PayrollQueries::class)->totals($run)['net'];
+        $rmb = MoneyAccount::factory()->rmb()->create();
+        $pay = fn (string $amount) => app(PaymentService::class)->record(['kind' => 'salary_payment', 'paid_on' => '2026-11-05', 'money_account_id' => $rmb->id, 'amount' => $amount, 'payroll_run_id' => $run->id], $this->manager);
+
+        $this->assertThrows(fn () => $pay('99999'), ValidationException::class, 'left to pay. A payment against it cannot be more.');
+        $pay('100');
+        $this->assertThrows(fn () => $pay(bcsub($net, '99.99', 4)), ValidationException::class);
+        $pay(bcsub($net, '100', 4));
+        // Both await approval and still count: nothing is left to pay.
+        $this->assertThrows(fn () => $pay('0.01'), ValidationException::class, 'CNY 0.00 left to pay');
+    }
+
     public function test_salaries_are_hidden_from_who_does_not_see_payroll(): void
     {
         $employee = $this->employee('Li Wei', '2025-03-01', '8000');

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Party;
+use App\Models\PiLine;
 use App\Models\ProformaInvoice;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -27,6 +28,12 @@ class ProformaInvoiceFactory extends Factory
     }
 
     /** Issue it the way the service does: lines first (a draft), then the status. */
+    /** One line worth $amount (1 carton × 1 × $amount), added while it is a draft. */
+    public function worth(string $amount): static
+    {
+        return $this->has(PiLine::factory()->state(['line_no' => 1, 'cartons' => 1, 'qty_per_carton' => 1, 'unit_price' => $amount]), 'lines');
+    }
+
     public function issued(): static
     {
         return $this->afterCreating(function (ProformaInvoice $pi) {

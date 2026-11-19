@@ -2596,5 +2596,7 @@
     "Debit notes on :document would come to :total, more than its total of :cap. At most :left can still be debited.": "ستبلغ إشعارات المدين على :document مبلغ :total، وهو أكثر من إجماليه :cap. يمكن إضافة :left كحد أقصى.",
     "Notes settling claim :claim would come to :total, more than the :cap agreed. At most :left is left to settle.": "ستبلغ الإشعارات التي تسوي المطالبة :claim مبلغ :total، وهو أكثر من المتفق عليه :cap. المتبقي للتسوية :left كحد أقصى.",
     "That PI is of another client. Choose the PI's client, or another PI.": "هذه الفاتورة المبدئية لعميل آخر. اختر عميلها أو فاتورة أخرى.",
-    "That purchase order is with another supplier. Choose its supplier, or another order.": "أمر الشراء هذا مع مورد آخر. اختر مورده أو أمراً آخر."
+    "That purchase order is with another supplier. Choose its supplier, or another order.": "أمر الشراء هذا مع مورد آخر. اختر مورده أو أمراً آخر.",
+    ":document has :left left to pay. Record at most that on it, and money beyond it on the client without a PI (an advance).": "المتبقي للدفع على :document هو :left. سجّل هذا المبلغ كحد أقصى عليه، وما زاد عنه على العميل دون فاتورة مبدئية (دفعة مقدمة).",
+    ":document has :left left to pay. A payment against it cannot be more.": "المتبقي للدفع على :document هو :left. لا يجوز أن تزيد الدفعة عليه."
 }

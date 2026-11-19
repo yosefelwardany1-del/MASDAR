@@ -37,7 +37,7 @@ class PaymentScreensTest extends FinanceTestCase
         Storage::fake('local');
         $accountant = $this->user(Roles::ACCOUNTANT);
         $usd = $this->usd();
-        $pi = ProformaInvoice::factory()->issued()->create();
+        $pi = ProformaInvoice::factory()->worth('5000')->issued()->create();
 
         $this->actingAs($accountant)->get(route('payments.create', ['kind' => 'client_receipt', 'party' => $pi->client_id, 'pi' => $pi->id]))
             ->assertOk()

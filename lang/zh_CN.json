@@ -2596,5 +2596,7 @@
     "Debit notes on :document would come to :total, more than its total of :cap. At most :left can still be debited.": "针对 :document 的借项通知单合计将达 :total，超过其总额 :cap。最多还可借记 :left。",
     "Notes settling claim :claim would come to :total, more than the :cap agreed. At most :left is left to settle.": "用于结算索赔 :claim 的通知单合计将达 :total，超过约定的 :cap。最多还剩 :left 可结算。",
     "That PI is of another client. Choose the PI's client, or another PI.": "该形式发票属于其他客户。请选择该形式发票的客户，或选择其他形式发票。",
-    "That purchase order is with another supplier. Choose its supplier, or another order.": "该采购订单属于其他供应商。请选择其供应商，或选择其他订单。"
+    "That purchase order is with another supplier. Choose its supplier, or another order.": "该采购订单属于其他供应商。请选择其供应商，或选择其他订单。",
+    ":document has :left left to pay. Record at most that on it, and money beyond it on the client without a PI (an advance).": ":document 尚余 :left 待付。最多登记该金额，超出部分请登记在客户名下，不关联形式发票（预收款）。",
+    ":document has :left left to pay. A payment against it cannot be more.": ":document 尚余 :left 待付。针对它的付款不能超过此金额。"
 }

@@ -15,6 +15,7 @@ use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
+use App\Services\Accounting\Decimal;
 use App\Services\Attachments\AttachmentService;
 use App\Services\Claims\NoteQueries;
 use App\Services\Numbering\NumberingService;
@@ -77,6 +78,7 @@ class PaymentService
 
         return DB::transaction(function () use ($kind, $paidOn, $account, $amount, $rate, $links, $data, $by, $evidence) {
             $this->holdAccounts($account);
+            $this->assertNotOverpaid($kind, $links, $account, $amount);
             $payment = Payment::create([
                 'number' => $this->numbers->next('payment', $paidOn),
                 'paid_on' => $paidOn->toDateString(),
@@ -388,6 +390,66 @@ class PaymentService
         }
 
         return $links;
+    }
+
+    /**
+     * B05: a payment against a document never pays more than is left on it. Left = what it asks
+     * (a PI's current total less its credit notes; a purchase order's total less its debit notes;
+     * a payroll run's net pay; an expense claim's total) less what is already paid on it in its
+     * currency — every payment counted, those awaiting approval too, so two of them cannot
+     * overpay together. The document's row is locked until the payment commits. Money beyond a
+     * PI's balance is recorded on the client without a PI: an advance, by choice.
+     */
+    private function assertNotOverpaid(string $kind, array $links, MoneyAccount $account, string $amount): void
+    {
+        $paid = fn (string $column, int $id, ?string $piNumber = null) => (string) DB::table('payments')
+            ->when($piNumber, fn ($q) => $q->join('proforma_invoices as r', 'r.id', '=', 'payments.proforma_invoice_id')->where('r.pi_number', $piNumber),
+                fn ($q) => $q->where("payments.{$column}", $id))
+            ->where('payments.kind', $kind)->where('payments.currency', $account->currency)
+            ->selectRaw('ABS(COALESCE(SUM(payments.signed_amount), 0))::numeric(18,4) AS t')->value('t');
+        $sum = fn (string $table, string $column, int $id, string $field = 'amount') => (string) DB::table($table)->where($column, $id)
+            ->selectRaw("COALESCE(SUM({$field}), 0)::numeric(18,4) AS t")->value('t');
+
+        [$left, $document, $field] = match (true) {
+            $kind === 'client_receipt' && $links['proforma_invoice_id'] !== null => (function () use ($links, $account, $paid, $sum) {
+                $pi = ProformaInvoice::query()->whereKey($links['proforma_invoice_id'])->lockForUpdate()->firstOrFail();
+                if ($pi->currency !== $account->currency) {
+                    return [null, null, null];
+                }
+                $current = ProformaInvoice::query()->where('pi_number', $pi->pi_number)->where('is_current', true)->first() ?? $pi;
+                $asked = bcsub($sum('pi_lines', 'proforma_invoice_id', $current->id), app(NoteQueries::class)->creditedForPiNumber($pi->pi_number, $pi->currency), 4);
+
+                return [bcsub($asked, $paid('proforma_invoice_id', $pi->id, $pi->pi_number), 4), $current->reference(), 'amount'];
+            })(),
+            $kind === 'supplier_payment' && $links['supplier_order_id'] !== null => (function () use ($links, $account, $paid, $sum) {
+                $order = SupplierOrder::query()->whereKey($links['supplier_order_id'])->lockForUpdate()->firstOrFail();
+                if ($order->currency !== $account->currency) {
+                    return [null, null, null];
+                }
+                $asked = bcsub($sum('supplier_order_lines', 'supplier_order_id', $order->id), app(NoteQueries::class)->debitedForOrder($order->id, $order->currency), 4);
+
+                return [bcsub($asked, $paid('supplier_order_id', $order->id), 4), $order->number, 'amount'];
+            })(),
+            $kind === 'salary_payment' && $links['payroll_run_id'] !== null => (function () use ($links, $paid, $sum) {
+                $run = PayrollRun::query()->whereKey($links['payroll_run_id'])->lockForUpdate()->firstOrFail();
+
+                return [bcsub($sum('payroll_lines', 'payroll_run_id', $run->id, 'net'), $paid('payroll_run_id', $run->id), 4), $run->number, 'amount'];
+            })(),
+            $kind === 'claim_payment' && $links['expense_claim_id'] !== null => (function () use ($links, $paid) {
+                $claim = ExpenseClaim::query()->whereKey($links['expense_claim_id'])->lockForUpdate()->firstOrFail();
+
+                return [bcsub($claim->total(), $paid('expense_claim_id', $claim->id), 4), $claim->number, 'amount'];
+            })(),
+            default => [null, null, null],
+        };
+        if ($left === null || bccomp($amount, $left, 4) <= 0) {
+            return;
+        }
+        $left = bccomp($left, '0', 4) > 0 ? $left : '0';
+        $money = $account->currency.' '.Decimal::format($left);
+        throw ValidationException::withMessages([$field => $kind === 'client_receipt'
+            ? __(':document has :left left to pay. Record at most that on it, and money beyond it on the client without a PI (an advance).', ['document' => $document, 'left' => $money])
+            : __(':document has :left left to pay. A payment against it cannot be more.', ['document' => $document, 'left' => $money])]);
     }
 
     /**

@@ -71,9 +71,9 @@ abstract class FinanceTestCase extends TestCase
     /** An issued revision 1, superseded by an issued revision 2 of the same PI number. */
     protected function piWithTwoRevisions(): array
     {
-        $first = ProformaInvoice::factory()->issued()->create(['pi_number' => 'PI-2026-0042']);
+        $first = ProformaInvoice::factory()->worth('5000')->issued()->create(['pi_number' => 'PI-2026-0042']);
         $first->update(['status' => 'superseded', 'is_current' => false]);
-        $second = ProformaInvoice::factory()->issued()->create([
+        $second = ProformaInvoice::factory()->worth('5000')->issued()->create([
             'pi_number' => 'PI-2026-0042', 'revision' => 2, 'client_id' => $first->client_id, 'created_by' => $first->created_by,
         ]);
 

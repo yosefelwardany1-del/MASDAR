@@ -158,6 +158,8 @@ class BooksCompletionTest extends TestCase
         $lines = $entry->lines()->with('account')->get()->keyBy(fn ($l) => $l->account->code);
         $this->assertSame(['16.8000', '39.2000', '56.0000'], [(string) $lines['6502']->debit, (string) $lines['6599']->debit, (string) $lines['2405']->credit]);
 
+        // B05: never more than the claim's total.
+        $this->assertThrows(fn () => app(PaymentService::class)->record(['kind' => 'claim_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '400.01', 'expense_claim_id' => $claim->id], $this->accountant), ValidationException::class);
         $payment = app(PaymentService::class)->record(['kind' => 'claim_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '400', 'expense_claim_id' => $claim->id], $this->accountant);
         $payment = Payment::find($payment->id);
         if (! app(PaymentQueries::class)->isEffective($payment)) {

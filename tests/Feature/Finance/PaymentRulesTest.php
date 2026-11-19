@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\PaymentApproval;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
+use App\Models\SupplierOrderLine;
 use App\Security\Roles;
 use App\Services\Finance\FxRateService;
 use App\Services\Finance\MoneyAccountService;
@@ -29,7 +30,7 @@ class PaymentRulesTest extends FinanceTestCase
 
     public function test_a_usd_client_receipt_is_numbered_linked_to_its_pi_and_audited(): void
     {
-        $pi = ProformaInvoice::factory()->issued()->create();
+        $pi = ProformaInvoice::factory()->worth('5000')->issued()->create();
         $payment = $this->receipt($this->usd(), '3000', pi: $pi)->fresh();
 
         $this->assertSame('PAY-'.now()->year.'-0001', $payment->number);
@@ -254,7 +255,7 @@ class PaymentRulesTest extends FinanceTestCase
         $this->receipt($this->cny(), '1000', pi: $second); // another currency: not in the USD figure
         $mistake = $this->receipt($usd, '999', pi: $second);
         $this->payments()->reverse($mistake, $this->user(Roles::ACCOUNTANT), 'wrong PI');
-        $this->receipt($usd, '50', pi: ProformaInvoice::factory()->issued()->create(['client_id' => $first->client_id])); // another PI
+        $this->receipt($usd, '50', pi: ProformaInvoice::factory()->worth('100')->issued()->create(['client_id' => $first->client_id])); // another PI
 
         $this->assertSame('1000.0000', $this->queries()->paidForPiNumber('PI-2026-0042', 'USD'));
         $this->assertSame('1000.0000', $this->queries()->paidForPiNumber('PI-2026-0042', 'CNY'));
@@ -265,6 +266,7 @@ class PaymentRulesTest extends FinanceTestCase
     {
         $this->setRate('CNY', now()->toDateString(), '0.14');
         $order = SupplierOrder::factory()->create();
+        SupplierOrderLine::factory()->create(['supplier_order_id' => $order->id, 'unit_price' => '100']); // 48,000
         $cny = $this->cny();
         $approved = $this->supplierPayment($cny, '3000', $order->supplier, ['supplier_order_id' => $order->id]);
         $this->payments()->approve($approved, $this->user(Roles::MANAGER));
