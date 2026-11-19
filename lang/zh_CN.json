@@ -2641,5 +2641,9 @@
     "Withdraw this payment? It was never approved, so it never counted.": "撤回此付款？它从未获批，因此从未计入。",
     "Why is it withdrawn?": "为何撤回？",
     "Withdraw": "撤回",
-    "The period :period (:from – :to) is closed. Choose a date in an open period, or ask the accountant to reopen it.": "会计期间 :period（:from – :to）已关闭。请选择开放期间内的日期，或请会计重新打开该期间。"
+    "The period :period (:from – :to) is closed. Choose a date in an open period, or ask the accountant to reopen it.": "会计期间 :period（:from – :to）已关闭。请选择开放期间内的日期，或请会计重新打开该期间。",
+    ":month has not begun: depreciation is posted for this month or earlier.": ":month 尚未开始：折旧只能计提本月或更早的月份。",
+    "Depreciation goes month by month: post :first first (:assets).": "折旧须逐月计提：请先计提 :first（:assets）。",
+    "Months not depreciated yet": "尚未计提折旧的月份",
+    "{1} one month|[2,*] :count months": "{1} 1 个月|[2,*] :count 个月"
 }

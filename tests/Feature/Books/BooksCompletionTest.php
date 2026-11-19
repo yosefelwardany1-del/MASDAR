@@ -217,4 +217,36 @@ class BooksCompletionTest extends TestCase
         $this->assertSame(1, FixedAsset::count());
         $this->assertTrue(JournalEntry::where('event', 'depreciation')->exists());
     }
+
+    /** B19: month by month from the first, never a month that has not begun; the screen lists what is missing. */
+    public function test_depreciation_goes_month_by_month_and_never_ahead(): void
+    {
+        app()->setLocale('en');
+        $this->accountant->forceFill(['locale' => 'en'])->save();
+        $service = app(FixedAssetService::class);
+        $start = now()->subMonthsNoOverflow(3)->startOfMonth();
+        $asset = $service->create([
+            'name' => 'Forklift', 'acquired_on' => $start->toDateString(), 'depreciation_starts_on' => $start->toDateString(),
+            'cost' => '1300', 'residual_value' => '100', 'useful_life_months' => '12',
+            'asset_account_id' => Account::where('code', '1801')->value('id'), 'depreciation_account_id' => Account::where('code', '1802')->value('id'),
+            'expense_account_id' => Account::where('code', '6601')->value('id'),
+        ], $this->accountant);
+        $month = fn (int $plus) => $start->copy()->addMonthsNoOverflow($plus)->format('Y-m');
+
+        // The screen lists the four months that have begun, and starts at the oldest.
+        $this->assertSame([$month(0), $month(1), $month(2), $month(3)], $service->missingMonths($asset));
+        $this->actingAs($this->accountant)->get(route('fixed-assets.index'))->assertSee('Months not depreciated yet')->assertSee($month(0).' – '.$month(3))
+            ->assertSee('value="'.$month(0).'"', false);
+
+        // Not a later month first, nor next month.
+        $this->assertThrows(fn () => $service->depreciate($month(1), $this->accountant), ValidationException::class,
+            'Depreciation goes month by month: post '.$month(0).' first (FA-0001).');
+        $this->assertThrows(fn () => $service->depreciate(now()->addMonthNoOverflow()->format('Y-m'), $this->accountant), ValidationException::class, 'has not begun');
+        $this->assertThrows(fn () => $service->depreciate('2030-06', $this->accountant), ValidationException::class);
+
+        $service->depreciate($month(0), $this->accountant);
+        $service->depreciate($month(1), $this->accountant);
+        $this->assertSame($month(2), $service->nextMonth($asset->fresh()));
+        $this->assertSame([$month(2), $month(3)], $service->missingMonths($asset->fresh()));
+    }
 }

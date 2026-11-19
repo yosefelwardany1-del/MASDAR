@@ -83,7 +83,51 @@ class FixedAssetService
         });
     }
 
-    /** What depreciating $month would charge: each asset and its amount. @return Collection<int, array{0: FixedAsset, 1: string}> */
+    /**
+     * B19: the one month $asset may be depreciated for next — the month after its last posted one,
+     * or its first month — as Y-m; null once fully depreciated, or disposed before that month.
+     */
+    public function nextMonth(FixedAsset $asset): ?string
+    {
+        $last = DB::table('depreciation_lines')->where('fixed_asset_id', $asset->id)->max('month');
+        $next = $last ? Carbon::parse($last)->startOfMonth()->addMonthNoOverflow() : Carbon::parse($asset->depreciation_starts_on)->startOfMonth();
+        $left = bcsub(bcsub((string) $asset->cost, (string) $asset->residual_value, 4), $asset->depreciated(), 4);
+        if (bccomp($left, '0', 4) <= 0 || ($asset->disposed_on && Carbon::parse($asset->disposed_on)->lt($next))) {
+            return null;
+        }
+
+        return $next->format('Y-m');
+    }
+
+    /**
+     * B19: months that have begun and are not posted yet, oldest first: from the asset's next
+     * month up to this month (Y-m each), for the screen to list.
+     *
+     * @return list<string>
+     */
+    public function missingMonths(FixedAsset $asset): array
+    {
+        $next = $this->nextMonth($asset);
+        if ($next === null) {
+            return [];
+        }
+        $months = [];
+        $at = Carbon::parse($next.'-01');
+        $now = now()->startOfMonth();
+        while ($at->lte($now) && count($months) < 120) {
+            $months[] = $at->format('Y-m');
+            $at->addMonthNoOverflow();
+        }
+
+        return $months;
+    }
+
+    /**
+     * What depreciating $month would charge: each asset whose next month it is, and its amount
+     * (B19: month by month — an asset with earlier months to post is not charged for a later one).
+     *
+     * @return Collection<int, array{0: FixedAsset, 1: string}>
+     */
     public function charges(string $month): Collection
     {
         $start = Carbon::parse($month.'-01')->startOfMonth();
@@ -94,6 +138,7 @@ class FixedAssetService
             ->where(fn ($q) => $q->whereNull('disposed_on')->orWhereDate('disposed_on', '>=', $start->toDateString()))
             ->whereDoesntHave('depreciation', fn ($q) => $q->whereDate('month', $start->toDateString()))
             ->orderBy('code')->get()
+            ->filter(fn (FixedAsset $asset) => $this->nextMonth($asset) === $month)
             ->map(function (FixedAsset $asset) {
                 $left = bcsub(bcsub((string) $asset->cost, (string) $asset->residual_value, 4), $asset->depreciated(), 4);
                 $charge = bccomp($asset->monthlyCharge(), $left, 4) > 0 ? $left : $asset->monthlyCharge();
@@ -110,6 +155,17 @@ class FixedAssetService
             throw ValidationException::withMessages(['month' => __('Choose a month.')]);
         }
         OpenPeriods::assert(CarbonImmutable::parse($month.'-01')->endOfMonth()->toDateString(), 'month');
+        // B19: month by month, and never a month that has not begun.
+        if ($month > now()->format('Y-m')) {
+            throw ValidationException::withMessages(['month' => __(':month has not begun: depreciation is posted for this month or earlier.', ['month' => $month])]);
+        }
+        $behind = FixedAsset::query()->whereNull('disposed_on')->orderBy('code')->get()
+            ->filter(fn (FixedAsset $a) => ($next = $this->nextMonth($a)) !== null && $next < $month);
+        if ($behind->isNotEmpty()) {
+            throw ValidationException::withMessages(['month' => __('Depreciation goes month by month: post :first first (:assets).', [
+                'first' => $behind->map(fn ($a) => $this->nextMonth($a))->min(), 'assets' => $behind->pluck('code')->implode(', '),
+            ])]);
+        }
         $charges = $this->charges($month);
         if ($charges->isEmpty()) {
             throw ValidationException::withMessages(['month' => __('Nothing to depreciate for :month.', ['month' => $month])]);

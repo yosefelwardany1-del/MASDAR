@@ -11,11 +11,22 @@
     @endcan
 </x-page-header>
 @error('month')<div class="alert alert-danger">{{ $message }}</div>@enderror
+@if($missing->isNotEmpty())
+    <div class="alert alert-warning" role="status">
+        <div class="fw-semibold mb-1"><i class="bi bi-calendar-x me-1" aria-hidden="true"></i>{{ __('Months not depreciated yet') }}</div>
+        <ul class="mb-0 ps-3">
+            @foreach($assets->whereIn('id', $missing->keys()) as $a)
+                @php $m = $missing[$a->id]; @endphp
+                <li><span class="app-ltr">{{ $a->code }}</span> <bdi>{{ $a->name }}</bdi>: <span class="app-num">{{ count($m) > 1 ? $m[0].' – '.end($m) : $m[0] }}</span> ({{ trans_choice('{1} one month|[2,*] :count months', count($m), ['count' => count($m)]) }})</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
 @if(Gate::allows('fixed_assets.edit') && Gate::allows('accounting.edit'))
     <x-section :title="__('Depreciate a month')" icon="calendar-month" class="mb-4">
         <form method="GET" class="d-flex gap-2 align-items-end flex-wrap mb-3">
-            <div><label class="form-label" for="month">{{ __('Month') }}</label><input id="month" type="month" name="month" value="{{ $month }}" class="form-control"></div>
+            <div><label class="form-label" for="month">{{ __('Month') }}</label><input id="month" type="month" name="month" value="{{ $month }}" max="{{ now()->format('Y-m') }}" class="form-control"></div>
             <button class="btn btn-light"><i class="bi bi-eye" aria-hidden="true"></i>{{ __('Preview') }}</button>
         </form>
         @if($charges->isEmpty())

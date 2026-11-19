@@ -15,11 +15,16 @@ class FixedAssetController extends Controller
 
     public function index(Request $request)
     {
-        $month = is_string($request->query('month')) && preg_match('/^\d{4}-\d{2}$/', $request->query('month')) ? $request->query('month') : now()->subMonthNoOverflow()->format('Y-m');
+        $assets = FixedAsset::query()->with('assetAccount')->orderBy('code')->get();
+        // B19: the months each asset still needs, oldest first; the form starts at the oldest.
+        $missing = $assets->mapWithKeys(fn (FixedAsset $a) => [$a->id => $this->service->missingMonths($a)])->filter();
+        $oldest = $missing->flatten()->min();
+        $month = is_string($request->query('month')) && preg_match('/^\d{4}-\d{2}$/', $request->query('month')) ? $request->query('month') : ($oldest ?? now()->format('Y-m'));
 
         return view('fixed-assets.index', [
-            'assets' => FixedAsset::query()->with('assetAccount')->orderBy('code')->get(),
+            'assets' => $assets,
             'month' => $month,
+            'missing' => $missing,
             'charges' => $this->service->charges($month),
         ]);
     }

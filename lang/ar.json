@@ -2641,5 +2641,9 @@
     "Withdraw this payment? It was never approved, so it never counted.": "سحب هذه الدفعة؟ لم تتم الموافقة عليها قط، لذا لم تُحتسب أبداً.",
     "Why is it withdrawn?": "لماذا تُسحب؟",
     "Withdraw": "سحب",
-    "The period :period (:from – :to) is closed. Choose a date in an open period, or ask the accountant to reopen it.": "الفترة :period (:from – :to) مغلقة. اختر تاريخاً في فترة مفتوحة، أو اطلب من المحاسب إعادة فتحها."
+    "The period :period (:from – :to) is closed. Choose a date in an open period, or ask the accountant to reopen it.": "الفترة :period (:from – :to) مغلقة. اختر تاريخاً في فترة مفتوحة، أو اطلب من المحاسب إعادة فتحها.",
+    ":month has not begun: depreciation is posted for this month or earlier.": "لم يبدأ :month بعد: يُرحَّل الإهلاك لهذا الشهر أو ما قبله.",
+    "Depreciation goes month by month: post :first first (:assets).": "يُرحَّل الإهلاك شهراً بعد شهر: رحّل :first أولاً (:assets).",
+    "Months not depreciated yet": "أشهر لم يُرحَّل إهلاكها بعد",
+    "{1} one month|[2,*] :count months": "{1} شهر واحد|[2,*] :count أشهر"
 }
