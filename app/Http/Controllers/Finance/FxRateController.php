@@ -31,8 +31,9 @@ class FxRateController extends Controller
             'currency' => $currency,
             'currencies' => $this->currencies(),
             'book' => BusinessSetting::current()->book_currency,
-            // Read only, for the tiles: the latest rate of each currency.
-            'latest' => collect(DB::select('SELECT DISTINCT ON (currency) currency, rate, rate_date FROM fx_rates ORDER BY currency, rate_date DESC')),
+            // Read only, for the tiles: the latest rate of each currency on or before today (B08).
+            'latest' => collect(DB::select('SELECT DISTINCT ON (currency) currency, rate, rate_date FROM fx_rates WHERE rate_date <= ? ORDER BY currency, rate_date DESC', [now()->toDateString()])),
+            'deletable' => FxRate::query()->whereRaw('NOT fx_rate_is_used(fx_rates.id)')->pluck('id')->flip(),
         ]);
     }
 
@@ -49,12 +50,16 @@ class FxRateController extends Controller
     {
         $data = $request->validate([
             'currency' => ['required', 'string', 'size:3'],
-            'rate_date' => ['required', 'date'],
+            'rate_date' => ['required', 'date', 'before_or_equal:today'],
             'rate' => ['required', 'string', 'max:30'],
-        ]);
+        ], ['rate_date.before_or_equal' => __('A rate cannot be dated after today.')]);
+        // B08: one rate per currency per day — saving another replaces it, and the user is told so.
+        $previous = FxRate::query()->where('currency', strtoupper($data['currency']))->whereDate('rate_date', $data['rate_date'])->value('rate');
         $rate = $this->rates->set($data['currency'], $data['rate_date'], trim($data['rate']), $request->user());
 
-        return redirect()->route('fx-rates.index', ['currency' => $rate->currency])->with('success', __('Rate saved.'));
+        return redirect()->route('fx-rates.index', ['currency' => $rate->currency])->with('success', $previous !== null && bccomp((string) $previous, (string) $rate->rate, 6) !== 0
+            ? __('The :currency rate of :date was :old; it is now :new.', ['currency' => $rate->currency, 'date' => $rate->rate_date->toDateString(), 'old' => (string) $previous, 'new' => (string) $rate->rate])
+            : __('Rate saved.'));
     }
 
     public function edit(FxRate $rate)
@@ -68,6 +73,13 @@ class FxRateController extends Controller
         $this->rates->set($rate->currency, $rate->rate_date, trim($data['rate']), $request->user());
 
         return redirect()->route('fx-rates.index', ['currency' => $rate->currency])->with('success', __('Rate saved.'));
+    }
+
+    public function destroy(Request $request, FxRate $rate)
+    {
+        $this->rates->delete($rate, $request->user());
+
+        return redirect()->route('fx-rates.index', ['currency' => $rate->currency])->with('success', __('Rate deleted.'));
     }
 
     /** @return array<string, string> code => name, without the book currency (always 1) */

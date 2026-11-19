@@ -65,6 +65,12 @@
                     <td class="text-end">
                         @can('payments.edit')
                             <a href="{{ route('fx-rates.edit', $rate) }}" class="btn btn-sm btn-light" title="{{ __('Edit') }}" aria-label="{{ __('Edit rate') }}: {{ $rate->currency }} {{ $rate->rate_date->toDateString() }}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                            @if($deletable->has($rate->id))
+                                <form method="POST" action="{{ route('fx-rates.destroy', $rate) }}" class="d-inline" onsubmit="return confirm(@js(__('Delete this rate? Nothing has used it.')));">
+                                    @csrf @method('DELETE')
+                                    <button class="btn btn-sm btn-light" title="{{ __('Delete') }}" aria-label="{{ __('Delete rate') }}: {{ $rate->currency }} {{ $rate->rate_date->toDateString() }}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                                </form>
+                            @endif
                         @endcan
                     </td>
                 </tr>

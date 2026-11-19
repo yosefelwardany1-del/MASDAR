@@ -59,7 +59,8 @@ class PaymentRulesTest extends FinanceTestCase
         $this->assertSame(0, Payment::count());
 
         $this->setRate('CNY', now()->subDays(3)->toDateString(), '0.138000');
-        $this->setRate('CNY', now()->addDay()->toDateString(), '0.150000'); // later than the payment: not used
+        // Later than the payment, written before B08 refused rates dated ahead: not used.
+        \App\Models\FxRate::create(['currency' => 'CNY', 'rate_date' => now()->addDay()->toDateString(), 'rate' => '0.150000', 'created_by' => $this->user(Roles::MANAGER)->id]);
         $payment = $this->receipt($cny, '7000')->fresh();
         $this->assertSame('0.138000', $payment->rate);
         $this->assertSame('966.0000', $payment->book_amount);

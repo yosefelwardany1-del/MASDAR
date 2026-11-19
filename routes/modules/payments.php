@@ -29,3 +29,4 @@ Route::get('fx-rates/create', [FxRateController::class, 'create'])->middleware('
 Route::post('fx-rates', [FxRateController::class, 'store'])->middleware('can:payments.edit')->name('fx-rates.store');
 Route::get('fx-rates/{rate}/edit', [FxRateController::class, 'edit'])->whereNumber('rate')->middleware('can:payments.edit')->name('fx-rates.edit');
 Route::put('fx-rates/{rate}', [FxRateController::class, 'update'])->whereNumber('rate')->middleware('can:payments.edit')->name('fx-rates.update');
+Route::delete('fx-rates/{rate}', [FxRateController::class, 'destroy'])->whereNumber('rate')->middleware('can:payments.edit')->name('fx-rates.destroy');

@@ -2602,5 +2602,11 @@
     ":account holds :available (money out awaiting approval counted as gone), not enough for :amount. Record the money coming in first, or pay from another account.": "رصيد :account هو :available (مع احتساب المدفوعات الصادرة التي تنتظر الموافقة كأنها خرجت)، وهو لا يكفي لـ :amount. سجّل المبلغ الوارد أولاً، أو ادفع من حساب آخر.",
     "May go below zero (e.g. a payment agent who advances the money)": "يجوز أن يصبح رصيده سالباً (مثل وكيل دفع يقدّم المال مسبقاً)",
     "Off: money out is refused when the account does not hold it.": "عند الإيقاف: يُرفض الصرف إذا لم يكن المبلغ متوفراً في الحساب.",
-    "A payment cannot be dated after today.": "لا يجوز أن يكون تاريخ الدفعة بعد اليوم."
+    "A payment cannot be dated after today.": "لا يجوز أن يكون تاريخ الدفعة بعد اليوم.",
+    "A rate cannot be dated after today.": "لا يجوز أن يكون تاريخ سعر الصرف بعد اليوم.",
+    "This rate has been used by payments or posted entries, so it stays. Add a rate for another day instead.": "استُخدم هذا السعر في مدفوعات أو قيود مُرحَّلة، لذا يبقى. أضف سعراً ليوم آخر بدلاً من ذلك.",
+    "The :currency rate of :date was :old; it is now :new.": "كان سعر :currency بتاريخ :date هو :old؛ وأصبح الآن :new.",
+    "Rate deleted.": "حُذف السعر.",
+    "Delete this rate? Nothing has used it.": "حذف هذا السعر؟ لم يستخدمه أي شيء.",
+    "Delete rate": "حذف السعر"
 }
