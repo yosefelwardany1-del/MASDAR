@@ -2623,5 +2623,8 @@
     "The period of this date is closed. Reopen it or choose another date.": "该日期所在期间已关闭。请重新打开期间或选择其他日期。",
     "This record is final and never changes. Make a correction instead.": "此记录为最终记录，不会更改。请改为登记更正。",
     "This already exists, so it was not saved again.": "该记录已存在，因此未再次保存。",
-    "This change was refused because it breaks a rule of the system, so nothing was saved. Check what you entered, or ask your administrator.": "此更改违反系统规则，已被拒绝，未保存任何内容。请检查您输入的内容，或联系管理员。"
+    "This change was refused because it breaks a rule of the system, so nothing was saved. Check what you entered, or ask your administrator.": "此更改违反系统规则，已被拒绝，未保存任何内容。请检查您输入的内容，或联系管理员。",
+    "This quotation was valid until :date, which has passed. Extend its date before sending it, or send it anyway.": "此报价有效期至 :date，已过期。请先延长日期再发送，或仍然发送。",
+    "This quotation was valid until :date, which has passed. Send it anyway?": "此报价有效期至 :date，已过期。仍然发送吗？",
+    "This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.": "此报价已于 :date 过期。请复制（复制以修改），为副本设定新日期后改发副本。"
 }

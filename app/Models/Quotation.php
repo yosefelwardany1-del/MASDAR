@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -52,10 +53,29 @@ class Quotation extends Model
         return $this->status === 'draft';
     }
 
-    /** Sent, unanswered, and past its validity. */
+    /** Sent, unanswered, and past its validity (B13: the same rule as scopeShownAs('expired')). */
     public function isExpired(): bool
     {
-        return $this->status === 'sent' && $this->valid_until->toDateString() < now()->toDateString();
+        return $this->status === 'sent' && $this->isPastValidity();
+    }
+
+    /** Its "valid until" date has gone by (today, by the company's clock, is still valid). */
+    public function isPastValidity(): bool
+    {
+        return $this->valid_until->toDateString() < now()->toDateString();
+    }
+
+    /** B13: the quotations whose shown status (displayStatus) is $status — the list's tabs. */
+    public function scopeShownAs(Builder $query, string $status): Builder
+    {
+        $today = now()->toDateString();
+
+        return match ($status) {
+            'expired' => $query->where('status', 'sent')->whereDate('valid_until', '<', $today),
+            'sent' => $query->where('status', 'sent')->whereDate('valid_until', '>=', $today),
+            'all' => $query,
+            default => $query->where('status', $status),
+        };
     }
 
     /** The status as shown: an unanswered quotation past its date reads as expired. */

@@ -23,12 +23,18 @@
         @endunless
         @can('quotations.edit')
             @if($quotation->isDraft())
-                <form method="POST" action="{{ route('quotations.send', $quotation) }}">@csrf<button class="btn btn-primary"><i class="bi bi-send" aria-hidden="true"></i>{{ __('Send') }}</button></form>
+                {{-- B13: a draft past its date is sent only on purpose; extending the date is the usual fix. --}}
+                <form method="POST" action="{{ route('quotations.send', $quotation) }}" @if($quotation->isPastValidity()) onsubmit="return confirm(@js(__('This quotation was valid until :date, which has passed. Send it anyway?', ['date' => $quotation->valid_until->toDateString()])));" @endif>
+                    @csrf @if($quotation->isPastValidity())<input type="hidden" name="anyway" value="1">@endif
+                    <button class="btn btn-primary"><i class="bi bi-send" aria-hidden="true"></i>{{ __('Send') }}</button>
+                </form>
             @elseif($quotation->status === 'sent')
-                <form method="POST" action="{{ route('quotations.accept', $quotation) }}">@csrf<button class="btn btn-light"><i class="bi bi-hand-thumbs-up" aria-hidden="true"></i>{{ __('Accepted by the client') }}</button></form>
+                @unless($quotation->isExpired())
+                    <form method="POST" action="{{ route('quotations.accept', $quotation) }}">@csrf<button class="btn btn-light"><i class="bi bi-hand-thumbs-up" aria-hidden="true"></i>{{ __('Accepted by the client') }}</button></form>
+                @endunless
                 <form method="POST" action="{{ route('quotations.decline', $quotation) }}">@csrf<button class="btn btn-light"><i class="bi bi-hand-thumbs-down" aria-hidden="true"></i>{{ __('Declined') }}</button></form>
             @endif
-            @if(in_array($quotation->status, ['sent', 'accepted'], true) && ! $quotation->proforma_invoice_id && Gate::allows('proforma_invoices.edit'))
+            @if(in_array($quotation->status, ['sent', 'accepted'], true) && ! $quotation->isExpired() && ! $quotation->proforma_invoice_id && Gate::allows('proforma_invoices.edit'))
                 <form method="POST" action="{{ route('quotations.convert', $quotation) }}" onsubmit="return confirm(@js(__('Make a draft PI from this quotation?')));">@csrf<button class="btn btn-primary"><i class="bi bi-receipt" aria-hidden="true"></i>{{ __('Make the PI') }}</button></form>
             @endif
             @unless($quotation->isDraft())
@@ -39,6 +45,10 @@
 </x-page-header>
 
 @error('quotation')<div class="alert alert-danger">{{ $message }}</div>@enderror
+@error('valid_until')<div class="alert alert-danger">{{ $message }}</div>@enderror
+@if($quotation->isExpired())
+    <div class="alert alert-warning py-2"><i class="bi bi-hourglass-bottom me-1" aria-hidden="true"></i>{{ __('This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.', ['date' => $quotation->valid_until->toDateString()]) }}</div>
+@endif
 @if($quotation->proformaInvoice)
     <div class="alert alert-success d-flex gap-2 align-items-center"><i class="bi bi-receipt" aria-hidden="true"></i><div>{{ __('This quotation became PI') }} <a href="{{ route('proforma-invoices.show', $quotation->proforma_invoice_id) }}" class="app-ltr fw-semibold">{{ $quotation->proformaInvoice->reference() }}</a>.</div></div>
 @endif

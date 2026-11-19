@@ -113,15 +113,21 @@ class QuotationService
         });
     }
 
-    /** Send it to the client: numbered now, and never changed after. */
-    public function send(Quotation $quotation, User $by): Quotation
+    /**
+     * Send it to the client: numbered now, and never changed after. One whose validity has already
+     * ended is sent only when the person says so ($anyway, B13): extending its date is the usual fix.
+     */
+    public function send(Quotation $quotation, User $by, bool $anyway = false): Quotation
     {
         $this->authorize($by, 'quotations.edit');
 
-        return DB::transaction(function () use ($quotation, $by) {
+        return DB::transaction(function () use ($quotation, $by, $anyway) {
             $quotation = $this->lockedDraft($quotation);
             if (! $quotation->lines()->exists()) {
                 throw ValidationException::withMessages(['quotation' => __('Add at least one line before sending the quotation.')]);
+            }
+            if ($quotation->isPastValidity() && ! $anyway) {
+                throw ValidationException::withMessages(['valid_until' => __('This quotation was valid until :date, which has passed. Extend its date before sending it, or send it anyway.', ['date' => $quotation->valid_until->toDateString()])]);
             }
             $quotation->update([
                 'number' => $this->numbers->next('quotation', $quotation->quoted_on),
@@ -157,6 +163,10 @@ class QuotationService
             $quotation = Quotation::query()->lockForUpdate()->findOrFail($quotation->id);
             if ($quotation->proforma_invoice_id) {
                 throw ValidationException::withMessages(['quotation' => __('This quotation is already PI :pi.', ['pi' => $quotation->proformaInvoice?->reference()])]);
+            }
+            // B13: past its validity the offer no longer stands — unless it was accepted while it did.
+            if ($quotation->status === 'sent' && $quotation->isPastValidity()) {
+                throw ValidationException::withMessages(['quotation' => $this->expiredMessage($quotation)]);
             }
             if ($quotation->status === 'sent') {
                 $quotation = $this->answer($quotation, 'accepted', $by);
@@ -217,6 +227,11 @@ class QuotationService
         });
     }
 
+    private function expiredMessage(Quotation $quotation): string
+    {
+        return __('This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.', ['date' => $quotation->valid_until->toDateString()]);
+    }
+
     private function answer(Quotation $quotation, string $status, User $by): Quotation
     {
         $this->authorize($by, 'quotations.edit');
@@ -225,6 +240,10 @@ class QuotationService
             $quotation = Quotation::query()->lockForUpdate()->findOrFail($quotation->id);
             if ($quotation->status !== 'sent') {
                 throw ValidationException::withMessages(['quotation' => __('Only a sent quotation is accepted or declined.')]);
+            }
+            // B13: an expired offer is not accepted; a decline is still recorded.
+            if ($status === 'accepted' && $quotation->isPastValidity()) {
+                throw ValidationException::withMessages(['quotation' => $this->expiredMessage($quotation)]);
             }
             $quotation->update(['status' => $status, 'decided_at' => now()]);
             AuditTrail::record($status, $quotation, [], []);
