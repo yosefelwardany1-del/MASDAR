@@ -104,7 +104,7 @@
     </header>
 
     <main class="app-content">
-        @foreach(['success' => 'success', 'error' => 'danger', 'warning' => 'warning'] as $key => $tone)
+        @foreach(['success' => 'success', 'info' => 'info', 'error' => 'danger', 'warning' => 'warning'] as $key => $tone)
             @if(session($key))
                 <div class="alert alert-{{ $tone }} alert-dismissible fade show" role="alert">
                     {{ session($key) }}

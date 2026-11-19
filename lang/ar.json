@@ -2659,5 +2659,16 @@
     ":name already exists (:code). Open it, or tick \"Save anyway\" to add another.": ":name موجود بالفعل (:code). افتحه، أو حدّد \"حفظ على أي حال\" لإضافة آخر.",
     "There is already a :currency account named :name. Give this one another name.": "يوجد بالفعل حساب :currency باسم :name. أعطِ هذا الحساب اسماً آخر.",
     "Open :record": "فتح :record",
-    "Save anyway": "حفظ على أي حال"
+    "Save anyway": "حفظ على أي حال",
+    "Your own details are on My profile. Another administrator changes your roles.": "بياناتك الخاصة في صفحة ملفي الشخصي. يغيّر أدوارك مسؤول آخر.",
+    "Your roles do not let you change this person: they hold a role or permission you do not.": "لا تسمح لك أدوارك بتعديل هذا الشخص: لديه دور أو صلاحية ليست لديك.",
+    "This page has expired": "انتهت صلاحية هذه الصفحة",
+    "You were away for a while. Go back, reload the page and try again.": "لقد غبت فترة. ارجع، وأعد تحميل الصفحة وحاول مرة أخرى.",
+    "You may not open this page": "لا يمكنك فتح هذه الصفحة",
+    "Your role does not give access to it. If you need it, ask a manager.": "دورك لا يتيح الوصول إليها. إن كنت تحتاجها فاطلب ذلك من مدير.",
+    "Go back": "رجوع",
+    "Something went wrong": "حدث خطأ ما",
+    "Nothing you did caused this. Try again in a moment; if it keeps happening, tell your administrator.": "لم يحدث هذا بسبب شيء فعلته. حاول مرة أخرى بعد لحظة؛ وإن تكرر فأخبر مسؤول النظام.",
+    "This page was not found": "لم يتم العثور على هذه الصفحة",
+    "It may have been moved, or the record is one you may not see.": "ربما نُقلت، أو أن السجل مما لا يحق لك رؤيته."
 }

@@ -38,7 +38,7 @@ class UserController extends Controller
 
         $pendingCount = $request->user()->can('users.edit') ? User::where('status', 'pending')->count() : 0;
 
-        return view('users.index', compact('users', 'search', 'status', 'pendingCount'));
+        return view('users.index', compact('users', 'search', 'status', 'pendingCount') + ['guard' => $this->guard]);
     }
 
     public function create(Request $request)
@@ -84,7 +84,11 @@ class UserController extends Controller
 
     public function edit(Request $request, User $user)
     {
-        abort_unless($this->guard->canManageUser($request->user(), $user), 403);
+        // B24: your own details are on My profile; your roles are another administrator's to change.
+        if ($request->user()->is($user)) {
+            return redirect()->route('profile')->with('info', __('Your own details are on My profile. Another administrator changes your roles.'));
+        }
+        abort_unless($this->guard->canManageUser($request->user(), $user), 403, __('Your roles do not let you change this person: they hold a role or permission you do not.'));
 
         return view('users.edit', [
             'user' => $user->load('roles'),

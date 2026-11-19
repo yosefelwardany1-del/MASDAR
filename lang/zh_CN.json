@@ -2659,5 +2659,16 @@
     ":name already exists (:code). Open it, or tick \"Save anyway\" to add another.": ":name 已存在（:code）。请打开它，或勾选“仍然保存”以新增一条。",
     "There is already a :currency account named :name. Give this one another name.": "已有名为 :name 的 :currency 账户。请为此账户另取名称。",
     "Open :record": "打开 :record",
-    "Save anyway": "仍然保存"
+    "Save anyway": "仍然保存",
+    "Your own details are on My profile. Another administrator changes your roles.": "您本人的信息在“我的资料”中。您的角色由另一位管理员更改。",
+    "Your roles do not let you change this person: they hold a role or permission you do not.": "您的角色不允许修改此人：对方拥有您没有的角色或权限。",
+    "This page has expired": "此页面已过期",
+    "You were away for a while. Go back, reload the page and try again.": "您离开了一段时间。请返回、刷新页面后重试。",
+    "You may not open this page": "您无权打开此页面",
+    "Your role does not give access to it. If you need it, ask a manager.": "您的角色无权访问此页面。如需访问，请联系经理。",
+    "Go back": "返回",
+    "Something went wrong": "出现了问题",
+    "Nothing you did caused this. Try again in a moment; if it keeps happening, tell your administrator.": "这不是您的操作导致的。请稍后重试；如果仍然出现，请告诉管理员。",
+    "This page was not found": "未找到此页面",
+    "It may have been moved, or the record is one you may not see.": "页面可能已移动，或该记录您无权查看。"
 }
