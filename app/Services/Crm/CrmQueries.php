@@ -24,6 +24,12 @@ class CrmQueries
     /** Document stages, most advanced first. */
     private const DOCUMENT_STAGES = ['delivered', 'shipped', 'in_production', 'confirmed', 'pi_sent'];
 
+    /** B12: a stage the documents reach — flagged so on the list, or one of those the documents compute. */
+    public static function isDocumentStage(string $code, ?Lookup $row = null): bool
+    {
+        return in_array($code, self::DOCUMENT_STAGES, true) || (int) ($row?->meta['from_documents'] ?? 0) === 1;
+    }
+
     /** @var array<string, array{label: string, from_documents: bool, closed: bool}>|null */
     private ?array $stages = null;
 
@@ -33,7 +39,7 @@ class CrmQueries
         return $this->stages ??= Lookup::query()->ofList('client_stage')->where('active', true)->get()
             ->mapWithKeys(fn (Lookup $l) => [$l->code => [
                 'label' => $l->displayName(),
-                'from_documents' => (int) ($l->meta['from_documents'] ?? 0) === 1,
+                'from_documents' => self::isDocumentStage($l->code, $l),
                 'closed' => (int) ($l->meta['closed'] ?? 0) === 1,
             ]])->all();
     }

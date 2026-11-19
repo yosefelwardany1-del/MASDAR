@@ -299,7 +299,7 @@ abstract class PartyController extends Controller
                 'party_source' => Lookup::options('party_source'),
                 // Only the stages a person sets: those from "PI sent" on follow the documents (spec §5.1).
                 'client_stage' => Lookup::query()->ofList('client_stage')->where('active', true)->get()
-                    ->reject(fn (Lookup $l) => (int) ($l->meta['from_documents'] ?? 0) === 1)
+                    ->reject(fn (Lookup $l) => CrmQueries::isDocumentStage($l->code, $l))
                     ->mapWithKeys(fn (Lookup $l) => [$l->code => $l->displayName()])->all(),
                 'shipping_company_kind' => Lookup::options('shipping_company_kind'),
             ],

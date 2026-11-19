@@ -7,6 +7,7 @@ use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\PartyContact;
 use App\Models\User;
+use App\Services\Crm\CrmQueries;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
 use Illuminate\Support\Facades\Auth;
@@ -127,7 +128,7 @@ class PartyService
         if (! $row) {
             throw ValidationException::withMessages(['stage' => __('Choose a stage from the list.')]);
         }
-        if ((int) ($row->meta['from_documents'] ?? 0) === 1) {
+        if (CrmQueries::isDocumentStage($row->code, $row)) {
             throw ValidationException::withMessages(['stage' => __(':stage follows the documents: it is reached by issuing, confirming and shipping the client\'s PI, not set by hand.', ['stage' => $row->displayName()])]);
         }
     }

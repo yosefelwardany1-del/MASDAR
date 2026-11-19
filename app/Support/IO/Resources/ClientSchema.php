@@ -88,7 +88,7 @@ class ClientSchema extends PartySchema
     {
         $code = $value === '' ? null : $this->lookupCode('client_stage', $value, __('Stage'));
 
-        return $code !== null && (int) (Lookup::query()->ofList('client_stage')->where('code', $code)->value('meta->from_documents') ?? 0) === 1;
+        return $code !== null && CrmQueries::isDocumentStage($code, Lookup::query()->ofList('client_stage')->where('code', $code)->first());
     }
 
     protected function scoped(Builder $query, User $user): Builder
