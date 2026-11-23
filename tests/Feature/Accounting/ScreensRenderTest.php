@@ -43,11 +43,11 @@ class ScreensRenderTest extends TestCase
         $order = $this->supplierOrder();
         $payment = $this->payment(['kind' => 'client_receipt', 'money_account_id' => MoneyAccount::factory()->rmb()->create()->id]);
         $company = $this->shippingCompany();
-        Container::factory()->create(['container_no' => 'MSKU1234567']);
+        Container::factory()->create(['container_no' => 'MSKU1234565']);
 
         $this->actingAs($accountant)->get(route('accounting.to-post.index'))->assertOk()
             ->assertSee($pi->pi_number)->assertSee($order->number)->assertSee($payment->number)
-            ->assertSee($company->name)->assertSee('MSKU1234567');
+            ->assertSee($company->name)->assertSee('MSKU1234565');
     }
 
     public function test_every_report_downloads_as_csv(): void

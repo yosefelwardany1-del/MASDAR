@@ -50,11 +50,13 @@ class Ledger
         return (string) $rate;
     }
 
-    /** @return array<string, string> currency => latest rate (for the entry form's defaults). */
+    /** @return array<string, string> currency => the latest rate on or before today (B08: never one dated ahead). */
     public function latestRates(): array
     {
+        $today = now()->toDateString();
+
         return DB::table('fx_rates as r')
-            ->whereRaw('r.rate_date = (SELECT MAX(rate_date) FROM fx_rates x WHERE x.currency = r.currency)')
+            ->whereRaw('r.rate_date = (SELECT MAX(rate_date) FROM fx_rates x WHERE x.currency = r.currency AND x.rate_date <= ?)', [$today])
             ->pluck('rate', 'currency')->map(fn ($rate) => (string) $rate)->all();
     }
 

@@ -23,7 +23,7 @@ class MoneyAccount extends Model
 
     protected function casts(): array
     {
-        return ['active' => 'boolean'];
+        return ['active' => 'boolean', 'allow_negative' => 'boolean'];
     }
 
     public function ledgerAccount(): BelongsTo

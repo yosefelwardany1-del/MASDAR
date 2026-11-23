@@ -97,7 +97,7 @@ class TradeDocumentsTest extends TestCase
         $manager = User::where('email', 'manager@example.test')->sole();
 
         $this->actingAs($manager)->get(route('containers.commercial-invoice', [$container, 'client' => $client->id]))->assertOk()
-            ->assertSee('COMMERCIAL INVOICE')->assertSee('MSKU7712345')->assertSee('7013.49')->assertSee('$2,520.00')->assertSee('FOB Ningbo')
+            ->assertSee('COMMERCIAL INVOICE')->assertSee('MSKU7712342')->assertSee('7013.49')->assertSee('$2,520.00')->assertSee('FOB Ningbo')
             ->assertDontSee('Yiwu Bright Housewares Factory');
         // A client with nothing in the container has no invoice; neither does whoever cannot see prices.
         $other = Party::where('name', 'Nile Kitchenware Co.')->sole();

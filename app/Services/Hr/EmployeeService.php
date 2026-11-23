@@ -73,14 +73,18 @@ class EmployeeService
     {
         $this->authorize($by, 'payroll.edit');
         $from = $this->date($data['effective_from'] ?? null, 'effective_from', required: true);
-        $base = Money::amount($data['base_salary'] ?? null, 'base_salary', positive: true);
-        $allowances = Money::amount($data['allowances'] ?? null, 'allowances');
+        $base = Money::amount($data['base_salary'] ?? null, 'base_salary', positive: true, decimals: 2);
+        $allowances = Money::amount($data['allowances'] ?? null, 'allowances', decimals: 2);
         $currency = strtoupper((string) ($data['currency'] ?? '') ?: $employee->salary_currency);
         if (! array_key_exists($currency, Lookup::options('currency'))) {
             throw ValidationException::withMessages(['currency' => __('Choose a currency from the list of currencies.')]);
         }
         if ($from < $employee->joined_on->toDateString()) {
             throw ValidationException::withMessages(['effective_from' => __('A salary starts on or after the joining date (:date).', ['date' => $employee->joined_on->toDateString()])]);
+        }
+        // B28: salaries are a history; a second one from the same day is said, not taken silently.
+        if (EmployeeSalary::query()->where('employee_id', $employee->id)->whereDate('effective_from', $from)->exists()) {
+            throw ValidationException::withMessages(['effective_from' => __('A salary from :date is already recorded. Salaries are kept as a history: give the new one the date it starts.', ['date' => $from])]);
         }
 
         return DB::transaction(function () use ($employee, $from, $base, $allowances, $currency, $data, $by) {
@@ -167,6 +171,10 @@ class EmployeeService
                     $errors += $e->errors();
                 }
             }
+        }
+        // B28: nobody is born in the future.
+        if (($data['birth_date'] ?? null) !== null && ! isset($errors['birth_date']) && $data['birth_date'] > now()->toDateString()) {
+            $errors['birth_date'] = __('The birth date cannot be in the future.');
         }
         $joined = $data['joined_on'] ?? $employee?->joined_on?->toDateString();
         if ($joined === null && ! isset($errors['joined_on'])) {

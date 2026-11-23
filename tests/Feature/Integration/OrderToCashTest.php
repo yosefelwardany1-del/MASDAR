@@ -59,19 +59,19 @@ class OrderToCashTest extends TestCase
         $this->assertSame('852.0000', (string) DB::table('pi_lines')->where('proforma_invoice_id', $pi->id)->sum('amount'));
         $this->assertSame('30% DEPOSIT 70% FINAL PAYMENT BEFORE SHIPPING', $pi->terms_text);
 
-        // 2. The factory order, from the PI's lines.
-        $order = app(SupplierOrderService::class)->createFromPi($pi, [[
-            'supplier_id' => $factory->id, 'lines' => $pi->lines->mapWithKeys(fn ($l) => [$l->id => null])->all(),
-            'confirmation_date' => now()->toDateString(), 'delivery_date' => now()->addDays(25)->toDateString(),
-            'currency' => 'CNY', 'merchandiser_id' => $manager->id,
-        ]], $manager)->first();
-
-        // 3. The client's 30% deposit arrives in Hong Kong (USD).
+        // 2. The client's 30% deposit arrives in Hong Kong (USD).
         $usd = MoneyAccount::factory()->create();
         $rmb = MoneyAccount::factory()->rmb()->create();
         $payments = app(PaymentService::class);
         $payments->record(['kind' => 'client_receipt', 'paid_on' => now()->toDateString(), 'money_account_id' => $usd->id, 'amount' => '255.60', 'party_id' => $client->id, 'proforma_invoice_id' => $pi->id], $manager);
         $pis->confirm($pi->fresh(), $manager);
+
+        // 3. The factory order, from the confirmed PI's lines (B01: the sales order).
+        $order = app(SupplierOrderService::class)->createFromPi($pi, [[
+            'supplier_id' => $factory->id, 'lines' => $pi->lines->mapWithKeys(fn ($l) => [$l->id => null])->all(),
+            'confirmation_date' => now()->toDateString(), 'delivery_date' => now()->addDays(25)->toDateString(),
+            'currency' => 'CNY', 'merchandiser_id' => $manager->id,
+        ]], $manager)->first();
 
         // 4. Goods received and inspected: the receive-goods step completes itself.
         foreach ($order->lines as $line) {
@@ -82,7 +82,7 @@ class OrderToCashTest extends TestCase
 
         // 5. Booked and loaded: the booking and loading steps complete themselves.
         $shipment = app(ShipmentService::class)->create(['shipping_company_id' => $forwarder->id, 'mode' => 'sea_fcl', 'port_of_loading' => 'NGB', 'port_of_discharge' => 'JEA', 'etd' => now()->addDays(3)->toDateString(), 'eta' => now()->addDays(28)->toDateString()], $manager);
-        $container = app(ShipmentService::class)->addContainer($shipment, ['container_no' => 'MSKU1234567', 'container_type' => '40HQ'], $manager);
+        $container = app(ShipmentService::class)->addContainer($shipment, ['container_no' => 'MSKU1234565', 'container_type' => '40HQ'], $manager);
         app(ShipmentService::class)->bookOrder($shipment, $order, $manager);
         foreach ($order->lines as $line) {
             app(ContainerTrackingService::class)->load($container, $line, (string) $line->cartons, now()->toDateString(), $manager);
@@ -98,8 +98,8 @@ class OrderToCashTest extends TestCase
         app(FxRateService::class)->set('CNY', now()->toDateString(), '0.140000', $manager);
         $payments->record(['kind' => 'client_receipt', 'paid_on' => now()->toDateString(), 'money_account_id' => $usd->id, 'amount' => '596.40', 'party_id' => $client->id, 'proforma_invoice_id' => $pi->id], $manager);
         $this->assertSame(0, bccomp(app(PaymentQueries::class)->paidForPiNumber($pi->pi_number, 'USD'), '852', 4), 'the PI is paid in full');
-        $factoryPayment = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '3580.80', 'rate' => '0.140000', 'party_id' => $factory->id, 'supplier_order_id' => $order->id], $manager);
-        $payments->approve($factoryPayment, $manager);
+        $factoryPayment = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '3580.80', 'rate' => '0.140000', 'party_id' => $factory->id, 'supplier_order_id' => $order->id], $accountant = User::factory()->create()->assignRole(Roles::ACCOUNTANT));
+        $payments->approve($factoryPayment, $manager); // the accountant records, a manager approves (B16)
 
         // 7. The books: invoice the client, bill the factory's goods, post every payment.
         $posting = app(PostingService::class);

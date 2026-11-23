@@ -74,7 +74,7 @@ class StepAutomationTest extends TestCase
         $order = $line->supplierOrder;
         $shipping = app(ShipmentService::class);
         $shipment = $shipping->create(['mode' => 'sea_fcl'], $this->manager);
-        $container = $shipping->addContainer($shipment, ['container_no' => 'MSKU0000001', 'container_type' => '40HQ'], $this->manager);
+        $container = $shipping->addContainer($shipment, ['container_no' => 'MSKU0000006', 'container_type' => '40HQ'], $this->manager);
         $shipping->bookOrder($shipment, $order, $this->manager);
         $tracking = app(ContainerTrackingService::class);
 
@@ -110,6 +110,6 @@ class StepAutomationTest extends TestCase
         $this->assertNull($note(null));
 
         app()->setLocale('en');
-        $this->assertSame('Loaded in MSKU7712345', $note('Loaded in MSKU7712345'));
+        $this->assertSame('Loaded in MSKU7712342', $note('Loaded in MSKU7712342'));
     }
 }

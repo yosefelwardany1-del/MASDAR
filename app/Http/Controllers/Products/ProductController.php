@@ -10,9 +10,11 @@ use App\Models\Product;
 use App\Services\Media\ImageStore;
 use App\Services\Products\ProductService;
 use App\Support\Access\Visibility;
+use App\Support\SameName;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The Products screen (spec §3.2): the catalog with each item's photo and carton spec. The
@@ -62,6 +64,7 @@ class ProductController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->warnIfSameName($request, (string) $request->input('name'), null);
         $product = $this->products->create($this->validated($request), $request->user(), $request->file('photo'));
 
         return redirect()->route('products.show', $product)->with('success', __(':code created.', ['code' => $product->code]));
@@ -86,9 +89,23 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product): RedirectResponse
     {
+        $this->warnIfSameName($request, (string) $request->input('name', $product->name), $product);
         $this->products->update($product, $this->validated($request), $request->file('photo'));
 
         return redirect()->route('products.show', $product)->with('success', __(':code saved.', ['code' => $product->code]));
+    }
+
+    /** B23: a product of the same name (case and spacing aside) is said first; "Save anyway" saves it. */
+    private function warnIfSameName(Request $request, string $name, ?Product $self): void
+    {
+        if ($request->boolean('save_anyway') || trim($name) === '') {
+            return;
+        }
+        $same = SameName::scope(Product::query(), $name)->when($self, fn ($q) => $q->whereKeyNot($self->id))->first();
+        if ($same) {
+            session()->flash('same_name', ['url' => route('products.show', $same), 'label' => $same->code.' — '.$same->name]);
+            throw ValidationException::withMessages(['name' => __(':name already exists (:code). Open it, or tick "Save anyway" to add another.', ['name' => $same->name, 'code' => $same->code])]);
+        }
     }
 
     public function deactivate(Product $product): RedirectResponse
@@ -158,7 +175,8 @@ class ProductController extends Controller
             'kg_per_carton' => $amount,
             'sale_price' => $amount,
             'sale_currency' => ['nullable', 'string', 'size:3', $lookup('currency'), 'required_with:sale_price'],
-            'hs_code' => ['nullable', 'string', 'max:30'],
+            // B28: an HS code is 4 to 10 digits; dots may group them (6912.00).
+            'hs_code' => ['nullable', 'string', 'max:30', 'regex:/^(?=(?:\D*\d){4,10}\D*$)\d+(\.\d+)*$/'],
             'photo' => array_map(fn ($rule) => $rule === 'required' ? 'nullable' : $rule, ImageStore::rules()),
             'active' => ['boolean'],
         ];
@@ -170,7 +188,7 @@ class ProductController extends Controller
             ];
         }
 
-        $data = $request->validate($rules);
+        $data = $request->validate($rules, ['hs_code.regex' => __('An HS code is 4 to 10 digits; dots may group them, e.g. 6912.00.')]);
         unset($data['photo']);
         $data['active'] = $request->boolean('active');
         foreach ($data as $key => $value) {

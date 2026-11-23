@@ -39,9 +39,10 @@ class SampleService
     {
         $this->authorize($by);
         $status = (string) ($data['status'] ?? '');
-        if (! in_array($status, Sample::STATUSES, true) || $status === 'requested') {
+        if (! in_array($status, Sample::STATUSES, true)) {
             throw ValidationException::withMessages(['status' => __('Choose what happened.')]);
         }
+
         $on = filled($data['happened_on'] ?? null) ? (string) $data['happened_on'] : now()->toDateString();
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $on)) {
             throw ValidationException::withMessages(['happened_on' => __('Enter a valid date.')]);
@@ -51,6 +52,15 @@ class SampleService
         }
 
         return DB::transaction(function () use ($sample, $status, $on, $data, $by) {
+            // B26: in order, read fresh with the sample locked; a closed sample (approved, rejected,
+            // cancelled) only reopens.
+            $from = Sample::query()->lockForUpdate()->findOrFail($sample->id)->status();
+            if (! in_array($status, Sample::NEXT[$from] ?? [], true)) {
+                throw ValidationException::withMessages(['status' => in_array($from, Sample::FINAL, true)
+                    ? __('This sample is :status and closed. Reopen it first.', ['status' => Sample::statusLabel($from)])
+                    : __('A sample that is :from cannot become :to.', ['from' => Sample::statusLabel($from), 'to' => Sample::statusLabel($status)])]);
+            }
+            $sample->unsetRelation('latestEvent');
             $event = SampleEvent::create([
                 'sample_id' => $sample->id, 'status' => $status, 'happened_on' => $on,
                 'courier' => filled($data['courier'] ?? null) ? mb_substr(trim((string) $data['courier']), 0, 80) : null,
@@ -78,6 +88,12 @@ class SampleService
                 throw ValidationException::withMessages(['client_id' => __('Choose a client.')]);
             }
         }
+        // B26: said, not refused silently: needed by a day on or after it was asked for.
+        $requested = filled($data['requested_on'] ?? null) ? (string) $data['requested_on'] : now()->toDateString();
+        $needed = filled($data['needed_by'] ?? null) ? (string) $data['needed_by'] : null;
+        if ($needed !== null && $needed < $requested) {
+            throw ValidationException::withMessages(['needed_by' => __('The date needed by can\'t be before the date it was requested.')]);
+        }
         $supplierId = filled($data['supplier_id'] ?? null) && Visibility::canSeeSupplierPrices($by) ? (int) $data['supplier_id'] : null;
         if ($supplierId !== null && ! Party::query()->suppliers()->whereKey($supplierId)->exists()) {
             throw ValidationException::withMessages(['supplier_id' => __('Choose a supplier.')]);
@@ -89,8 +105,8 @@ class SampleService
             'product_id' => filled($data['product_id'] ?? null) ? (int) $data['product_id'] : null,
             'supplier_order_id' => filled($data['supplier_order_id'] ?? null) && Visibility::canSeeSupplierPrices($by) ? (int) $data['supplier_order_id'] : null,
             'quantity' => filled($data['quantity'] ?? null) ? Money::amount($data['quantity'], 'quantity', true) : null,
-            'requested_on' => filled($data['requested_on'] ?? null) ? (string) $data['requested_on'] : now()->toDateString(),
-            'needed_by' => filled($data['needed_by'] ?? null) ? (string) $data['needed_by'] : null,
+            'requested_on' => $requested,
+            'needed_by' => $needed,
         ];
     }
 

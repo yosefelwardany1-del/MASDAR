@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Lookup;
 use App\Models\MoneyAccount;
 use App\Support\Audit\AuditTrail;
+use App\Support\SameName;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,7 +17,7 @@ use Illuminate\Validation\ValidationException;
  */
 class MoneyAccountService
 {
-    public const FIELDS = ['name', 'kind', 'currency', 'location', 'ledger_account_id', 'details', 'active'];
+    public const FIELDS = ['name', 'kind', 'currency', 'location', 'ledger_account_id', 'details', 'active', 'allow_negative'];
 
     /** @param array<string, mixed> $data validated fields (FIELDS) */
     public function create(array $data): MoneyAccount
@@ -57,10 +58,15 @@ class MoneyAccountService
         $data['ledger_account_id'] = ($data['ledger_account_id'] ?? null) ?: null;
         $data['details'] = ($data['details'] ?? null) ?: null;
         $data['active'] = (bool) ($data['active'] ?? true);
+        $data['allow_negative'] = (bool) ($data['allow_negative'] ?? false);
 
         $errors = [];
         if (trim((string) ($data['name'] ?? '')) === '') {
             $errors['name'] = __('Give the account a name.');
+        } elseif (SameName::scope(MoneyAccount::query()->where('currency', $data['currency']), (string) $data['name'])
+            ->when($account, fn ($q) => $q->whereKeyNot($account->id))->exists()) {
+            // B23: one name per currency, case and spacing aside.
+            $errors['name'] = __('There is already a :currency account named :name. Give this one another name.', ['currency' => $data['currency'], 'name' => trim((string) $data['name'])]);
         }
         if (! in_array($data['kind'] ?? null, MoneyAccount::KINDS, true)) {
             $errors['kind'] = __('Choose the kind of account.');

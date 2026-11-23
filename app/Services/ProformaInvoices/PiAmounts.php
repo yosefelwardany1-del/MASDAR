@@ -2,6 +2,8 @@
 
 namespace App\Services\ProformaInvoices;
 
+use App\Models\BusinessSetting;
+
 /**
  * Arithmetic and display of PI money and quantities on numeric(18,4) strings, with bcmath —
  * never through a PHP float (CLAUDE.md). Rounding is half away from zero.
@@ -19,10 +21,10 @@ final class PiAmounts
             : bcadd($value, $half, $scale);
     }
 
-    /** What the client pays before production: total × deposit % ÷ 100, to 4 decimals. */
+    /** What the client pays before production: total × deposit % ÷ 100, to the cent (B09). */
     public static function depositRequired(string $total, string $depositPercent): string
     {
-        return self::round(bcdiv(bcmul(self::normalise($total), self::normalise($depositPercent), 8), '100', 8));
+        return bcadd(self::round(bcdiv(bcmul(self::normalise($total), self::normalise($depositPercent), 8), '100', 8), 2), '0', 4);
     }
 
     public static function subtract(string $a, string $b): string
@@ -72,6 +74,19 @@ final class PiAmounts
         $text = strtoupper($currency) === 'USD' ? '$'.$number : strtoupper($currency).' '.$number;
 
         return $negative ? "-{$text}" : $text;
+    }
+
+    /** B27: a message when $cartons is a part carton and the business sells whole cartons only; else null. */
+    public static function partCartonError(mixed $cartons): ?string
+    {
+        if ($cartons === null || $cartons === '' || ! is_numeric((string) $cartons) || BusinessSetting::current()->part_cartons_allowed) {
+            return null;
+        }
+        $value = self::normalise((string) $cartons);
+
+        return bccomp($value, bcadd($value, '0', 0), 8) === 0 ? null : __('Cartons are whole: enter :whole or :next, not :value.', [
+            'whole' => bcadd($value, '0', 0), 'next' => bcadd(bcadd($value, '0', 0), '1', 0), 'value' => rtrim(rtrim($value, '0'), '.'),
+        ]);
     }
 
     /** Accepts "12", "12.5", "-3.25", " 7 " and gives what bcmath expects. */

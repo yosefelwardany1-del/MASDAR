@@ -55,7 +55,7 @@ class BankReconciliationController extends Controller
             'money_in' => $data['layout'] === 'two' ? $col($data['col_in'] ?? null) : null,
             'money_out' => $data['layout'] === 'two' ? $col($data['col_out'] ?? null) : null,
             'balance' => $col($data['col_balance'] ?? null), 'date_format' => $data['date_format'],
-        ], $request->user(), $request->file('file')->getClientOriginalName());
+        ], $request->user(), $request->file('file')->getClientOriginalName(), anyway: $request->boolean('anyway'));
 
         return redirect()->route('bank-reconciliation.show', $statement)->with('success', __('Statement imported: :count lines. Match them to the payments below.', ['count' => $statement->lines()->count()]));
     }

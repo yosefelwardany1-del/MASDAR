@@ -109,6 +109,30 @@ class ImportExportTest extends TestCase
         $this->assertFalse(TestItem::whereIn('sku', ['BAD-1', 'BAD-2'])->exists());
     }
 
+    /** B22: an unreadable file or a header that is not the template's is refused, never "complete". */
+    public function test_an_unreadable_file_or_a_foreign_header_is_refused_and_unknown_columns_are_reported(): void
+    {
+        app()->setLocale('en');
+        $this->manager->forceFill(['locale' => 'en'])->save();
+        $import = fn (UploadedFile $file) => $this->actingAs($this->manager)->post(route('io.import', 'test-items'), ['file' => $file]);
+
+        $import(UploadedFile::fake()->createWithContent('bad.xlsx', 'this is not a spreadsheet'))
+            ->assertSessionHasErrors(['file' => 'This file could not be read. Use the template.']);
+        $import(UploadedFile::fake()->createWithContent('other.csv', "foo,bar\n1,2\n"))
+            ->assertSessionHasErrors(['file' => 'This file could not be read. Use the template.']);
+        $import(UploadedFile::fake()->createWithContent('noname.csv', "sku,pages\nBK-9,10\n"))
+            ->assertSessionHasErrors(['file' => 'The file has no column for name. Use the template.']);
+        $this->assertSame(0, ImportRun::count());
+
+        // Known columns plus one the template does not have: imported, the extra reported; a row
+        // with none of the template's columns filled fails with why.
+        $data = $this->actingAs($this->manager)->postJson(route('io.import', 'test-items'), ['file' => UploadedFile::fake()->createWithContent('extra.csv',
+            "sku,name,pages,colour\nOK-7,Seven,7,red\n,,,blue\n")])->assertOk()->json();
+        $this->assertSame([1, 1], [$data['created'], $data['failed']]);
+        $this->assertSame(['This row fills none of the template\'s columns.'], $data['errors'][0]['messages']);
+        $this->assertSame(['These columns are not in the template and were ignored: colour.'], $data['notices'][0]['messages']);
+    }
+
     public function test_preview_does_not_write(): void
     {
         $this->actingAs($this->manager)

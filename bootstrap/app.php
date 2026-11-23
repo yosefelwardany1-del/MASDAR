@@ -5,9 +5,12 @@ use App\Http\Middleware\EnsurePortalUser;
 use App\Http\Middleware\EnsureStaffUser;
 use App\Http\Middleware\ProfileRequest;
 use App\Http\Middleware\SetUserLocale;
+use App\Support\Database\Refusal;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -38,5 +41,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias(['portal' => EnsurePortalUser::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // B10, the safety net: a refusal of PostgreSQL that no writer turned into a message goes back
+        // to the form in plain words; the table, constraint and SQL go to the log, never to the screen.
+        $exceptions->render(function (QueryException $e, Request $request) {
+            if (! Refusal::isRefusal($e)) {
+                return null;
+            }
+            $message = Refusal::message($e);
+
+            return $request->expectsJson()
+                ? response()->json(['message' => $message], 422)
+                : back()->withInput()->with('error', $message);
+        });
     })->create();

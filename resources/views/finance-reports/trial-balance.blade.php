@@ -12,6 +12,9 @@
         : new HtmlString('<span class="app-num app-fig'.(Decimal::cmp((string) $v, '0') < 0 ? ' app-fig--neg' : '').'">'.e(Decimal::format($v)).'</span>');
     $keys = ['opening_dr', 'opening_cr', 'debit', 'credit', 'closing_dr', 'closing_cr'];
     $agree = Decimal::cmp($t['debit'], $t['credit']) === 0 && Decimal::cmp($t['closing_dr'], $t['closing_cr']) === 0;
+    // Exactly balanced, yet the cents shown differ: amounts below a cent posted before amounts were kept to the cent (B09).
+    $x = $report['exact'] ?? $t;
+    $exactAgree = Decimal::cmp($x['debit'], $x['credit']) === 0 && Decimal::cmp($x['closing_dr'], $x['closing_cr']) === 0;
 @endphp
 
 @section('content')
@@ -65,6 +68,9 @@
     @if($agree)
         <x-status tone="done" icon="check2-circle">{{ __('Balanced') }}</x-status>
         <span>{{ __('Debits equal credits, and the closing balances agree.') }}</span>
+    @elseif($exactAgree)
+        <x-status tone="done" icon="check2-circle">{{ __('Balanced') }}</x-status>
+        <span>{{ __('Debits equal credits exactly. The cents shown differ by :diff because older entries carry amounts below a cent.', ['diff' => Decimal::format(Decimal::abs(Decimal::sub($t['debit'], $t['credit'])))]) }}</span>
     @else
         <div class="alert alert-danger w-100 mb-0" role="alert"><i class="bi bi-exclamation-octagon me-1" aria-hidden="true"></i>{{ __('The totals do not agree. Tell the system administrator.') }}</div>
     @endif

@@ -22,8 +22,8 @@
                 <a href="{{ $n->url ?: route('notifications.index') }}" class="d-flex align-items-start gap-2 px-3 py-2 border-bottom text-decoration-none text-reset {{ $n->is_read ? '' : 'bg-light' }}">
                     <i class="bi bi-{{ $n->icon ?? 'bell' }} text-primary mt-1"></i>
                     <div class="flex-grow-1">
-                        <div class="small fw-semibold">{{ $n->title }}</div>
-                        <div class="text-muted small">{{ \Illuminate\Support\Str::limit($n->message, 70) }}</div>
+                        <div class="small fw-semibold">{{ $n->displayTitle() }}</div>
+                        <div class="text-muted small">{{ \Illuminate\Support\Str::limit($n->displayMessage(), 70) }}</div>
                         <div class="text-muted" style="font-size:11px;">{{ $n->created_at?->diffForHumans() }}</div>
                     </div>
                 </a>

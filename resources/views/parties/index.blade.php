@@ -116,7 +116,8 @@
                         <td>{{ $countries[$p->country] ?? $p->country ?? '—' }}@if($p->city)<div class="app-party-list__sub">{{ $p->city }}</div>@endif</td>
                         @if($isClient)
                             <td><bdi>{{ $p->accountManager?->name ?? '—' }}</bdi></td>
-                            <td>@if($p->stage)<span class="app-pill"><i class="bi bi-signpost" aria-hidden="true"></i>{{ $stages[$p->stage] ?? $p->stage }}</span>@else — @endif</td>
+                            @php $now = $crmStages[$p->id]['stage'] ?? null; @endphp
+                            <td>@if($now)<span class="app-pill"><i class="bi bi-signpost" aria-hidden="true"></i>{{ $stages[$now] ?? $now }}</span>@else — @endif</td>
                         @endif
                         @if($isSupplier)<td class="app-party-list__note" dir="auto">{{ \Illuminate\Support\Str::limit($p->products_note, 60) ?: '—' }}</td>@endif
                         @if($isShipping)<td>{{ $shippingKinds[$p->shipping_kind] ?? $p->shipping_kind ?? '—' }}</td>@endif

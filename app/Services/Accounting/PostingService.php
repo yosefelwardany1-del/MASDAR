@@ -320,7 +320,7 @@ class PostingService
 
         $date = $on ?: ($pi->confirmed_at?->timezone(config('app.timezone'))->toDateString() ?? now()->toDateString());
         $rate = $this->ledger->rateOn($pi->currency, $date);
-        $book = Decimal::mul($total, $rate);
+        $book = $this->book($total, $rate);
         $memo = $pi->reference();
 
         return $this->postNew([
@@ -365,7 +365,7 @@ class PostingService
             ->where('l.supplier_order_id', $order->id)->max('g.received_on') ?: now()->toDateString());
         $date = substr($date, 0, 10);
         $rate = $this->ledger->rateOn($order->currency, $date);
-        $book = Decimal::mul($total, $rate);
+        $book = $this->book($total, $rate);
 
         return $this->postNew([
             'entry_date' => $date, 'event' => 'supplier_bill',
@@ -405,7 +405,7 @@ class PostingService
         $employer = Decimal::add($t['social_insurance_employer'], $t['housing_fund_employer']);
         $contributions = Decimal::sum([$t['social_insurance_employee'], $t['housing_fund_employee'], $employer]);
         $memo = $run->number;
-        $book = fn (string $amount) => Decimal::mul($amount, $rate);
+        $book = fn (string $amount) => $this->book($amount, $rate);
 
         $lines = [];
         $credits = '0';
@@ -462,7 +462,7 @@ class PostingService
         }
         $date = $note->issued_on->toDateString();
         $rate = $this->ledger->rateOn($note->currency, $date);
-        $book = Decimal::mul($total, $rate);
+        $book = $this->book($total, $rate);
         $party = $note->party_id;
         $memo = $note->number;
 
@@ -504,7 +504,7 @@ class PostingService
             $account = Account::query()->where('code', $code)->first() ?? $fallback
                 ?? throw new AccountingException(__('Set the account of expense category :category on Lists & options.', ['category' => $group->first()->category]));
             $amount = Decimal::sum($group->pluck('amount')->map(fn ($v) => (string) $v));
-            $lines[] = $this->line($account, 'debit', Decimal::mul($amount, $rate), $claim->currency, $amount, $rate, null, $claim->number);
+            $lines[] = $this->line($account, 'debit', $this->book($amount, $rate), $claim->currency, $amount, $rate, null, $claim->number);
             $total = Decimal::add($total, $amount);
         }
         if (! Decimal::isPositive($total)) {
@@ -544,7 +544,7 @@ class PostingService
             $account = Account::query()->where('code', $code)->first()
                 ?? throw new AccountingException(__('Set the account of service :category on Lists & options.', ['category' => $group->first()->category]));
             $amount = Decimal::sum($group->pluck('amount')->map(fn ($v) => (string) $v));
-            $lines[] = $this->line($account, 'credit', Decimal::mul($amount, $rate), $invoice->currency, $amount, $rate, null, $invoice->number);
+            $lines[] = $this->line($account, 'credit', $this->book($amount, $rate), $invoice->currency, $amount, $rate, null, $invoice->number);
             $total = Decimal::add($total, $amount);
         }
         $credits = Decimal::sum(array_column($lines, 'credit'));
@@ -652,7 +652,7 @@ class PostingService
         if (! Decimal::isPositive($rate, 6)) {
             throw new AccountingException(__('The rate must be greater than zero.'));
         }
-        $book = Decimal::mul($amount, $rate);
+        $book = $this->book($amount, $rate);
         $memo = $container ? ($container->container_no ?: '#'.$container->id) : null;
 
         return $this->postNew([
@@ -714,23 +714,32 @@ class PostingService
     }
 
     /** @return array<string, mixed> */
+    /** A book amount: $amount × $rate, to the cent (B09). Every posting converts through this. */
+    private function book(string $amount, string $rate): string
+    {
+        return Decimal::normalize(Decimal::round(Decimal::mul($amount, $rate, 10), 2));
+    }
+
+    /** One journal line; its amounts are to the cent (B09, journal_lines_cents_check). */
     private function line(Account $account, string $side, string $book, string $currency, string $amount, string $rate, ?int $party, ?string $memo): array
     {
+        $book = Decimal::normalize(Decimal::round($book, 2));
+
         return [
             'account' => $account,
             'party_id' => $party,
             'debit' => $side === 'debit' ? $book : '0',
             'credit' => $side === 'credit' ? $book : '0',
             'currency' => $currency,
-            'amount_currency' => $amount,
+            'amount_currency' => Decimal::normalize(Decimal::round($amount, 2)),
             'rate' => $rate,
             'memo' => $memo,
         ];
     }
 
     /**
-     * Manual lines: a debit or a credit in the line's currency; in another currency than the
-     * book's it takes a rate and its book amount is amount × rate, rounded to 4 places.
+     * Manual lines: a debit or a credit in the line's currency, to the cent; in another currency
+     * than the book's it takes a rate and its book amount is amount × rate, to the cent (B09).
      *
      * @return list<array<string, mixed>>
      */
@@ -754,6 +763,9 @@ class PostingService
             if (Decimal::isPositive($debit) === Decimal::isPositive($credit)) {
                 throw new AccountingException(__('Line :n: enter either a debit or a credit.', ['n' => $n]));
             }
+            if (Decimal::cmp($debit, Decimal::round($debit, 2)) !== 0 || Decimal::cmp($credit, Decimal::round($credit, 2)) !== 0) {
+                throw new AccountingException(__('Line :n: an amount has at most 2 decimals.', ['n' => $n]));
+            }
             $currency = strtoupper((string) ($row['currency'] ?? '') ?: $book);
             if ($currency === $book) {
                 $rate = '1.000000';
@@ -765,7 +777,7 @@ class PostingService
             }
             $side = Decimal::isPositive($debit) ? 'debit' : 'credit';
             $amount = $side === 'debit' ? $debit : $credit;
-            $bookAmount = Decimal::mul($amount, $rate);
+            $bookAmount = $this->book($amount, $rate);
             if (! Decimal::isPositive($bookAmount)) {
                 throw new AccountingException(__('Line :n is too small to post in the book currency.', ['n' => $n]));
             }
@@ -773,6 +785,14 @@ class PostingService
             $lines[] = $this->line($account, $side, $bookAmount, $currency, $amount, $rate,
                 filled($row['party_id'] ?? null) ? (int) $row['party_id'] : null,
                 filled($row['memo'] ?? null) ? (string) $row['memo'] : null);
+        }
+
+        // B29: an entry moves an amount between two accounts, or between two parties of one
+        // account. Every line on the same account and party moves nothing (journal_entries_two_sides).
+        if (count($lines) > 1 && collect($lines)->unique(fn (array $l) => $l['account']->id.'|'.($l['party_id'] ?? ''))->count() === 1) {
+            throw new AccountingException(__('Every line is on account :account. An entry moves an amount from one account to another: put the other side on the account it comes from or goes to.', [
+                'account' => $lines[0]['account']->label(),
+            ]));
         }
 
         return $lines;

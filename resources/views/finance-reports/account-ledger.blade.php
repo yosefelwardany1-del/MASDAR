@@ -39,7 +39,13 @@
 
     <div class="app-card app-stmt-card">
         @include('finance-reports._stmt-head', ['title' => $account->label(), 'from' => $from, 'to' => $to, 'book' => $book])
-        <p class="app-note justify-content-center text-center mx-auto mt-3 mb-0 px-3">{{ __('Balances in :book, positive when normal for a :type account.', ['book' => $book, 'type' => $account->typeLabel()]) }}</p>
+        <p class="app-note justify-content-center text-center mx-auto mt-3 mb-0 px-3">{{ match ($account->type) {
+            'asset' => __('Balances in :book, positive when normal for an asset account.', ['book' => $book]),
+            'liability' => __('Balances in :book, positive when normal for a liability account.', ['book' => $book]),
+            'equity' => __('Balances in :book, positive when normal for an equity account.', ['book' => $book]),
+            'income' => __('Balances in :book, positive when normal for an income account.', ['book' => $book]),
+            default => __('Balances in :book, positive when normal for an expense account.', ['book' => $book]),
+        } }}</p>
         <div class="table-responsive">
             <table class="table table-sm table-hover mb-0 app-ledger">
                 <thead><tr>

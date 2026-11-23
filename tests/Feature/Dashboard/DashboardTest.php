@@ -15,12 +15,13 @@ use App\Services\SupplierOrders\OrderStepService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\LoadsContainers;
 use Tests\Concerns\SeedsReference;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
 {
-    use RefreshDatabase, SeedsReference;
+    use LoadsContainers, RefreshDatabase, SeedsReference;
 
     private function make(string ...$roles): User
     {
@@ -49,6 +50,7 @@ class DashboardTest extends TestCase
         $late = Container::factory()->create(['shipment_id' => Shipment::factory()->create(['eta' => Carbon::today()->subDays(2)])->id]);
         $soon = Container::factory()->create(['shipment_id' => Shipment::factory()->create(['eta' => Carbon::today()->addDays(2)])->id]);
         $arrived = Container::factory()->create(['shipment_id' => Shipment::factory()->create(['eta' => Carbon::today()->subDay()])->id]);
+        $this->putGoodsIn($arrived);
         DB::table('container_events')->insert(['container_id' => $arrived->id, 'status' => 'arrived', 'happened_at' => now(), 'user_id' => $logistics->id]);
 
         $this->actingAs($logistics)->get('/')->assertOk()

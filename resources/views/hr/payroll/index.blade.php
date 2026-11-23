@@ -24,7 +24,9 @@
                         <div class="col-7">
                             <label class="form-label" for="pr-period">{{ __('Month') }}<span class="app-req" aria-hidden="true">*</span></label>
                             <input type="month" name="period" id="pr-period" class="form-control @error('period') is-invalid @enderror" value="{{ old('period', $nextMonth) }}" required>
-                            @error('period')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @error('period')<div class="invalid-feedback">{{ $message }}
+                                @if(session('existing_payroll'))<a href="{{ route('payroll.show', session('existing_payroll')) }}">{{ __('Open it') }}</a>@endif
+                            </div>@enderror
                         </div>
                         <div class="col-5">
                             <label class="form-label" for="pr-currency">{{ __('Currency') }}</label>

@@ -21,8 +21,8 @@
         <label class="form-label" for="a-action">{{ __('Action') }}</label>
         <select name="action" id="a-action" class="form-select form-select-sm">
             <option value="">{{ __('All actions') }}</option>
-            @foreach(['created', 'updated', 'deleted'] as $a)
-                <option value="{{ $a }}" @selected(request('action') === $a)>{{ __('audit.'.$a) }}</option>
+            @foreach($actions as $a => $label)
+                <option value="{{ $a }}" @selected(request('action') === $a)>{{ $label }}</option>
             @endforeach
         </select>
     </div>
@@ -41,7 +41,7 @@
                 <tr>
                     <td class="text-nowrap small text-muted"><span class="app-num">{{ $log->created_at?->format('Y-m-d H:i') }}</span></td>
                     <td class="text-nowrap">{{ $log->user?->name ?? __('System') }}</td>
-                    <td class="text-nowrap"><span class="app-audit-action">{{ __('audit.'.$log->action) }}</span></td>
+                    <td class="text-nowrap"><span class="app-audit-action">{{ \App\Support\Audit\AuditActions::label($log->action) }}</span></td>
                     <td class="small text-nowrap"><span class="app-ltr">{{ class_basename($log->model_type) }} #{{ $log->model_id }}</span></td>
                     <td>
                         <div class="app-diff">
@@ -50,11 +50,11 @@
                                     @php $hasOld = array_key_exists($field, $log->old_values ?? []); $hasNew = array_key_exists($field, $log->new_values ?? []); @endphp
                                     <span class="app-diff__field app-ltr">{{ $field }}</span>
                                     @if($hasOld)
-                                        <span class="app-diff__old app-ltr"><span class="visually-hidden">{{ __('Before') }}: </span>{{ json_encode($log->old_values[$field] ?? null, JSON_UNESCAPED_UNICODE) }}</span>
+                                        <span class="app-diff__old app-ltr"><span class="visually-hidden">{{ __('Before') }}: </span>{{ \App\Support\Audit\AuditActions::value($log->old_values[$field] ?? null) }}</span>
                                     @endif
                                     @if($hasOld && $hasNew)<i class="bi {{ $rtl ? 'bi-arrow-left' : 'bi-arrow-right' }} app-diff__arrow" aria-hidden="true"></i>@endif
                                     @if($hasNew)
-                                        <span class="app-diff__new app-ltr"><span class="visually-hidden">{{ __('After') }}: </span>{{ json_encode($log->new_values[$field] ?? null, JSON_UNESCAPED_UNICODE) }}</span>
+                                        <span class="app-diff__new app-ltr"><span class="visually-hidden">{{ __('After') }}: </span>{{ \App\Support\Audit\AuditActions::value($log->new_values[$field] ?? null) }}</span>
                                     @endif
                                 </div>
                             @endforeach

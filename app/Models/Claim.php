@@ -72,6 +72,14 @@ class Claim extends Model
         return $this->hasMany(TradeNote::class)->orderBy('id');
     }
 
+    /** The latest agreed amount (claim_events), or null before one is agreed. */
+    public function agreedAmount(): ?string
+    {
+        $amount = $this->events()->whereNotNull('agreed_amount')->reorder('id', 'desc')->value('agreed_amount');
+
+        return $amount === null ? null : (string) $amount;
+    }
+
     public function status(): string
     {
         return $this->latestEvent?->status ?? 'open';

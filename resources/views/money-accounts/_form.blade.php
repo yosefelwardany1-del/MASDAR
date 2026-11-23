@@ -73,6 +73,14 @@
             </div>
         </div>
         <div class="col-12">
+            <input type="hidden" name="allow_negative" value="0">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" name="allow_negative" value="1" id="ma-allow-negative" @checked(old('allow_negative', $account?->allow_negative ?? false))>
+                <label class="form-check-label" for="ma-allow-negative">{{ __('May go below zero (e.g. a payment agent who advances the money)') }}</label>
+            </div>
+            <div class="form-text">{{ __('Off: money out is refused when the account does not hold it.') }}</div>
+        </div>
+        <div class="col-12">
             <label class="form-label" for="ma-details">{{ __('Details') }}</label>
             <textarea name="details" id="ma-details" rows="3" class="form-control @error('details') is-invalid @enderror" placeholder="{{ __('Bank, account number, holder, agent contact…') }}">{{ old('details', $account?->details) }}</textarea>
             @error('details')<div class="invalid-feedback">{{ $message }}</div>@enderror

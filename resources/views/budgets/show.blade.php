@@ -25,6 +25,7 @@
 @if($editing)
     <form method="POST" action="{{ route('budgets.update', $budget) }}" class="app-form">
         @csrf @method('PUT')
+        @if($errors->any())<div class="alert alert-danger" role="alert">{{ trans_choice('{1} One amount is not a number we can save: it is marked below. Nothing was saved.|[2,*] :count amounts are not numbers we can save: they are marked below. Nothing was saved.', count($errors->keys()), ['count' => count($errors->keys())]) }}</div>@endif
         <x-section :title="__('Amounts per month')" icon="grid-3x3" flush>
             <div class="table-responsive">
                 <table class="table table-sm align-middle mb-0">
@@ -34,7 +35,8 @@
                         <tr>
                             <th scope="row" class="fw-normal small">{{ $a->label() }}</th>
                             @foreach($months as $m => $label)
-                                <td><input name="amounts[{{ $a->id }}][{{ $m }}]" value="{{ $plain($planned[$a->id][$m] ?? null) }}" inputmode="decimal" class="form-control form-control-sm text-end app-num" style="min-inline-size: 5.5rem" aria-label="{{ $a->code }} {{ $label }}"></td>
+                                @php $cell = "amounts.{$a->id}.{$m}"; @endphp
+                                <td><input name="amounts[{{ $a->id }}][{{ $m }}]" value="{{ $errors->any() ? old($cell) : $plain($planned[$a->id][$m] ?? null) }}" inputmode="decimal" class="form-control form-control-sm text-end app-num @error($cell) is-invalid @enderror" style="min-inline-size: 5.5rem" aria-label="{{ $a->code }} {{ $label }}">@error($cell)<div class="invalid-feedback">{{ $message }}</div>@enderror</td>
                             @endforeach
                         </tr>
                     @endforeach

@@ -158,6 +158,8 @@ class BooksCompletionTest extends TestCase
         $lines = $entry->lines()->with('account')->get()->keyBy(fn ($l) => $l->account->code);
         $this->assertSame(['16.8000', '39.2000', '56.0000'], [(string) $lines['6502']->debit, (string) $lines['6599']->debit, (string) $lines['2405']->credit]);
 
+        // B05: never more than the claim's total.
+        $this->assertThrows(fn () => app(PaymentService::class)->record(['kind' => 'claim_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '400.01', 'expense_claim_id' => $claim->id], $this->accountant), ValidationException::class);
         $payment = app(PaymentService::class)->record(['kind' => 'claim_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '400', 'expense_claim_id' => $claim->id], $this->accountant);
         $payment = Payment::find($payment->id);
         if (! app(PaymentQueries::class)->isEffective($payment)) {
@@ -214,5 +216,85 @@ class BooksCompletionTest extends TestCase
         $this->actingAs($this->accountant)->get(route('fixed-assets.index'))->assertOk()->assertSee('FA-0001');
         $this->assertSame(1, FixedAsset::count());
         $this->assertTrue(JournalEntry::where('event', 'depreciation')->exists());
+    }
+
+    /** B21: a statement is imported once; lines already on another statement need "Import anyway". */
+    public function test_the_same_statement_is_not_imported_twice(): void
+    {
+        app()->setLocale('en');
+        $usd = MoneyAccount::where('name', 'HSBC Hong Kong — USD')->sole();
+        $d = fn (int $daysAgo) => now()->subDays($daysAgo)->format('d/m/Y');
+        $post = fn (string $csv, array $extra = []) => $this->actingAs($this->accountant)->post(route('bank-reconciliation.store'), $extra + [
+            'money_account_id' => $usd->id, 'file' => UploadedFile::fake()->createWithContent('stmt.csv', $csv), 'date_format' => 'd/m/Y',
+            'layout' => 'one', 'col_date' => 1, 'col_description' => 2, 'col_amount' => 3, 'skip_header' => '1',
+        ]);
+        $csv = "Date,Details,Amount\n".$d(18).",TT GULF HOME TRADING,3218.40\n".$d(17).",TRANSFER TO MAINLAND,-1400.00\n".$d(3).",SERVICE CHARGE,-15.00\n";
+
+        $post($csv)->assertRedirect()->assertSessionHasNoErrors();
+        $post($csv)->assertSessionHasErrors('file');
+        $this->assertStringStartsWith('This statement is already imported (stmt.csv', session('errors')->first('file'));
+        $this->assertSame(1, BankStatement::count());
+
+        // A later statement that repeats two of those lines: refused until "Import anyway".
+        $later = "Date,Details,Amount\n".$d(17).",TRANSFER TO MAINLAND,-1400.00\n".$d(3).",SERVICE CHARGE,-15.00\n".$d(1).",INTEREST,0.42\n";
+        $post($later)->assertSessionHasErrors(['file' => '2 of these lines are already on another statement of this account (the dates overlap). Check the file, or tick "Import anyway".']);
+        $post($later, ['anyway' => '1'])->assertSessionHasNoErrors();
+        $this->assertSame(2, BankStatement::count());
+    }
+
+    /** B20: each account of an asset is one of its kind, and it is bought on a day that has come. */
+    public function test_an_asset_takes_a_fixed_asset_account_its_contra_and_an_expense_account(): void
+    {
+        app()->setLocale('en');
+        $service = app(FixedAssetService::class);
+        $id = fn (string $code) => Account::where('code', $code)->value('id');
+        $data = ['name' => 'Desk', 'acquired_on' => now()->toDateString(), 'depreciation_starts_on' => now()->toDateString(), 'cost' => '600', 'useful_life_months' => '12',
+            'asset_account_id' => $id('1801'), 'depreciation_account_id' => $id('1802'), 'expense_account_id' => $id('6601')];
+
+        foreach ([
+            'asset_account_id' => [$id('1101'), 'Choose a fixed-asset account (under 18), not a bank or a receivable.'],
+            'depreciation_account_id' => [$id('1801'), 'Choose the accumulated-depreciation account.'],
+            'expense_account_id' => [$id('1401'), 'Choose an expense account that takes postings.'],
+            'acquired_on' => ['2030-01-01', 'The purchase date cannot be in the future.'],
+        ] as $field => [$value, $message]) {
+            $this->assertThrows(fn () => $service->create([$field => $value] + $data, $this->accountant), ValidationException::class, $message);
+        }
+
+        // The form offers only those accounts.
+        $form = $this->actingAs($this->accountant)->get(route('fixed-assets.create'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('value="'.$id('1101').'"', $form, 'no bank in the lists');
+        $this->assertSame('FA-0001', $service->create($data, $this->accountant)->code);
+    }
+
+    /** B19: month by month from the first, never a month that has not begun; the screen lists what is missing. */
+    public function test_depreciation_goes_month_by_month_and_never_ahead(): void
+    {
+        app()->setLocale('en');
+        $this->accountant->forceFill(['locale' => 'en'])->save();
+        $service = app(FixedAssetService::class);
+        $start = now()->subMonthsNoOverflow(3)->startOfMonth();
+        $asset = $service->create([
+            'name' => 'Forklift', 'acquired_on' => $start->toDateString(), 'depreciation_starts_on' => $start->toDateString(),
+            'cost' => '1300', 'residual_value' => '100', 'useful_life_months' => '12',
+            'asset_account_id' => Account::where('code', '1801')->value('id'), 'depreciation_account_id' => Account::where('code', '1802')->value('id'),
+            'expense_account_id' => Account::where('code', '6601')->value('id'),
+        ], $this->accountant);
+        $month = fn (int $plus) => $start->copy()->addMonthsNoOverflow($plus)->format('Y-m');
+
+        // The screen lists the four months that have begun, and starts at the oldest.
+        $this->assertSame([$month(0), $month(1), $month(2), $month(3)], $service->missingMonths($asset));
+        $this->actingAs($this->accountant)->get(route('fixed-assets.index'))->assertSee('Months not depreciated yet')->assertSee($month(0).' – '.$month(3))
+            ->assertSee('value="'.$month(0).'"', false);
+
+        // Not a later month first, nor next month.
+        $this->assertThrows(fn () => $service->depreciate($month(1), $this->accountant), ValidationException::class,
+            'Depreciation goes month by month: post '.$month(0).' first (FA-0001).');
+        $this->assertThrows(fn () => $service->depreciate(now()->addMonthNoOverflow()->format('Y-m'), $this->accountant), ValidationException::class, 'has not begun');
+        $this->assertThrows(fn () => $service->depreciate('2030-06', $this->accountant), ValidationException::class);
+
+        $service->depreciate($month(0), $this->accountant);
+        $service->depreciate($month(1), $this->accountant);
+        $this->assertSame($month(2), $service->nextMonth($asset->fresh()));
+        $this->assertSame([$month(2), $month(3)], $service->missingMonths($asset->fresh()));
     }
 }

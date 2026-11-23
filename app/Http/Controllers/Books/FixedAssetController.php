@@ -15,11 +15,16 @@ class FixedAssetController extends Controller
 
     public function index(Request $request)
     {
-        $month = is_string($request->query('month')) && preg_match('/^\d{4}-\d{2}$/', $request->query('month')) ? $request->query('month') : now()->subMonthNoOverflow()->format('Y-m');
+        $assets = FixedAsset::query()->with('assetAccount')->orderBy('code')->get();
+        // B19: the months each asset still needs, oldest first; the form starts at the oldest.
+        $missing = $assets->mapWithKeys(fn (FixedAsset $a) => [$a->id => $this->service->missingMonths($a)])->filter();
+        $oldest = $missing->flatten()->min();
+        $month = is_string($request->query('month')) && preg_match('/^\d{4}-\d{2}$/', $request->query('month')) ? $request->query('month') : ($oldest ?? now()->format('Y-m'));
 
         return view('fixed-assets.index', [
-            'assets' => FixedAsset::query()->with('assetAccount')->orderBy('code')->get(),
+            'assets' => $assets,
             'month' => $month,
+            'missing' => $missing,
             'charges' => $this->service->charges($month),
         ]);
     }
@@ -72,10 +77,11 @@ class FixedAssetController extends Controller
 
     private function formData(): array
     {
-        $postable = fn (string $type) => Account::query()->where('type', $type)->where('is_postable', true)->where('active', true)->orderBy('code')->get();
-
+        // B20: each list holds only the accounts of its kind.
         return [
-            'assetAccounts' => $postable('asset'), 'expenseAccounts' => $postable('expense'),
+            'assetAccounts' => $this->service->accountChoices('asset_account_id'),
+            'contraAccounts' => $this->service->accountChoices('depreciation_account_id'),
+            'expenseAccounts' => $this->service->accountChoices('expense_account_id'),
             'defaults' => [
                 'asset_account_id' => Account::query()->where('code', '1801')->value('id'),
                 'depreciation_account_id' => Account::query()->where('code', '1802')->value('id'),

@@ -9,6 +9,7 @@ use App\Models\ProformaInvoice;
 use App\Models\ServiceInvoice;
 use App\Models\SupplierOrder;
 use App\Models\TradeNote;
+use App\Services\Finance\PaymentQueries;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 
@@ -31,10 +32,14 @@ class PostingQueue
             ->get();
     }
 
-    /** Outgoing payments not posted because they still wait for a manager's approval. */
+    /**
+     * Outgoing payments not posted because they still wait for a manager's approval — the one rule
+     * every screen counts by (B17): a payment withdrawn before approval, and its withdrawal row, wait
+     * for nothing.
+     */
     public function awaitingApproval(): int
     {
-        return Payment::query()->whereNotIn('id', $this->ledger->effectivePayments()->select('payments.id'))->count();
+        return app(PaymentQueries::class)->whereAwaitingApproval(Payment::query())->count();
     }
 
     /** Confirmed, current PIs with no client_invoice yet — on this revision or, unreversed, on another. */

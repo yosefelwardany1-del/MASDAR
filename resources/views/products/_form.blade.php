@@ -15,6 +15,10 @@
                     <label class="form-label" for="f-name">{{ __('Name (English)') }} {!! $req !!}</label>
                     <input type="text" name="name" id="f-name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $product?->name) }}" maxlength="255" required>
                     @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @if(session('same_name'))
+                    <div class="mt-1 small"><a href="{{ session('same_name')['url'] }}" target="_blank" rel="noopener">{{ __('Open :record', ['record' => session('same_name')['label']]) }}</a></div>
+                    <div class="form-check mt-1"><input class="form-check-input" type="checkbox" name="save_anyway" id="save_anyway" value="1"><label class="form-check-label" for="save_anyway">{{ __('Save anyway') }}</label></div>
+                    @endif
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="f-name_local">{{ __('Name in Chinese or Arabic') }}</label>

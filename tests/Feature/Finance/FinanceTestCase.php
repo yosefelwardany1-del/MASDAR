@@ -25,14 +25,16 @@ abstract class FinanceTestCase extends TestCase
         return User::factory()->create()->assignRole($roles);
     }
 
+    /** The HSBC USD account — the same one each call (B23: one name per currency). */
     protected function usd(): MoneyAccount
     {
-        return MoneyAccount::factory()->create(['name' => 'HSBC USD']);
+        return MoneyAccount::query()->where('name', 'HSBC USD')->first() ?? MoneyAccount::factory()->create(['name' => 'HSBC USD']);
     }
 
+    /** The ICBC Yiwu RMB account — the same one each call. */
     protected function cny(): MoneyAccount
     {
-        return MoneyAccount::factory()->rmb()->create(['name' => 'ICBC Yiwu RMB']);
+        return MoneyAccount::query()->where('name', 'ICBC Yiwu RMB')->first() ?? MoneyAccount::factory()->rmb()->create(['name' => 'ICBC Yiwu RMB']);
     }
 
     protected function setOptions(array $values): void
@@ -71,9 +73,9 @@ abstract class FinanceTestCase extends TestCase
     /** An issued revision 1, superseded by an issued revision 2 of the same PI number. */
     protected function piWithTwoRevisions(): array
     {
-        $first = ProformaInvoice::factory()->issued()->create(['pi_number' => 'PI-2026-0042']);
+        $first = ProformaInvoice::factory()->worth('5000')->issued()->create(['pi_number' => 'PI-2026-0042']);
         $first->update(['status' => 'superseded', 'is_current' => false]);
-        $second = ProformaInvoice::factory()->issued()->create([
+        $second = ProformaInvoice::factory()->worth('5000')->issued()->create([
             'pi_number' => 'PI-2026-0042', 'revision' => 2, 'client_id' => $first->client_id, 'created_by' => $first->created_by,
         ]);
 

@@ -71,7 +71,12 @@
                         <span class="app-rowactions">
                             <a href="{{ route('users.show', $u) }}" class="btn btn-sm btn-light" title="{{ __('View') }}" aria-label="{{ __('View') }}: {{ $u->name }}"><i class="bi bi-eye" aria-hidden="true"></i></a>
                             @can('users.edit')
-                                <a href="{{ route('users.edit', $u) }}" class="btn btn-sm btn-light" title="{{ __('Edit') }}" aria-label="{{ __('Edit') }}: {{ $u->name }}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                                {{-- B24: Edit only where it opens; yourself on My profile. --}}
+                                @if(auth()->user()->is($u))
+                                    <a href="{{ route('profile') }}" class="btn btn-sm btn-light" title="{{ __('My profile') }}" aria-label="{{ __('My profile') }}"><i class="bi bi-person" aria-hidden="true"></i></a>
+                                @elseif($guard->canManageUser(auth()->user(), $u))
+                                    <a href="{{ route('users.edit', $u) }}" class="btn btn-sm btn-light" title="{{ __('Edit') }}" aria-label="{{ __('Edit') }}: {{ $u->name }}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                                @endif
                             @endcan
                         </span>
                     </td>

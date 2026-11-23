@@ -8,7 +8,7 @@
     $fmt = fn ($v) => Decimal::format($v);
 @endphp
 <x-page-header :title="__('Chart of accounts')" :eyebrow="__('Accounting')"
-               :subtitle="__('The chart is a starting point for MASDAR\'s accountant (spec Q-A4). Headings group sub-accounts and are never posted to. Balances are in :book, shown positive when normal for the account\'s type.', ['book' => $book])">
+               :subtitle="__('The chart is a starting point for MASDAR\'s accountant. Headings group sub-accounts and are never posted to. Balances are in :book, shown positive when normal for the account\'s type.', ['book' => $book])">
     @can('accounting.edit')
         <x-slot:actions>
             <a href="{{ route('accounting.accounts.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __('New account') }}</a>

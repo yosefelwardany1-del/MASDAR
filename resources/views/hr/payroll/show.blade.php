@@ -171,13 +171,15 @@
             @endif
             @if($run->isApproved())
                 @can('payroll.approve')
-                    <details class="app-hr-inlineform border-top">
+                    {{-- Open when it was refused, so the reason is seen, not folded away. --}}
+                    <details class="app-hr-inlineform border-top" @if($errors->hasAny(['run', 'void_reason'])) open @endif>
                         <summary class="small text-danger">{{ __('Void this run') }}</summary>
                         <form method="POST" action="{{ route('payroll.void', $run) }}" class="mt-2">
                             @csrf
                             <label class="form-label small" for="void-reason">{{ __('Why') }}<span class="app-req" aria-hidden="true">*</span></label>
-                            <input name="void_reason" id="void-reason" class="form-control mb-2 @error('void_reason') is-invalid @enderror" required>
+                            <input name="void_reason" id="void-reason" value="{{ old('void_reason') }}" class="form-control @error('void_reason') is-invalid @enderror" required>
                             @error('void_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="mb-2"></div>
                             @error('run')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                             <p class="small text-muted mb-2">{{ __('Reverse its salary payments and its journal entry first. The month can then be run again.') }}</p>
                             <button class="btn btn-sm btn-outline-danger">{{ __('Void the run') }}</button>

@@ -2,8 +2,10 @@
 
 namespace App\Support\IO\Resources;
 
+use App\Models\Lookup;
 use App\Models\Party;
 use App\Models\User;
+use App\Services\Crm\CrmQueries;
 use App\Services\Parties\PartyKind;
 use App\Support\Access\Visibility;
 use App\Support\IO\Field;
@@ -52,7 +54,8 @@ class ClientSchema extends PartySchema
         return $this->mapCommon($key, $value) ?? match ($key) {
             'account_manager_email' => ['account_manager_id' => $value === '' ? null : $this->requireUserByEmail($value, __('Account manager'))],
             'source' => ['source' => $this->lookupCode('party_source', $value, __('How they found us'))],
-            'stage' => ['stage' => $this->lookupCode('client_stage', $value, __('Stage'))],
+            // A stage that follows the documents is not typed: importing one leaves the typed stage as it is.
+            'stage' => $this->documentStage($value) ? [] : ['stage' => $this->lookupCode('client_stage', $value, __('Stage'))],
             'deposit_percent', 'default_destination' => [$key => $this->nullable($value)],
             default => [],
         };
@@ -74,10 +77,18 @@ class ClientSchema extends PartySchema
         return $this->commonExport($model) + [
             'account_manager_email' => $model->accountManager?->email,
             'source' => $model->source,
-            'stage' => $model->stage,
+            // B11: the stage now (typed, or from the documents), as the screens show it.
+            'stage' => app(CrmQueries::class)->stagesFor([$model->id])[$model->id]['stage'] ?? $model->stage,
             'deposit_percent' => $model->deposit_percent,
             'default_destination' => $model->default_destination,
         ];
+    }
+
+    private function documentStage(string $value): bool
+    {
+        $code = $value === '' ? null : $this->lookupCode('client_stage', $value, __('Stage'));
+
+        return $code !== null && CrmQueries::isDocumentStage($code, Lookup::query()->ofList('client_stage')->where('code', $code)->first());
     }
 
     protected function scoped(Builder $query, User $user): Builder

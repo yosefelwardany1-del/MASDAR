@@ -2,7 +2,9 @@
 
 namespace App\Services\Finance;
 
+use App\Models\Account;
 use App\Models\BusinessSetting;
+use App\Models\MoneyAccount;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\SupplierOrder;
@@ -29,6 +31,19 @@ class PaymentQueries
 {
     /** The kinds recorded on the payment form; transfers have their own form. */
     public const RECORDABLE_KINDS = ['client_receipt', 'supplier_payment', 'shipping_payment', 'expense', 'other_in', 'other_out', 'salary_payment', 'claim_payment'];
+
+    /**
+     * B29: the accounts a payment of $kind may name as the account the money is for — active,
+     * postable accounts of the types set for the kind on Lists & options, never a money
+     * account's own ledger account (moving money between own accounts is a transfer).
+     */
+    public function counterAccounts(string $kind): EloquentBuilder
+    {
+        return Account::query()->where('is_postable', true)->where('active', true)
+            ->whereIn('type', BusinessSetting::current()->counterAccountTypes($kind))
+            ->whereNotIn('id', MoneyAccount::query()->whereNotNull('ledger_account_id')->select('ledger_account_id'))
+            ->orderBy('code');
+    }
 
     public function approvalRequired(): bool
     {
@@ -113,12 +128,18 @@ class PaymentQueries
         return ($approvalRequired ?? $this->approvalRequired()) && $this->canBeApproved($payment);
     }
 
-    /** One of: reversal, reversed, approved, effective, awaiting (a reversal may also await: awaitsApproval). */
+    /**
+     * One of: reversal, reversed, approved, effective, awaiting (a reversal may also await:
+     * awaitsApproval) — and withdrawn / withdrawal (B17): a payment out reversed before it was ever
+     * approved was withdrawn; neither row ever counts, posts or waits for approval.
+     */
     public function status(Payment $payment, ?bool $approvalRequired = null): string
     {
+        $approvalRequired ??= $this->approvalRequired();
+
         return match (true) {
-            $payment->reverses_payment_id !== null => 'reversal',
-            $payment->reversal !== null => 'reversed',
+            $payment->reverses_payment_id !== null => $payment->reverses && ! $this->isEffective($payment->reverses, $approvalRequired) ? 'withdrawal' : 'reversal',
+            $payment->reversal !== null => $this->isEffective($payment, $approvalRequired) ? 'reversed' : 'withdrawn',
             $payment->approval !== null => 'approved',
             $this->isEffective($payment, $approvalRequired) => 'effective',
             default => 'awaiting',

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Text;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -52,11 +53,17 @@ class LeaveRequest extends Model
 
     public static function statusLabel(string $status): string
     {
+        return self::statusText($status)->render();
+    }
+
+    /** The status as a Text, for words stored now and read later (B31). */
+    public static function statusText(string $status): Text
+    {
         return match ($status) {
-            'approved' => __('Approved'),
-            'rejected' => __('Rejected'),
-            'cancelled' => __('Cancelled'),
-            default => __('Waiting for a decision'),
+            'approved' => Text::of('Approved'),
+            'rejected' => Text::of('Rejected'),
+            'cancelled' => Text::of('Cancelled'),
+            default => Text::of('Waiting for a decision'),
         };
     }
 

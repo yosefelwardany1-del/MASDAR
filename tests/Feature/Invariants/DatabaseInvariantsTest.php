@@ -19,6 +19,7 @@ use App\Services\Numbering\NumberingService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\LoadsContainers;
 use Tests\Concerns\SeedsReference;
 use Tests\TestCase;
 
@@ -28,7 +29,7 @@ use Tests\TestCase;
  */
 class DatabaseInvariantsTest extends TestCase
 {
-    use RefreshDatabase, SeedsReference;
+    use LoadsContainers, RefreshDatabase, SeedsReference;
 
     private function assertRefused(callable $write, string $message = ''): void
     {
@@ -55,8 +56,12 @@ class DatabaseInvariantsTest extends TestCase
         $this->assertRefused(fn () => DB::table('proforma_invoices')->where('id', $pi->id)->delete(), 'delete');
         $this->assertRefused(fn () => DB::table('proforma_invoices')->where('id', $pi->id)->update(['status' => 'draft']), 'back to draft');
 
-        DB::table('proforma_invoices')->where('id', $pi->id)->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+        // B03: not confirmed before its deposit, unless a manager's reason is given with it.
+        $this->assertRefused(fn () => DB::table('proforma_invoices')->where('id', $pi->id)->update(['status' => 'confirmed', 'confirmed_at' => now()]), 'confirm without the deposit');
+        DB::table('proforma_invoices')->where('id', $pi->id)->update(['status' => 'confirmed', 'confirmed_at' => now(),
+            'deposit_override_reason' => 'Long-standing client', 'deposit_override_by' => $pi->created_by]);
         $this->assertSame('confirmed', $pi->fresh()->status);
+        $this->assertRefused(fn () => DB::table('proforma_invoices')->where('id', $pi->id)->update(['deposit_override_reason' => 'changed']), 'override changed');
     }
 
     public function test_i4_only_one_current_revision_per_pi_number(): void
@@ -95,6 +100,7 @@ class DatabaseInvariantsTest extends TestCase
             'container_id' => $container->id, 'status' => $status, 'happened_at' => now(), 'user_id' => $user->id, 'corrects_event_id' => $corrects,
         ]);
 
+        $this->putGoodsIn($container);
         $loaded = $insert('loaded_sealed');
         $this->assertRefused(fn () => $insert('booked'), 'backwards');
         $this->assertRefused(fn () => $insert('no_such_status'), 'unknown');

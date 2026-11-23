@@ -12,6 +12,7 @@ use App\Models\SupplierOrderLine;
 use App\Models\User;
 use App\Services\SupplierOrders\OrderStepService;
 use App\Support\Audit\AuditTrail;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -42,18 +43,38 @@ class ContainerTrackingService
         if ($newSort === null) {
             throw ValidationException::withMessages(['status' => __('Unknown container status.')]);
         }
+        // B15: a status is recorded once it has happened, by the company's clock.
+        $at = CarbonImmutable::parse((string) $data['happened_at'], config('app.timezone'));
+        if ($at->gt(CarbonImmutable::now())) {
+            throw ValidationException::withMessages(['happened_at' => __('A status is recorded once it has happened: the date and time cannot be in the future.')]);
+        }
         if ($corrects !== null) {
             if (! ContainerEvent::query()->whereKey($corrects)->where('container_id', $container->id)->exists()) {
                 throw ValidationException::withMessages(['corrects_event_id' => __('A correction must name an event of this container.')]);
             }
         } else {
-            $lastSort = DB::table('container_events as e')
+            $last = DB::table('container_events as e')
                 ->join('lookups as l', fn ($j) => $j->on('l.code', '=', 'e.status')->where('l.list', 'container_status'))
                 ->where('e.container_id', $container->id)
                 ->orderByDesc('e.id')
-                ->value('l.sort');
-            if ($lastSort !== null && (int) $newSort < (int) $lastSort) {
+                ->first(['l.sort', 'e.status', 'e.happened_at']);
+            if ($last !== null && (int) $newSort < (int) $last->sort) {
                 throw ValidationException::withMessages(['status' => $backwards]);
+            }
+            // B15: a status is recorded once, and not dated before the one before it.
+            if ($last !== null && (int) $newSort === (int) $last->sort) {
+                throw ValidationException::withMessages(['status' => __('The container is already :status.', ['status' => Lookup::label('container_status', $status)])]);
+            }
+            if ($last !== null && $at->lt(CarbonImmutable::parse($last->happened_at))) {
+                throw ValidationException::withMessages(['happened_at' => __('This is earlier than the status before it (:date). Check the date, or record it as a correction.', [
+                    'date' => CarbonImmutable::parse($last->happened_at)->timezone(config('app.timezone'))->format('Y-m-d H:i'),
+                ])]);
+            }
+            // B15: from "Loaded & sealed" on, the container holds goods.
+            $sealedSort = Lookup::query()->where('list', 'container_status')->where('code', 'loaded_sealed')->value('sort');
+            $loaded = (string) DB::table('container_loads')->where('container_id', $container->id)->sum('cartons');
+            if ($sealedSort !== null && (int) $newSort >= (int) $sealedSort && bccomp($loaded, '0', 4) <= 0) {
+                throw ValidationException::withMessages(['status' => __('Nothing is loaded in this container yet. Load its goods before marking it :status.', ['status' => Lookup::label('container_status', $status)])]);
             }
         }
 

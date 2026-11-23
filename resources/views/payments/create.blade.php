@@ -41,7 +41,7 @@
         <div class="row g-3">
             <div class="col-md-4">
                 <label class="form-label" for="pay-date">{{ __('Date') }}<span class="app-req" aria-hidden="true">*</span></label>
-                <input type="date" name="paid_on" id="pay-date" class="form-control @error('paid_on') is-invalid @enderror" value="{{ old('paid_on', $preset['paid_on'] ?? now()->toDateString()) }}" required>
+                <input type="date" max="{{ now()->toDateString() }}" name="paid_on" id="pay-date" class="form-control @error('paid_on') is-invalid @enderror" value="{{ old('paid_on', $preset['paid_on'] ?? now()->toDateString()) }}" required>
                 @error('paid_on')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-md-8">
@@ -191,6 +191,7 @@
                         @endforeach
                     </select>
                     @error('counter_account_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-text">{{ __('Only accounts that fit this kind of payment are offered (Lists & options); your money accounts are not, as moving money between them is a transfer.') }}</div>
                 </div>
             @endif
         </div>

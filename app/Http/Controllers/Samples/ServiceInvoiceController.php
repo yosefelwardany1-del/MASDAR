@@ -13,6 +13,7 @@ use App\Models\Setting;
 use App\Services\ServiceInvoices\ServiceInvoiceService;
 use App\Support\Access\Visibility;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /** Service invoices (spec §5.8): commission, inspection, sourcing, samples, freight recharged. */
 class ServiceInvoiceController extends Controller
@@ -41,7 +42,13 @@ class ServiceInvoiceController extends Controller
         if (filled($request->input('line_description'))) {
             $data['lines'] = [['category' => $request->input('line_category'), 'description' => $request->input('line_description'), 'quantity' => '1', 'unit_price' => $request->input('line_amount')]];
         }
-        $invoice = $this->service->createDraft($data, $request->user());
+        try {
+            $invoice = $this->service->createDraft($data, $request->user());
+        } catch (ValidationException $e) {
+            // The first line's fields have their own names on this form: say it next to them.
+            $names = ['category' => 'line_category', 'description' => 'line_description', 'unit_price' => 'line_amount', 'quantity' => 'line_amount'];
+            throw ValidationException::withMessages(collect($e->errors())->mapWithKeys(fn ($m, $k) => [$names[preg_replace('/^lines\.\d+\./', '', $k)] ?? $k => $m])->all());
+        }
 
         return redirect()->route('service-invoices.show', $invoice)->with('success', __('Draft invoice created. Check its lines, then issue it.'));
     }
@@ -79,7 +86,8 @@ class ServiceInvoiceController extends Controller
 
     public function issue(Request $request, ServiceInvoice $invoice)
     {
-        $data = $request->validate(['issued_on' => 'nullable|date_format:Y-m-d', 'due_on' => 'nullable|date_format:Y-m-d']);
+        $data = $request->validate(['issued_on' => 'nullable|date_format:Y-m-d', 'due_on' => 'nullable|date_format:Y-m-d|after_or_equal:'.($request->input('issued_on') ?: now()->toDateString())],
+            ['due_on.after_or_equal' => __('The due date can\'t be before the invoice date.')]);
         $invoice = $this->service->issue($invoice, $request->user(), $data['issued_on'] ?? null, $data['due_on'] ?? null);
 
         return back()->with('success', __('Invoice :number issued.', ['number' => $invoice->number]));

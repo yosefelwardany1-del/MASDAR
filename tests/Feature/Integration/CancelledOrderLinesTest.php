@@ -33,9 +33,10 @@ class CancelledOrderLinesTest extends TestCase
     {
         parent::setUp();
         $this->manager = User::factory()->create()->assignRole(Roles::MANAGER);
-        $this->pi = ProformaInvoice::factory()->create();
+        $this->pi = ProformaInvoice::factory()->create(['deposit_percent' => 0]);
         PiLine::factory()->create(['proforma_invoice_id' => $this->pi->id, 'line_no' => 1]);
         $this->pi->update(['status' => 'issued', 'issued_at' => now(), 'issued_by' => $this->manager->id]);
+        $this->pi->update(['status' => 'confirmed', 'confirmed_at' => now()]);
     }
 
     private function orderFrom(Party $factory)

@@ -15,6 +15,8 @@ use App\Models\PayrollRun;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
+use App\Services\Accounting\Decimal;
+use App\Services\Accounting\OpenPeriods;
 use App\Services\Attachments\AttachmentService;
 use App\Services\Claims\NoteQueries;
 use App\Services\Numbering\NumberingService;
@@ -70,6 +72,7 @@ class PaymentService
             throw ValidationException::withMessages(['kind' => __('Choose what the payment is.')]);
         }
         $paidOn = $this->date($data['paid_on'] ?? null, 'paid_on');
+        OpenPeriods::assert($paidOn->toDateString(), 'paid_on');
         $account = $this->activeAccount($data['money_account_id'] ?? null, 'money_account_id');
         $amount = $this->amount($data['amount'] ?? null, 'amount');
         $rate = $this->rate($account->currency, $paidOn, $data['rate'] ?? null, 'rate');
@@ -77,6 +80,10 @@ class PaymentService
 
         return DB::transaction(function () use ($kind, $paidOn, $account, $amount, $rate, $links, $data, $by, $evidence) {
             $this->holdAccounts($account);
+            $this->assertNotOverpaid($kind, $links, $account, $amount);
+            if (! in_array($kind, Payment::KINDS_IN, true)) {
+                $this->assertCovers($account, $amount);
+            }
             $payment = Payment::create([
                 'number' => $this->numbers->next('payment', $paidOn),
                 'paid_on' => $paidOn->toDateString(),
@@ -120,6 +127,8 @@ class PaymentService
         if ($arrivedOn->lt($paidOn)) {
             throw ValidationException::withMessages(['in_paid_on' => __('The money cannot arrive before it leaves.')]);
         }
+        OpenPeriods::assert($paidOn->toDateString(), 'paid_on');
+        OpenPeriods::assert($arrivedOn->toDateString(), 'in_paid_on');
         $outAmount = $this->amount($data['amount'] ?? null, 'amount');
         if ($from->currency === $to->currency) {
             $inAmount = filled($data['in_amount'] ?? null) ? $this->amount($data['in_amount'], 'in_amount') : $outAmount;
@@ -134,6 +143,7 @@ class PaymentService
 
         return DB::transaction(function () use ($from, $to, $paidOn, $arrivedOn, $outAmount, $inAmount, $outRate, $inRate, $data, $by, $evidence) {
             $this->holdAccounts($from, $to);
+            $this->assertCovers($from, $outAmount, 'amount');
             $common = [
                 'transfer_group' => (string) Str::uuid(),
                 'reference' => $this->text($data['reference'] ?? null, 120),
@@ -177,10 +187,17 @@ class PaymentService
                 $payment->reversal()->exists() => __('This payment has been reversed.'),
                 $payment->reverses_payment_id !== null && ! PaymentApproval::query()->where('payment_id', $payment->reverses_payment_id)->exists() => __('The payment this reverses was never approved, so neither of them counts and there is nothing to approve.'),
                 $payment->approval()->exists() => __('This payment is already approved.'),
+                // B16: as with expense claims, nobody approves their own.
+                BusinessSetting::current()->payments_approved_by_another && (int) $payment->user_id === (int) $by->id => __('You recorded this payment, so another manager approves it.'),
                 default => null,
             };
             if ($refuse) {
                 throw ValidationException::withMessages(['payment' => $refuse]);
+            }
+            // The balance may have changed since it was recorded: it still has to be there (B06).
+            $account = MoneyAccount::query()->whereKey($payment->money_account_id)->lockForUpdate()->firstOrFail();
+            if ($payment->reverses_payment_id === null) {
+                $this->assertCovers($account, '0', 'payment');
             }
 
             $approval = PaymentApproval::create([
@@ -223,7 +240,14 @@ class PaymentService
                 throw ValidationException::withMessages(['reason' => __('This payment has already been reversed.')]);
             }
 
+            // Reversing money in takes it out again: it must still be there (B06).
+            $held = MoneyAccount::query()->whereKey($legs->pluck('money_account_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            foreach ($legs->where('direction', 'in') as $leg) {
+                $this->assertCovers($held[$leg->money_account_id], (string) $leg->amount, 'reason');
+            }
+
             $today = CarbonImmutable::now();
+            OpenPeriods::assert($today->toDateString(), 'reason');
             $reversals = [];
             foreach ($legs as $leg) {
                 $reversal = Payment::create([
@@ -380,6 +404,14 @@ class PaymentService
             $counter = $links['counter_account_id'] !== null ? Account::query()->find($links['counter_account_id']) : null;
             if (! $counter || ! $counter->is_postable || ! $counter->active) {
                 $errors['counter_account_id'] = __('Choose the account the money is for: an active account that can be posted to (not a heading).');
+            } elseif (MoneyAccount::query()->where('ledger_account_id', $counter->id)->exists()) {
+                // B29: a money account's own ledger account would debit and credit the same account.
+                $errors['counter_account_id'] = __('Account :account is the ledger account of a money account. Choose the account the money is for; to move money between your own accounts, record a transfer.', ['account' => $counter->label()]);
+            } elseif (! in_array($counter->type, $types = BusinessSetting::current()->counterAccountTypes($kind), true)) {
+                $errors['counter_account_id'] = __('A payment of kind “:kind” takes an account of type :types. :account is of type :type.', [
+                    'account' => $counter->label(), 'type' => $counter->typeLabel(), 'kind' => Payment::kindLabel($kind),
+                    'types' => implode(', ', array_map(fn (string $t) => Account::typeLabels()[$t], $types)),
+                ]);
             }
         }
 
@@ -391,13 +423,93 @@ class PaymentService
     }
 
     /**
-     * Hold the accounts' rows (FOR SHARE, in id order) until the payment commits, so an account's
+     * B05: a payment against a document never pays more than is left on it. Left = what it asks
+     * (a PI's current total less its credit notes; a purchase order's total less its debit notes;
+     * a payroll run's net pay; an expense claim's total) less what is already paid on it in its
+     * currency — every payment counted, those awaiting approval too, so two of them cannot
+     * overpay together. The document's row is locked until the payment commits. Money beyond a
+     * PI's balance is recorded on the client without a PI: an advance, by choice.
+     */
+    private function assertNotOverpaid(string $kind, array $links, MoneyAccount $account, string $amount): void
+    {
+        $paid = fn (string $column, int $id, ?string $piNumber = null) => (string) DB::table('payments')
+            ->when($piNumber, fn ($q) => $q->join('proforma_invoices as r', 'r.id', '=', 'payments.proforma_invoice_id')->where('r.pi_number', $piNumber),
+                fn ($q) => $q->where("payments.{$column}", $id))
+            ->where('payments.kind', $kind)->where('payments.currency', $account->currency)
+            ->selectRaw('ABS(COALESCE(SUM(payments.signed_amount), 0))::numeric(18,4) AS t')->value('t');
+        $sum = fn (string $table, string $column, int $id, string $field = 'amount') => (string) DB::table($table)->where($column, $id)
+            ->selectRaw("COALESCE(SUM({$field}), 0)::numeric(18,4) AS t")->value('t');
+
+        [$left, $document, $field] = match (true) {
+            $kind === 'client_receipt' && $links['proforma_invoice_id'] !== null => (function () use ($links, $account, $paid, $sum) {
+                $pi = ProformaInvoice::query()->whereKey($links['proforma_invoice_id'])->lockForUpdate()->firstOrFail();
+                if ($pi->currency !== $account->currency) {
+                    return [null, null, null];
+                }
+                $current = ProformaInvoice::query()->where('pi_number', $pi->pi_number)->where('is_current', true)->first() ?? $pi;
+                $asked = bcsub($sum('pi_lines', 'proforma_invoice_id', $current->id), app(NoteQueries::class)->creditedForPiNumber($pi->pi_number, $pi->currency), 4);
+
+                return [bcsub($asked, $paid('proforma_invoice_id', $pi->id, $pi->pi_number), 4), $current->reference(), 'amount'];
+            })(),
+            $kind === 'supplier_payment' && $links['supplier_order_id'] !== null => (function () use ($links, $account, $paid, $sum) {
+                $order = SupplierOrder::query()->whereKey($links['supplier_order_id'])->lockForUpdate()->firstOrFail();
+                if ($order->currency !== $account->currency) {
+                    return [null, null, null];
+                }
+                $asked = bcsub($sum('supplier_order_lines', 'supplier_order_id', $order->id), app(NoteQueries::class)->debitedForOrder($order->id, $order->currency), 4);
+
+                return [bcsub($asked, $paid('supplier_order_id', $order->id), 4), $order->number, 'amount'];
+            })(),
+            $kind === 'salary_payment' && $links['payroll_run_id'] !== null => (function () use ($links, $paid, $sum) {
+                $run = PayrollRun::query()->whereKey($links['payroll_run_id'])->lockForUpdate()->firstOrFail();
+
+                return [bcsub($sum('payroll_lines', 'payroll_run_id', $run->id, 'net'), $paid('payroll_run_id', $run->id), 4), $run->number, 'amount'];
+            })(),
+            $kind === 'claim_payment' && $links['expense_claim_id'] !== null => (function () use ($links, $paid) {
+                $claim = ExpenseClaim::query()->whereKey($links['expense_claim_id'])->lockForUpdate()->firstOrFail();
+
+                return [bcsub($claim->total(), $paid('expense_claim_id', $claim->id), 4), $claim->number, 'amount'];
+            })(),
+            default => [null, null, null],
+        };
+        if ($left === null || bccomp($amount, $left, 4) <= 0) {
+            return;
+        }
+        $left = bccomp($left, '0', 4) > 0 ? $left : '0';
+        $money = $account->currency.' '.Decimal::format($left);
+        throw ValidationException::withMessages([$field => $kind === 'client_receipt'
+            ? __(':document has :left left to pay. Record at most that on it, and money beyond it on the client without a PI (an advance).', ['document' => $document, 'left' => $money])
+            : __(':document has :left left to pay. A payment against it cannot be more.', ['document' => $document, 'left' => $money])]);
+    }
+
+    /**
+     * B06: what $account holds covers $amount more going out, unless it may go below zero. What it
+     * holds is what has arrived (money_account_available, which the trigger reads too): money out
+     * awaiting approval already counts as gone, so nothing waiting can overdraw it later.
+     */
+    private function assertCovers(MoneyAccount $account, string $amount, string $field = 'amount'): void
+    {
+        if ($account->allow_negative) {
+            return;
+        }
+        $available = (string) DB::selectOne('SELECT money_account_available(?)::numeric(18,4) AS a', [$account->id])->a;
+        if (bccomp(bcsub($available, $amount, 4), '0', 4) < 0) {
+            $format = fn (string $v) => $account->currency.' '.Decimal::format($v);
+            throw ValidationException::withMessages([$field => __(':account holds :available (money out awaiting approval counted as gone), not enough for :amount. Record the money coming in first, or pay from another account.', [
+                'account' => $account->name, 'available' => $format($available), 'amount' => $format($amount),
+            ])]);
+        }
+    }
+
+    /**
+     * Hold the accounts' rows (FOR UPDATE, in id order) until the payment commits, so an account's
      * currency cannot change between the check above and the insert (money_accounts_currency_guard).
      */
     private function holdAccounts(MoneyAccount ...$accounts): void
     {
         $ids = collect($accounts)->pluck('id')->sort()->values();
-        $held = MoneyAccount::query()->whereKey($ids)->orderBy('id')->sharedLock()->get(['id', 'currency', 'active'])->keyBy('id');
+        // FOR UPDATE: two payments out of one account wait for each other, so both cannot pass the balance check.
+        $held = MoneyAccount::query()->whereKey($ids)->orderBy('id')->lockForUpdate()->get(['id', 'currency', 'active'])->keyBy('id');
         foreach ($accounts as $account) {
             $now = $held->get($account->id);
             if (! $now || ! $now->active || $now->currency !== $account->currency) {
@@ -416,21 +528,31 @@ class PaymentService
         return $account;
     }
 
+    /** A payment's date: today or earlier, by the company's clock (APP_TIMEZONE) — B07. */
     private function date(mixed $value, string $field): CarbonImmutable
     {
         try {
-            return CarbonImmutable::parse((string) $value)->startOfDay();
+            $date = CarbonImmutable::parse((string) $value)->startOfDay();
         } catch (\Throwable) {
             throw ValidationException::withMessages([$field => __('Give a valid date.')]);
         }
+        if ($date->gt(CarbonImmutable::today())) {
+            throw ValidationException::withMessages([$field => __('A payment cannot be dated after today.')]);
+        }
+
+        return $date;
     }
 
-    /** A positive amount with up to 4 decimals, as a string (never a float). */
+    /** A positive amount to the cent (B09: every listed currency has 2 decimals), as a string (never a float). */
     private function amount(mixed $value, string $field): string
     {
-        $value = trim((string) $value);
-        if (! preg_match('/^\d{1,14}(\.\d{1,4})?$/', $value) || bccomp($value, '0', 4) <= 0) {
-            throw ValidationException::withMessages([$field => __('The amount is a number greater than zero, with up to 4 decimals.')]);
+        $value = trim(str_replace(',', '', (string) $value));
+        // "1200.5000" is a cent amount too: zeros past the cents are dropped.
+        if (preg_match('/^\d+\.\d+$/', $value)) {
+            $value = rtrim(rtrim($value, '0'), '.');
+        }
+        if (! preg_match('/^\d{1,14}(\.\d{1,2})?$/', $value) || bccomp($value, '0', 2) <= 0) {
+            throw ValidationException::withMessages([$field => __('The amount is a number greater than zero, with up to 2 decimals.')]);
         }
 
         return $value;

@@ -144,6 +144,18 @@ class ImportRun extends Model
     }
 
     /** Still queued or running — the UI keeps polling while this is true. */
+    /** B31: the status in the reader's language (an English key, translated like every other). */
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            self::QUEUED => __('Queued'),
+            self::RUNNING => __('Running'),
+            self::COMPLETED => __('Completed'),
+            self::FAILED => __('Failed'),
+            default => (string) $this->status,
+        };
+    }
+
     public function inProgress(): bool
     {
         return in_array($this->status, [self::QUEUED, self::RUNNING], true);
@@ -181,6 +193,7 @@ class ImportRun extends Model
             'created' => $this->created_count,
             'updated' => $this->updated_count,
             'failed' => $this->failed_count,
+            'summary' => ImportResult::summary((int) $this->created_count, (int) $this->updated_count, (int) $this->failed_count, (int) $this->total_rows),
             'errors' => $this->inProgress() ? [] : ($this->errors ?? []),
             'notices' => $this->inProgress() ? [] : ($this->notices ?? []),
         ];

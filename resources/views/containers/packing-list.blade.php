@@ -87,8 +87,8 @@
     <tr>
         <td colspan="4">TOTAL</td>
         <td class="n">{{ $num($totals->cartons) }}</td>
-        <td class="n">{{ $num($totals->qty) }}</td>
-        <td></td>
+        <td class="n">{{ $totals->qty !== null ? $num($totals->qty) : '' }}</td>
+        <td>{{ strtoupper((string) $totals->unit) }}</td>
         <td class="n">{{ $num($totals->cbm) }}</td>
         <td class="n">{{ $num($totals->kg) }}</td>
     </tr>

@@ -103,7 +103,9 @@
                             <td>{{ Payment::kindLabel($payment->kind) }}
                                 @if($state === 'awaiting')<x-status tone="due" class="ms-1">{{ __('Awaiting approval') }}</x-status>
                                 @elseif($state === 'reversed')<x-status tone="skip" icon="arrow-counterclockwise" class="ms-1">{{ __('Reversed') }}</x-status>
-                                @elseif($state === 'reversal')<x-status tone="skip" icon="arrow-counterclockwise" class="ms-1">{{ __('Reversal') }}</x-status>@endif</td>
+                                @elseif($state === 'reversal')<x-status tone="skip" icon="arrow-counterclockwise" class="ms-1">{{ __('Reversal') }}</x-status>
+                                @elseif($state === 'withdrawn')<x-status tone="skip" icon="slash-circle" class="ms-1">{{ __('Withdrawn') }}</x-status>
+                                @elseif($state === 'withdrawal')<x-status tone="skip" icon="arrow-counterclockwise" class="ms-1">{{ __('Withdrawal') }}</x-status>@endif</td>
                             <td>
                                 @if($payment->proformaInvoice && auth()->user()->can('proforma_invoices.view'))<span class="app-doc-code">{{ $payment->proformaInvoice->reference() }}</span>
                                 @elseif($payment->supplierOrder)<span class="app-doc-code">{{ $payment->supplierOrder->number }}</span>

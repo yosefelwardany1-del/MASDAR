@@ -9,6 +9,7 @@ use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Services\Notifications\NotificationService;
 use App\Support\Audit\AuditTrail;
+use App\Support\Text;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -188,14 +189,13 @@ class LeaveService
     {
         $approvers = User::permission('leave.approve')->where('status', 'active')
             ->when($employee->user_id, fn ($q, $id) => $q->whereKeyNot($id))->get();
-        foreach ($approvers as $approver) {
-            $this->inLocale($approver, fn () => $this->notifications->send($approver, __('Leave to decide'),
-                __(':name asks for :days days of :type, :from to :to.', [
-                    'name' => $employee->name, 'days' => $request->days, 'type' => mb_strtolower($this->typeLabel($request->leave_type)),
-                    'from' => $request->starts_on->toDateString(), 'to' => $request->ends_on->toDateString(),
-                ]),
-                ['icon' => 'calendar-check', 'category' => 'leave', 'url' => route('leave.index', ['tab' => 'requests'])]));
-        }
+        // B31: stored as text keys, shown in each reader's language.
+        $this->notifications->send($approvers, Text::of('Leave to decide'),
+            Text::of(':name asks for :days days of :type, :from to :to.', [
+                'name' => $employee->name, 'days' => $request->days, 'type' => Text::lookup('leave_type', $request->leave_type)->lower(),
+                'from' => $request->starts_on->toDateString(), 'to' => $request->ends_on->toDateString(),
+            ]),
+            ['icon' => 'calendar-check', 'category' => 'leave', 'url' => route('leave.index', ['tab' => 'requests'])]);
     }
 
     private function tellEmployee(LeaveRequest $request, string $decision): void
@@ -204,30 +204,13 @@ class LeaveService
         if (! $user) {
             return;
         }
-        $this->inLocale($user, fn () => $this->notifications->send($user,
-            $decision === 'approved' ? __('Leave approved') : __('Leave not approved'),
-            __('Your :type from :from to :to: :status.', [
-                'type' => mb_strtolower($this->typeLabel($request->leave_type)), 'from' => $request->starts_on->toDateString(),
-                'to' => $request->ends_on->toDateString(), 'status' => mb_strtolower(LeaveRequest::statusLabel($decision)),
+        $this->notifications->send($user,
+            $decision === 'approved' ? Text::of('Leave approved') : Text::of('Leave not approved'),
+            Text::of('Your :type from :from to :to: :status.', [
+                'type' => Text::lookup('leave_type', $request->leave_type)->lower(), 'from' => $request->starts_on->toDateString(),
+                'to' => $request->ends_on->toDateString(), 'status' => LeaveRequest::statusText($decision)->lower(),
             ]),
-            ['icon' => 'calendar-check', 'category' => 'leave', 'type' => $decision === 'approved' ? 'success' : 'warning', 'url' => route('my-leave.index')]));
-    }
-
-    private function typeLabel(string $code): string
-    {
-        return $this->queries->types(includeInactive: true)[$code]['label'] ?? $code;
-    }
-
-    /** Notifications are stored as text: each is written in its reader's language. */
-    private function inLocale(User $user, callable $send): void
-    {
-        $previous = app()->getLocale();
-        app()->setLocale($user->locale ?: config('app.locale'));
-        try {
-            $send();
-        } finally {
-            app()->setLocale($previous);
-        }
+            ['icon' => 'calendar-check', 'category' => 'leave', 'type' => $decision === 'approved' ? 'success' : 'warning', 'url' => route('my-leave.index')]);
     }
 
     private function days(mixed $value, string $from, string $to): string

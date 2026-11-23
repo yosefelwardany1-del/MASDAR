@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ProformaInvoices\PiAmounts;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,13 +26,13 @@ class QuotationLine extends Model
         return $this->belongsTo(Party::class, 'supplier_id');
     }
 
-    /** Price × quantity, when a quantity is proposed. */
+    /** Price × quantity to the cent (B09), when a quantity is proposed — as a PI line's amount is. */
     public function amount(): ?string
     {
         if ($this->cartons === null) {
             return null;
         }
 
-        return bcmul(bcmul((string) $this->cartons, (string) $this->qty_per_carton, 4), (string) $this->unit_price, 4);
+        return PiAmounts::round(bcmul(bcmul((string) $this->cartons, (string) $this->qty_per_carton, 8), (string) $this->unit_price, 8), 2);
     }
 }

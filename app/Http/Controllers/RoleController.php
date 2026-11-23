@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
 /**
- * The role matrix: the ten fixed roles (spec §10.2 — never a composite role per
+ * The role matrix: the fixed roles (spec §10.2 — never a composite role per
  * combination, so roles are not created or deleted here) × the screens, each at none /
  * view / edit / approve. Levels are cumulative; RoleManagementGuard decides who may change
  * what.

@@ -309,10 +309,16 @@ class MasdarReferenceSeeder extends Seeder
         DB::transaction(function () {
             foreach (self::LOOKUPS as $list => $rows) {
                 foreach ($rows as $i => $row) {
-                    Lookup::firstOrCreate(['list' => $list, 'code' => $row[0]], [
+                    $lookup = Lookup::firstOrCreate(['list' => $list, 'code' => $row[0]], [
                         'name' => $row[1], 'name_ar' => $row[2], 'name_zh' => $row[3],
                         'meta' => $row[4] ?? [], 'sort' => ($i + 1) * 10, 'active' => true,
                     ]);
+                    // B12: an entry made before a flag existed (e.g. client stages before "follows the
+                    // documents") gets the flags it lacks; a flag already there — an editor's — is kept.
+                    $missing = array_diff_key($row[4] ?? [], (array) ($lookup->meta ?? []));
+                    if (! $lookup->wasRecentlyCreated && $missing !== []) {
+                        $lookup->forceFill(['meta' => (array) ($lookup->meta ?? []) + $missing])->save();
+                    }
                 }
             }
 

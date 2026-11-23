@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
-use App\Models\Account;
 use App\Models\BusinessSetting;
 use App\Models\Container;
 use App\Models\ExpenseClaim;
@@ -120,7 +119,7 @@ class PaymentController extends Controller
                 ? PayrollRun::query()->where('status', 'approved')->orderByDesc('period')->limit(24)->get(['id', 'number', 'period', 'currency'])
                 : collect(),
             'counterAccounts' => in_array($kind, ['expense', 'other_in', 'other_out'], true)
-                ? Account::query()->where('is_postable', true)->where('active', true)->orderBy('code')->get()
+                ? $this->queries->counterAccounts($kind)->get()
                 : collect(),
             'book' => BusinessSetting::current()->book_currency,
             'approvalRequired' => $this->queries->approvalRequired(),
@@ -133,7 +132,7 @@ class PaymentController extends Controller
         $user = $request->user();
         $data = $request->validate([
             'kind' => ['required', Rule::in($this->queries->recordableKinds($user))],
-            'paid_on' => ['required', 'date'],
+            'paid_on' => ['required', 'date', 'before_or_equal:today'],
             'money_account_id' => ['required', 'integer'],
             'amount' => ['required', 'string', 'max:30'],
             'rate' => ['nullable', 'string', 'max:30'],
@@ -146,7 +145,7 @@ class PaymentController extends Controller
             'counter_account_id' => ['nullable', 'integer'],
             'reference' => ['nullable', 'string', 'max:120'],
             'note' => ['nullable', 'string', 'max:2000'],
-        ] + $this->evidenceRules());
+        ] + $this->evidenceRules(), $this->futureDateMessages());
 
         if (Visibility::ownClientsOnly($user) && ! empty($data['party_id'])
             && ! Visibility::scopeClients(Party::query(), $user)->whereKey($data['party_id'])->exists()) {
@@ -175,15 +174,15 @@ class PaymentController extends Controller
         $data = $request->validate([
             'from_account_id' => ['required', 'integer'],
             'to_account_id' => ['required', 'integer', 'different:from_account_id'],
-            'paid_on' => ['required', 'date'],
+            'paid_on' => ['required', 'date', 'before_or_equal:today'],
             'amount' => ['required', 'string', 'max:30'],
             'rate' => ['nullable', 'string', 'max:30'],
-            'in_paid_on' => ['nullable', 'date'],
+            'in_paid_on' => ['nullable', 'date', 'before_or_equal:today'],
             'in_amount' => ['nullable', 'string', 'max:30'],
             'in_rate' => ['nullable', 'string', 'max:30'],
             'reference' => ['nullable', 'string', 'max:120'],
             'note' => ['nullable', 'string', 'max:2000'],
-        ] + $this->evidenceRules());
+        ] + $this->evidenceRules(), $this->futureDateMessages());
 
         $legs = $this->payments->transfer($data, $request->user(), $request->file('files', []));
 
@@ -349,6 +348,12 @@ class PaymentController extends Controller
     }
 
     /** @return array<string, list<string>> */
+    /** B07: a payment is dated today or earlier; said in words, next to the date. */
+    private function futureDateMessages(): array
+    {
+        return ['paid_on.before_or_equal' => __('A payment cannot be dated after today.'), 'in_paid_on.before_or_equal' => __('A payment cannot be dated after today.')];
+    }
+
     private function evidenceRules(): array
     {
         $maxKb = (int) config('attachments.max_size_kb', 10240);

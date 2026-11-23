@@ -7,6 +7,7 @@
     $hasQty = $quotation->lines->contains(fn ($l) => $l->cartons !== null);
     $watermark = ['draft' => 'DRAFT', 'declined' => 'DECLINED'][$quotation->status] ?? null;
     $plain = fn ($v) => $v === null ? '' : PiAmounts::number((string) $v);
+    $totals = $quotation->printTotals();
 @endphp
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -38,6 +39,8 @@
         table.lines td.num { text-align: right; white-space: nowrap; }
         table.lines td.pic { width: 22mm; padding: 1mm; }
         table.lines td.pic img { display: block; margin: 0 auto; max-width: 20mm; max-height: 20mm; }
+        table.lines tr.total td { font-weight: bold; }
+        .summary { display: flex; flex-wrap: wrap; gap: 3mm 8mm; justify-content: flex-end; margin-top: 3mm; font-size: 10pt; }
         tr { page-break-inside: avoid; }
         .terms { margin-top: 6mm; white-space: pre-line; }
         .valid { margin-top: 4mm; font-weight: bold; }
@@ -92,8 +95,24 @@
                 @if($hasQty)<td class="num">{{ $plain($line->cartons) }}</td><td class="num">{{ $line->amount() ? $money($line->amount()) : '' }}</td>@endif
             </tr>
         @endforeach
+        {{-- B30: the total, as on the screen, with the cartons. --}}
+        @if($hasQty)
+            <tr class="total">
+                <td colspan="9">Total</td>
+                <td class="num">{{ $plain($totals['cartons']) }}</td>
+                <td class="num">{{ $money($totals['amount']) }}</td>
+            </tr>
+        @endif
         </tbody>
     </table>
+    @if($hasQty)
+        <div class="summary">
+            <span><b>Total:</b> {{ $money($totals['amount']) }}</span>
+            <span><b>Cartons:</b> {{ $plain($totals['cartons']) }}</span>
+            @if($totals['cbm'] !== null)<span><b>CBM:</b> {{ PiAmounts::number(PiAmounts::round($totals['cbm'], 3)) }}</span>@endif
+            @if($totals['kg'] !== null)<span><b>KG:</b> {{ PiAmounts::number(PiAmounts::round($totals['kg'], 2)) }}</span>@endif
+        </div>
+    @endif
 
     @if($quotation->terms)<div class="terms">{{ $quotation->terms }}</div>@endif
     <div class="valid">Prices valid until {{ $quotation->valid_until->format('j F Y') }}.</div>

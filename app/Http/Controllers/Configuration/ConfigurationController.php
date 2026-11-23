@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Configuration;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\BusinessSetting;
 use App\Models\Lookup;
 use App\Models\OrderStepDefinition;
+use App\Models\Payment;
 use App\Services\Configuration\BusinessSettingsService;
 use App\Services\Configuration\LookupService;
 use App\Services\Configuration\OrderStepDefinitionService;
@@ -84,6 +86,8 @@ class ConfigurationController extends Controller
             // Profit and ageing (spec §5.8): how a shared container's costs split (Q-C3), the age buckets.
             'container_cost_split' => 'sometimes|required|in:cbm,kg,value,cartons',
             'ageing_buckets' => ['sometimes', 'required', 'string', 'max:40', 'regex:/^\s*\d{1,3}(\s*,\s*\d{1,3}){0,5}\s*$/'],
+            // B32: the month the financial year starts in (on its 1st).
+            'financial_year_start_month' => 'sometimes|required|integer|between:1,12',
         ] + array_fill_keys(array_values(NumberingService::SERIES), $prefix));
         if (isset($data['ageing_buckets'])) {
             $days = array_values(array_unique(array_filter(array_map('intval', explode(',', $data['ageing_buckets'])), fn (int $d) => $d > 0)));
@@ -108,15 +112,28 @@ class ConfigurationController extends Controller
             $data['hr_work_days'] = implode(',', $days);
         }
 
-        foreach (['pi_issue_requires_approval', 'payments_out_require_approval', 'sales_see_supplier_prices', 'sales_own_clients_only', 'block_loading_unpaid', 'whatsapp_container_updates', 'client_portal_enabled'] as $flag) {
+        foreach (['pi_issue_requires_approval', 'payments_out_require_approval', 'sales_see_supplier_prices', 'sales_own_clients_only', 'block_loading_unpaid', 'whatsapp_container_updates', 'client_portal_enabled', 'orders_from_issued_pi', 'payments_approved_by_another', 'part_cartons_allowed'] as $flag) {
             $data[$flag] = $request->boolean($flag);
         }
         // Which container statuses send clients a WhatsApp update (spec Q-C4).
         if ($request->has('whatsapp_update_statuses')) {
             // The form sends one empty value so that unticking every status clears them.
             $statuses = array_values(array_filter((array) $request->input('whatsapp_update_statuses'), 'filled'));
-            validator(['statuses' => $statuses], ['statuses.*' => [Rule::in(array_keys(Lookup::options('container_status')))]])->validate();
+            if (array_diff($statuses, array_keys(Lookup::options('container_status'))) !== []) {
+                throw ValidationException::withMessages(['whatsapp_update_statuses' => __('Choose the statuses from the list.')]);
+            }
             $data['whatsapp_update_statuses'] = implode(',', $statuses);
+        }
+
+        // B29: the account types each kind of payment may name as what the money is for.
+        foreach (BusinessSetting::COUNTER_TYPE_SETTINGS as $kind => $column) {
+            if ($request->has($column)) {
+                $types = array_values(array_intersect(Account::TYPES, (array) $request->input($column)));
+                if ($types === []) {
+                    throw ValidationException::withMessages([$column => __('Tick at least one type of account for :kind.', ['kind' => Payment::kindLabel($kind)])]);
+                }
+                $data[$column] = implode(',', $types);
+            }
         }
 
         $service->update($data);

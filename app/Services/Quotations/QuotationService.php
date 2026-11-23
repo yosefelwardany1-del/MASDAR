@@ -11,6 +11,7 @@ use App\Models\Quotation;
 use App\Models\QuotationLine;
 use App\Models\User;
 use App\Services\Numbering\NumberingService;
+use App\Services\ProformaInvoices\PiAmounts;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
 use App\Support\Access\Visibility;
 use App\Support\Audit\AuditTrail;
@@ -113,15 +114,21 @@ class QuotationService
         });
     }
 
-    /** Send it to the client: numbered now, and never changed after. */
-    public function send(Quotation $quotation, User $by): Quotation
+    /**
+     * Send it to the client: numbered now, and never changed after. One whose validity has already
+     * ended is sent only when the person says so ($anyway, B13): extending its date is the usual fix.
+     */
+    public function send(Quotation $quotation, User $by, bool $anyway = false): Quotation
     {
         $this->authorize($by, 'quotations.edit');
 
-        return DB::transaction(function () use ($quotation, $by) {
+        return DB::transaction(function () use ($quotation, $by, $anyway) {
             $quotation = $this->lockedDraft($quotation);
             if (! $quotation->lines()->exists()) {
                 throw ValidationException::withMessages(['quotation' => __('Add at least one line before sending the quotation.')]);
+            }
+            if ($quotation->isPastValidity() && ! $anyway) {
+                throw ValidationException::withMessages(['valid_until' => __('This quotation was valid until :date, which has passed. Extend its date before sending it, or send it anyway.', ['date' => $quotation->valid_until->toDateString()])]);
             }
             $quotation->update([
                 'number' => $this->numbers->next('quotation', $quotation->quoted_on),
@@ -157,6 +164,10 @@ class QuotationService
             $quotation = Quotation::query()->lockForUpdate()->findOrFail($quotation->id);
             if ($quotation->proforma_invoice_id) {
                 throw ValidationException::withMessages(['quotation' => __('This quotation is already PI :pi.', ['pi' => $quotation->proformaInvoice?->reference()])]);
+            }
+            // B13: past its validity the offer no longer stands — unless it was accepted while it did.
+            if ($quotation->status === 'sent' && $quotation->isPastValidity()) {
+                throw ValidationException::withMessages(['quotation' => $this->expiredMessage($quotation)]);
             }
             if ($quotation->status === 'sent') {
                 $quotation = $this->answer($quotation, 'accepted', $by);
@@ -217,6 +228,21 @@ class QuotationService
         });
     }
 
+    /** B27: whole cartons, unless the business sells part cartons. */
+    private function wholeCartons(string $cartons): string
+    {
+        if ($error = PiAmounts::partCartonError($cartons)) {
+            throw ValidationException::withMessages(['cartons' => $error]);
+        }
+
+        return $cartons;
+    }
+
+    private function expiredMessage(Quotation $quotation): string
+    {
+        return __('This quotation expired on :date. Copy it (Copy to revise), give the copy a new date and send that instead.', ['date' => $quotation->valid_until->toDateString()]);
+    }
+
     private function answer(Quotation $quotation, string $status, User $by): Quotation
     {
         $this->authorize($by, 'quotations.edit');
@@ -225,6 +251,10 @@ class QuotationService
             $quotation = Quotation::query()->lockForUpdate()->findOrFail($quotation->id);
             if ($quotation->status !== 'sent') {
                 throw ValidationException::withMessages(['quotation' => __('Only a sent quotation is accepted or declined.')]);
+            }
+            // B13: an expired offer is not accepted; a decline is still recorded.
+            if ($status === 'accepted' && $quotation->isPastValidity()) {
+                throw ValidationException::withMessages(['quotation' => $this->expiredMessage($quotation)]);
             }
             $quotation->update(['status' => $status, 'decided_at' => now()]);
             AuditTrail::record($status, $quotation, [], []);
@@ -270,7 +300,7 @@ class QuotationService
             'description' => trim((string) $pick('description', $productText)),
             'unit' => (string) $pick('unit', $product?->unit),
             'qty_per_carton' => $this->decimal($pick('qty_per_carton', $product?->qty_per_carton ?? '0'), 'qty_per_carton'),
-            'cartons' => array_key_exists('cartons', $data) ? (filled($data['cartons']) ? $this->decimal($data['cartons'], 'cartons', positive: true) : null) : $line?->cartons,
+            'cartons' => array_key_exists('cartons', $data) ? (filled($data['cartons']) ? $this->wholeCartons($this->decimal($data['cartons'], 'cartons', positive: true)) : null) : $line?->cartons,
             'moq' => array_key_exists('moq', $data) ? (filled($data['moq']) ? $this->decimal($data['moq'], 'moq') : null) : $line?->moq,
             'unit_price' => $this->decimal($pick('unit_price', $product?->sale_price), 'unit_price', required: true),
             'cbm_per_carton' => $this->decimal($pick('cbm_per_carton', $product?->cbm_per_carton ?? '0'), 'cbm_per_carton'),

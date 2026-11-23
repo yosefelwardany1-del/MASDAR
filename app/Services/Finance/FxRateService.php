@@ -34,6 +34,10 @@ class FxRateService
         if (! preg_match('/^\d{1,12}(\.\d{1,6})?$/', $rate) || bccomp($rate, '0', 6) <= 0) {
             $errors['rate'] = __('The rate is a number greater than zero, with up to 6 decimals.');
         }
+        // B08: a rate is what was seen on a day that has come — never one ahead of today.
+        if ($day > CarbonImmutable::today()->toDateString()) {
+            $errors['rate_date'] = __('A rate cannot be dated after today.');
+        }
         if ($errors) {
             throw ValidationException::withMessages($errors);
         }
@@ -55,6 +59,30 @@ class FxRateService
 
             return $row;
         });
+    }
+
+    /**
+     * Delete a rate nothing used (B08): no posted journal line and no payment in its currency at
+     * that rate while it was the rate in force (from its date until the next rate's). The trigger
+     * holds the same rule.
+     */
+    public function delete(FxRate $rate, User $by): void
+    {
+        DB::transaction(function () use ($rate) {
+            $rate = FxRate::query()->lockForUpdate()->findOrFail($rate->id);
+            if ($this->isUsed($rate)) {
+                throw ValidationException::withMessages(['rate' => __('This rate has been used by payments or posted entries, so it stays. Add a rate for another day instead.')]);
+            }
+            $old = ['currency' => $rate->currency, 'rate_date' => $rate->rate_date->toDateString(), 'rate' => $rate->rate];
+            $rate->delete();
+            AuditTrail::record('deleted', $rate, $old, []);
+        });
+    }
+
+    /** Whether a payment or a posted journal line took this rate while it was in force. */
+    public function isUsed(FxRate $rate): bool
+    {
+        return (bool) DB::selectOne('SELECT fx_rate_is_used(?) AS used', [$rate->id])->used;
     }
 
     /**

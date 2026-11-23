@@ -26,11 +26,11 @@
                 <div class="row g-3">
                     <div class="col-md-8">
                         <label class="form-label" for="company_address">{{ __('Address on documents') }}</label>
-                        <input id="company_address" name="company_address" class="form-control" dir="ltr" value="{{ old('company_address', $setting->company_address) }}">
+                        <input id="company_address" name="company_address" class="form-control @error('company_address') is-invalid @enderror" dir="ltr" value="{{ old('company_address', $setting->company_address) }}">@error('company_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-4">
                         <label class="form-label" for="company_phone">{{ __('Phone on documents') }}</label>
-                        <input id="company_phone" name="company_phone" class="form-control" dir="ltr" value="{{ old('company_phone', $setting->company_phone) }}">
+                        <input id="company_phone" name="company_phone" class="form-control @error('company_phone') is-invalid @enderror" dir="ltr" value="{{ old('company_phone', $setting->company_phone) }}">@error('company_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-3">
                         <label class="form-label" for="default_deposit_percent">{{ __('Default deposit %') }}</label>
@@ -42,7 +42,7 @@
                     </div>
                     <div class="col-md-9">
                         <label class="form-label" for="pi_terms_template">{{ __('Payment terms on the PI') }}</label>
-                        <input id="pi_terms_template" name="pi_terms_template" class="form-control" dir="ltr" value="{{ old('pi_terms_template', $setting->pi_terms_template) }}" aria-describedby="pi-terms-help">
+                        <input id="pi_terms_template" name="pi_terms_template" class="form-control @error('pi_terms_template') is-invalid @enderror" dir="ltr" value="{{ old('pi_terms_template', $setting->pi_terms_template) }}" aria-describedby="pi-terms-help">@error('pi_terms_template')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         <div class="form-text" id="pi-terms-help">{{ __('{deposit} and {final} are replaced by the PI\'s percentages.') }} <span class="app-ltr">{{ $setting->piTerms($setting->default_deposit_percent) }}</span></div>
                     </div>
                 </div>
@@ -68,9 +68,12 @@
                 @foreach([
                     'pi_issue_requires_approval' => __('Issuing a Proforma Invoice needs a manager\'s approval'),
                     'payments_out_require_approval' => __('Every payment out needs a manager\'s approval'),
+                    'payments_approved_by_another' => __('A payment is approved by someone other than the person who recorded it (switch off only with a single manager)'),
                     'sales_see_supplier_prices' => __('Sales staff see suppliers and supplier prices'),
                     'sales_own_clients_only' => __('Sales staff see only the clients they manage'),
                     'block_loading_unpaid' => __('Goods are not loaded until the client has paid in full (a manager can override)'),
+                    'orders_from_issued_pi' => __('Purchase orders may be made from an issued PI, before the client\'s deposit (otherwise from a confirmed PI only)'),
+                    'part_cartons_allowed' => __('PI and quotation lines may have part cartons (otherwise whole cartons only)'),
                 ] as $flag => $label)
                     <div class="app-switch">
                         <div class="form-check form-switch">
@@ -81,21 +84,41 @@
                 @endforeach
             </x-section>
 
+            <x-section :title="__('Accounts a payment is for')" icon="journal-text" id="counter-accounts">
+                <p class="form-text mt-0 mb-3">{{ __('The types of account offered as "what the money is for" on each kind of payment. Your money accounts are never offered: moving money between them is a transfer.') }}</p>
+                @foreach(\App\Models\BusinessSetting::COUNTER_TYPE_SETTINGS as $kind => $column)
+                    <fieldset class="mb-3">
+                        <legend class="form-label">{{ \App\Models\Payment::kindLabel($kind) }}</legend>
+                        @php $chosen = old($column, $setting->counterAccountTypes($kind)); @endphp
+                        <div class="d-flex flex-wrap gap-3">
+                            @foreach(\App\Models\Account::typeLabels() as $type => $typeName)
+                                <div class="form-check">
+                                    <input class="form-check-input @error($column) is-invalid @enderror" type="checkbox" id="{{ $column }}-{{ $type }}" name="{{ $column }}[]" value="{{ $type }}" @checked(in_array($type, (array) $chosen, true))>
+                                    <label class="form-check-label" for="{{ $column }}-{{ $type }}">{{ $typeName }}</label>
+                                </div>
+                            @endforeach
+                        </div>
+                        <input type="hidden" name="{{ $column }}[]" value="">
+                        @error($column)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    </fieldset>
+                @endforeach
+            </x-section>
+
             <x-section :title="__('Warnings')" icon="bell">
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-4">
                         <label class="form-label" for="step_warning_days">{{ __('Warn this many days before a step is due') }}</label>
-                        <input id="step_warning_days" name="step_warning_days" type="number" min="0" max="90" class="form-control app-num" value="{{ old('step_warning_days', $setting->step_warning_days) }}">
+                        <input id="step_warning_days" name="step_warning_days" type="number" min="0" max="90" class="form-control app-num @error('step_warning_days') is-invalid @enderror" value="{{ old('step_warning_days', $setting->step_warning_days) }}">@error('step_warning_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 col-lg-4">
                         <label class="form-label" for="eta_warning_days">{{ __('Warn this many days before a container arrives') }}</label>
-                        <input id="eta_warning_days" name="eta_warning_days" type="number" min="0" max="90" class="form-control app-num" value="{{ old('eta_warning_days', $setting->eta_warning_days) }}">
+                        <input id="eta_warning_days" name="eta_warning_days" type="number" min="0" max="90" class="form-control app-num @error('eta_warning_days') is-invalid @enderror" value="{{ old('eta_warning_days', $setting->eta_warning_days) }}">@error('eta_warning_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
             </x-section>
 
             <x-section :title="__('Client portal')" icon="door-open">
-                <p class="form-text mt-0 mb-3">{{ __('Clients sign in to see their own orders, payments, containers and statement. Accounts are given on each client\'s page; nobody signs in while this is off (spec Q-R2).') }}</p>
+                <p class="form-text mt-0 mb-3">{{ __('Clients sign in to see their own orders, payments, containers and statement. Accounts are given on each client\'s page; nobody signs in while this is off.') }}</p>
                 <div class="app-switch">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="client_portal_enabled" name="client_portal_enabled" value="1" @checked(old('client_portal_enabled', $setting->client_portal_enabled))>
@@ -105,7 +128,7 @@
             </x-section>
 
             <x-section :title="__('WhatsApp updates to clients')" icon="whatsapp">
-                <p class="form-text mt-0 mb-3">{{ __('When a container reaches one of these statuses, each client with goods inside gets MASDAR\'s approved WhatsApp message. Nothing is sent until the WhatsApp keys are set and the template is approved (see the README).') }}</p>
+                <p class="form-text mt-0 mb-3">{{ __('When a container reaches one of these statuses, each client with goods inside gets MASDAR\'s approved WhatsApp message. Nothing is sent until your administrator has set up WhatsApp and the message template is approved.') }}</p>
                 <div class="app-switch mb-3">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="whatsapp_container_updates" name="whatsapp_container_updates" value="1" @checked(old('whatsapp_container_updates', $setting->whatsapp_container_updates))>
@@ -125,6 +148,7 @@
                         @endforeach
                     </div>
                     <input type="hidden" name="whatsapp_update_statuses[]" value="">
+                    @error('whatsapp_update_statuses')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                 </fieldset>
             </x-section>
 
@@ -162,13 +186,24 @@
                                 <option value="{{ $value }}" @selected(old('container_cost_split', $setting->container_cost_split) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        <div class="form-text">{{ __('Between the clients and orders inside it, on the Profit screen (spec Q-C3).') }}</div>
+                        @error('container_cost_split')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">{{ __('Between the clients and orders inside it, on the Profit screen.') }}</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label" for="ageing_buckets">{{ __('Ageing buckets (days)') }}</label>
                         <input id="ageing_buckets" name="ageing_buckets" dir="ltr" class="form-control app-num @error('ageing_buckets') is-invalid @enderror" value="{{ old('ageing_buckets', $setting->ageing_buckets) }}" placeholder="30,60,90">
                         @error('ageing_buckets')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         <div class="form-text">{{ __('The limits of each column of the ageing report, separated by commas.') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="financial_year_start_month">{{ __('The financial year starts on the 1st of') }}</label>
+                        <select id="financial_year_start_month" name="financial_year_start_month" class="form-select @error('financial_year_start_month') is-invalid @enderror">
+                            @foreach(range(1, 12) as $month)
+                                <option value="{{ $month }}" @selected((int) old('financial_year_start_month', $setting->financial_year_start_month) === $month)>{{ \Illuminate\Support\Carbon::create(2000, $month, 1)->locale(app()->getLocale())->monthName }}</option>
+                            @endforeach
+                        </select>
+                        @error('financial_year_start_month')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">{{ __('The balance sheet splits the result between this year and earlier years from this date; the reports start the year there.') }}</div>
                     </div>
                 </div>
             </x-section>
@@ -178,9 +213,9 @@
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-3">
                         <label class="form-label" for="payroll_currency">{{ __('Payroll currency') }}</label>
-                        <select id="payroll_currency" name="payroll_currency" class="form-select">
+                        <select id="payroll_currency" name="payroll_currency" class="form-select @error('payroll_currency') is-invalid @enderror">
                             @foreach($currencies as $code => $name)<option value="{{ $code }}" @selected(old('payroll_currency', $setting->payroll_currency) === $code)>{{ $code }} · {{ $name }}</option>@endforeach
-                        </select>
+                        </select>@error('payroll_currency')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 col-lg-3">
                         <label class="form-label" for="payroll_days_per_month">{{ __('Working days a month (daily rate)') }}</label>

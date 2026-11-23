@@ -54,7 +54,10 @@
     };
 @endphp
 
-<x-page-header :title="__('Purchase orders')" :subtitle="__('One purchase order per factory, made from a confirmed PI, followed step by step: one row per order, one column per step. Late rows come first.')">
+@php $fromIssued = \App\Models\BusinessSetting::current()->orders_from_issued_pi; @endphp
+<x-page-header :title="__('Purchase orders')" :subtitle="$fromIssued
+    ? __('One purchase order per factory, made from an issued PI, followed step by step: one row per order, one column per step. Late rows come first.')
+    : __('One purchase order per factory, made from a confirmed PI, followed step by step: one row per order, one column per step. Late rows come first.')">
     <x-slot:meta>
         <span class="app-pill"><i class="bi bi-kanban" aria-hidden="true"></i>{{ trans_choice('{0} No orders|{1} :count order|[2,*] :count orders', $orders->total(), ['count' => $orders->total()]) }}</span>
         @if($lateCount > 0)
@@ -66,6 +69,11 @@
         @endif
     </x-slot:meta>
     <x-slot:actions>
+        @if($seeSuppliers)
+            @can('supplier_orders.edit')
+                <a href="{{ route('supplier-orders.create') }}" class="btn btn-primary"><i class="bi bi-cart-plus" aria-hidden="true"></i>{{ __('New purchase orders') }}</a>
+            @endcan
+        @endif
         <a href="{{ route('supplier-orders.evaluation') }}" class="btn btn-light"><i class="bi bi-bar-chart" aria-hidden="true"></i>{{ __('Supplier evaluation') }}</a>
         @can('goods_receipts.view')
             <a href="{{ route('goods-receipts.index') }}" class="btn btn-light"><i class="bi bi-clipboard-check" aria-hidden="true"></i>{{ __('Goods receipt & inspection') }}</a>
@@ -125,9 +133,22 @@
     <li class="d-none d-md-inline-flex text-muted">{{ __('Point at a step to see its date.') }}</li>
 </ul>
 
+@if($waiting->isNotEmpty())
+    <x-section :title="__('Sales orders waiting for purchase orders')" icon="cart-plus" class="mb-3">
+        <ul class="list-unstyled mb-0 d-flex flex-wrap gap-2" aria-label="{{ __('Sales orders waiting for purchase orders') }}">
+            @foreach($waiting as $pi)
+                <li><a href="{{ route('supplier-orders.create', ['pi' => $pi->id]) }}" class="btn btn-light btn-sm"><i class="bi bi-cart-plus" aria-hidden="true"></i><span class="app-ltr">{{ $pi->reference() }}</span> · <bdi>{{ $pi->client?->name }}</bdi></a></li>
+            @endforeach
+            @if($waitingCount > $waiting->count())
+                <li><a href="{{ route('supplier-orders.create') }}" class="btn btn-link btn-sm">{{ __('See all :count', ['count' => $waitingCount]) }}</a></li>
+            @endif
+        </ul>
+    </x-section>
+@endif
+
 @if($orders->isEmpty())
     <div class="app-card">
-        <x-empty icon="kanban" :title="__('No supplier orders found.')" :text="$filtered ? __('Try other filters, or clear them to see every open order.') : __('Supplier orders are made from an issued PI and appear here, one row each.')">
+        <x-empty icon="kanban" :title="__('No supplier orders found.')" :text="$filtered ? __('Try other filters, or clear them to see every open order.') : ($fromIssued ? __('Purchase orders are made from an issued PI and appear here, one row each.') : __('Purchase orders are made from a confirmed PI and appear here, one row each.'))">
             @if($filtered)
                 <x-slot:action><a href="{{ route('supplier-orders.index') }}" class="btn btn-light btn-sm">{{ __('Clear filters') }}</a></x-slot:action>
             @endif

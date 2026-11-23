@@ -66,6 +66,12 @@ class ImportProcessor
             foreach ($fieldKeys as $k) {
                 $data[$k] = array_key_exists($k, $raw) ? trim((string) $raw[$k]) : '';
             }
+            // B22: a row that fills none of the template's columns cannot be mapped: it fails, with why.
+            if (array_filter($data, fn ($v) => $v !== '') === []) {
+                $result->errors[] = ['row' => $rowNum, 'messages' => [__('This row fills none of the template\'s columns.')]];
+
+                continue;
+            }
 
             $validator = Validator::make($data, $schema->rules());
             if ($validator->fails()) {

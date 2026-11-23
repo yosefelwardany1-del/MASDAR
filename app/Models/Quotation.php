@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,6 +27,36 @@ class Quotation extends Model
         return $this->belongsTo(Party::class, 'client_id');
     }
 
+    /** The sum of its priced lines, each to the cent (B09); '0' when no line has a quantity. */
+    public function total(): string
+    {
+        return $this->lines->filter(fn ($l) => $l->cartons !== null)->reduce(fn ($c, $l) => bcadd($c, $l->amount(), 2), '0.00');
+    }
+
+    /**
+     * B30: what the printout totals — the amount, the cartons and, when every quantified line
+     * gives them (above 0), the CBM and KG. Null figures are not known; all null when no line has a quantity.
+     *
+     * @return array{amount: ?string, cartons: ?string, cbm: ?string, kg: ?string}
+     */
+    public function printTotals(): array
+    {
+        $priced = $this->lines->filter(fn ($l) => $l->cartons !== null);
+        if ($priced->isEmpty()) {
+            return ['amount' => null, 'cartons' => null, 'cbm' => null, 'kg' => null];
+        }
+        // A line stores 0 when its CBM or KG was not given: not known, so the total is not either.
+        $per = fn (string $column) => $priced->contains(fn ($l) => $l->{$column} === null || bccomp((string) $l->{$column}, '0', 6) === 0) ? null
+            : $priced->reduce(fn ($c, $l) => bcadd($c, bcmul((string) $l->cartons, (string) $l->{$column}, 6), 6), '0');
+
+        return [
+            'amount' => $this->total(),
+            'cartons' => $priced->reduce(fn ($c, $l) => bcadd($c, (string) $l->cartons, 4), '0'),
+            'cbm' => $per('cbm_per_carton'),
+            'kg' => $per('kg_per_carton'),
+        ];
+    }
+
     public function lines(): HasMany
     {
         return $this->hasMany(QuotationLine::class)->orderBy('line_no');
@@ -46,10 +77,29 @@ class Quotation extends Model
         return $this->status === 'draft';
     }
 
-    /** Sent, unanswered, and past its validity. */
+    /** Sent, unanswered, and past its validity (B13: the same rule as scopeShownAs('expired')). */
     public function isExpired(): bool
     {
-        return $this->status === 'sent' && $this->valid_until->toDateString() < now()->toDateString();
+        return $this->status === 'sent' && $this->isPastValidity();
+    }
+
+    /** Its "valid until" date has gone by (today, by the company's clock, is still valid). */
+    public function isPastValidity(): bool
+    {
+        return $this->valid_until->toDateString() < now()->toDateString();
+    }
+
+    /** B13: the quotations whose shown status (displayStatus) is $status — the list's tabs. */
+    public function scopeShownAs(Builder $query, string $status): Builder
+    {
+        $today = now()->toDateString();
+
+        return match ($status) {
+            'expired' => $query->where('status', 'sent')->whereDate('valid_until', '<', $today),
+            'sent' => $query->where('status', 'sent')->whereDate('valid_until', '>=', $today),
+            'all' => $query,
+            default => $query->where('status', $status),
+        };
     }
 
     /** The status as shown: an unanswered quotation past its date reads as expired. */

@@ -28,9 +28,9 @@
                 <li class="app-notes__row {{ $n->is_read ? '' : 'is-unread' }}">
                     <span class="app-notes__icon app-notes__icon--{{ $tone }}"><i class="bi bi-{{ $n->icon ?? 'bell' }}" aria-hidden="true"></i></span>
                     <div class="app-notes__main">
-                        @if($n->url)<a href="{{ $n->url }}" class="app-notes__title">{{ $n->title }}</a>@else<span class="app-notes__title">{{ $n->title }}</span>@endif
+                        @if($n->url)<a href="{{ $n->url }}" class="app-notes__title">{{ $n->displayTitle() }}</a>@else<span class="app-notes__title">{{ $n->displayTitle() }}</span>@endif
                         @unless($n->is_read)<span class="app-notes__new"><i class="bi bi-circle-fill" style="font-size:.45rem" aria-hidden="true"></i>{{ __('Unread') }}</span>@endunless
-                        <div class="app-notes__text">{{ $n->message }}</div>
+                        <div class="app-notes__text">{{ $n->displayMessage() }}</div>
                         <div class="app-notes__time">{{ $n->created_at?->diffForHumans() }}</div>
                     </div>
                     <div class="app-notes__actions">

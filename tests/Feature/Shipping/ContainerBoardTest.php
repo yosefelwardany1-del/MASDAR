@@ -8,13 +8,14 @@ use App\Models\User;
 use App\Security\Roles;
 use App\Services\Shipping\ContainerTrackingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\LoadsContainers;
 use Tests\Concerns\SeedsReference;
 use Tests\TestCase;
 
 /** The container board (spec §5.5, §7): status, ETA flags, clients inside, fill. */
 class ContainerBoardTest extends TestCase
 {
-    use RefreshDatabase, SeedsReference, ShippingFixtures;
+    use LoadsContainers, RefreshDatabase, SeedsReference, ShippingFixtures;
 
     private function setStatus($container, string $status, User $by): void
     {
@@ -34,24 +35,24 @@ class ContainerBoardTest extends TestCase
     {
         $user = $this->userWithRole(Roles::LOGISTICS);
         $this->actingAs($user);
-        $container = $this->containerOn($this->shipmentWith(), ['container_no' => 'MSKU7654321', 'container_type' => '40HQ']); // 68 CBM
+        $container = $this->containerOn($this->shipmentWith(), ['container_no' => 'MSKU7654328', 'container_type' => '40HQ']); // 68 CBM
         $this->fill($container, Party::factory()->client()->create(['name' => 'Al Noor Trading']), 20, '1.0000', $user);
         $this->fill($container, Party::factory()->client()->create(['name' => 'Gulf Home LLC']), 14, '1.0000', $user);
         $this->setStatus($container, 'loaded_sealed', $user);
-        $empty = $this->containerOn($this->shipmentWith(), ['container_no' => 'TGHU0000001', 'container_type' => 'LCL']);
+        $empty = $this->containerOn($this->shipmentWith(), ['container_no' => 'TGHU0000008', 'container_type' => 'LCL']);
 
         $this->get(route('containers.index'))->assertOk()
-            ->assertSee('MSKU7654321')->assertSee('TGHU0000001')
+            ->assertSee('MSKU7654328')->assertSee('TGHU0000008')
             ->assertSee('Loaded &amp; sealed', false)->assertSee('No status yet')
             ->assertSee('Al Noor Trading')->assertSee('Gulf Home LLC')
             ->assertSee('50%')           // 34 of 68 CBM
             ->assertSee('680');          // 34 cartons × 20 KG
 
-        $this->get(route('containers.index', ['status' => 'loaded_sealed']))->assertSee('MSKU7654321')->assertDontSee('TGHU0000001');
-        $this->get(route('containers.index', ['status' => '_none']))->assertDontSee('MSKU7654321')->assertSee('TGHU0000001');
+        $this->get(route('containers.index', ['status' => 'loaded_sealed']))->assertSee('MSKU7654328')->assertDontSee('TGHU0000008');
+        $this->get(route('containers.index', ['status' => '_none']))->assertDontSee('MSKU7654328')->assertSee('TGHU0000008');
         $noor = Party::where('name', 'Al Noor Trading')->value('id');
-        $this->get(route('containers.index', ['client_id' => $noor]))->assertSee('MSKU7654321')->assertDontSee('TGHU0000001');
-        $this->get(route('containers.index', ['shipping_company_id' => $empty->shipment->shipping_company_id]))->assertDontSee('MSKU7654321')->assertSee('TGHU0000001');
+        $this->get(route('containers.index', ['client_id' => $noor]))->assertSee('MSKU7654328')->assertDontSee('TGHU0000008');
+        $this->get(route('containers.index', ['shipping_company_id' => $empty->shipment->shipping_company_id]))->assertDontSee('MSKU7654328')->assertSee('TGHU0000008');
         $this->get(route('containers.show', $container))->assertOk()->assertSee('Al Noor Trading')->assertSee('50%');
     }
 
@@ -63,6 +64,8 @@ class ContainerBoardTest extends TestCase
         $soon = $this->containerOn($this->shipmentWith(['etd' => now()->subDays(20)->toDateString(), 'eta' => now()->addDays(2)->toDateString()]), ['container_no' => 'SOON0000001']);
         $arrived = $this->containerOn($this->shipmentWith(['etd' => now()->subDays(40)->toDateString(), 'eta' => now()->subDays(5)->toDateString()]), ['container_no' => 'HOME0000001']);
         $far = $this->containerOn($this->shipmentWith(['eta' => now()->addDays(30)->toDateString()]), ['container_no' => 'FARR0000001']);
+        $this->putGoodsIn($late);
+        $this->putGoodsIn($arrived);
         $this->setStatus($late, 'in_transit', $user);
         $this->setStatus($arrived, 'arrived', $user);
 
@@ -76,6 +79,7 @@ class ContainerBoardTest extends TestCase
         $this->get(route('containers.show', $late))->assertSee('Late by 3 days');
 
         // Released and delivered count as arrived too; a correction back before arrival does not.
+        $this->travel(1)->minutes();
         $this->setStatus($arrived, 'delivered', $user);
         $this->get(route('containers.index', ['late' => 1]))->assertDontSee('HOME0000001');
         app(ContainerTrackingService::class)->recordStatus($arrived, [

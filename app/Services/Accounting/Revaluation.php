@@ -43,8 +43,9 @@ class Revaluation
             $rate = $this->ledger->rateOn($s->currency, $date);
             $balance = Decimal::normalize((string) $s->balance);
             $carried = Decimal::normalize((string) $s->carried);
-            $revalued = Decimal::mul($balance, $rate);
-            $difference = Decimal::sub($revalued, $carried);
+            // To the cent, as every journal line is (B09).
+            $revalued = Decimal::normalize(Decimal::round(Decimal::mul($balance, $rate, 10), 2));
+            $difference = Decimal::normalize(Decimal::round(Decimal::sub($revalued, $carried), 2));
             if (Decimal::cmp(Decimal::abs($difference), '0.01') < 0) {
                 continue;
             }

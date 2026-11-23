@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Services\Documents\DocumentRegistry;
 use App\Services\Documents\DocumentSender;
 use App\Services\Documents\PdfRenderer;
+use App\Support\SetupNotice;
 use Illuminate\Http\Request;
 
 /**
@@ -48,8 +49,10 @@ class DocumentController extends Controller
             'notReady' => $this->documents->notReady($type, $model),
             'maySend' => $this->documents->maySend($type, $request->user()),
             'pdfReady' => $this->pdf->available(),
-            'emailReady' => $this->sender->emailReady(),
-            'whatsappReady' => $this->sender->whatsappReady(),
+            'pdfProblem' => SetupNotice::for($request->user(), __('PDF files can\'t be made yet: print the page from the browser instead, or ask your administrator.'),
+                __('PDF is not set up on this server: it needs Chromium (PDF_CHROME_BINARY). Print the page from the browser instead.')),
+            'emailReady' => $this->sender->emailReady($request->user()),
+            'whatsappReady' => $this->sender->whatsappReady($request->user()),
             'back' => $this->documents->backUrl($type, $model),
             'subject' => "{$title} {$reference} — {$company}",
             'message' => "Dear {$party?->name},\n\nPlease find attached our {$title} {$reference}.\n\nBest regards,\n{$request->user()->name}\n{$company}",

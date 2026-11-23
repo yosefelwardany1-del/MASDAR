@@ -65,6 +65,28 @@ class BatchDTest extends TestCase
         $this->actingAs($other)->get(route('samples.show', $sample))->assertNotFound();
     }
 
+    /** B26: the quantity shows; statuses follow their order and a closed sample only reopens; bad input is said. */
+    public function test_a_sample_follows_its_order_and_says_what_is_wrong(): void
+    {
+        app()->setLocale('en');
+        $this->manager->forceFill(['locale' => 'en'])->save();
+        $service = app(SampleService::class);
+        $sample = $service->create(['description' => 'Glass jar', 'client_id' => $this->pi->client_id, 'quantity' => '3'], $this->manager);
+        $this->actingAs($this->manager)->get(route('samples.show', $sample))->assertSee('Quantity')->assertSee('>3<', false);
+
+        $service->record($sample, ['status' => 'received'], $this->manager);
+        $service->record($sample, ['status' => 'approved'], $this->manager);
+        $this->assertThrows(fn () => $service->record($sample->fresh(), ['status' => 'rejected'], $this->manager), ValidationException::class, 'and closed. Reopen it first.');
+        $this->assertThrows(fn () => $service->record($sample->fresh(), ['status' => 'cancelled'], $this->manager), ValidationException::class);
+        $service->record($sample->fresh(), ['status' => 'requested', 'note' => 'Client wants another colour'], $this->manager);
+        $this->assertSame('requested', $sample->fresh()->status());
+
+        $this->actingAs($this->manager)->post(route('samples.store'), ['description' => 'x', 'quantity' => '-2'])
+            ->assertSessionHasErrors(['quantity' => 'Enter a number of up to 4 decimals, without a minus sign.']);
+        $this->actingAs($this->manager)->post(route('samples.store'), ['description' => 'x', 'requested_on' => '2026-11-10', 'needed_by' => '2026-11-01'])
+            ->assertSessionHasErrors(['needed_by' => 'The date needed by can\'t be before the date it was requested.']);
+    }
+
     public function test_a_service_invoice_is_issued_posted_counted_in_profit_and_ageing(): void
     {
         $service = app(ServiceInvoiceService::class);
@@ -113,7 +135,7 @@ class BatchDTest extends TestCase
         $forwarder = Party::where('name', 'Ningbo Fast Forwarding')->sole();
         $forwarder->forceFill(['tracking_url_template' => 'https://track.example/{container}?bl={bl}'])->save();
         $this->actingAs($this->manager)->get(route('containers.show', Container::sole()))->assertOk()
-            ->assertSee('https://track.example/MSKU7712345', false);
+            ->assertSee('https://track.example/MSKU7712342', false);
     }
 
     public function test_ai_drafts_are_proposed_and_saved_only_when_a_person_adds_them(): void
@@ -151,7 +173,7 @@ class BatchDTest extends TestCase
         // Off until switched on.
         $this->actingAs($account)->get(route('portal.home'))->assertForbidden();
         BusinessSetting::current()->fill(['client_portal_enabled' => true])->save();
-        $this->actingAs($account)->get(route('portal.home'))->assertOk()->assertSee($this->pi->reference())->assertSee('MSKU7712345')
+        $this->actingAs($account)->get(route('portal.home'))->assertOk()->assertSee($this->pi->reference())->assertSee('MSKU7712342')
             ->assertDontSee('Nile Kitchenware')->assertDontSee('Yiwu Bright Housewares Factory');
         $this->actingAs($account)->get(route('portal.pi', $this->pi))->assertOk()->assertSee('Proforma Invoice (PI)');
         $this->actingAs($account)->get(route('portal.container', Container::sole()))->assertOk()->assertDontSee('Yiwu Bright');

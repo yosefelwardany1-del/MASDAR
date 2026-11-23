@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\BusinessSetting;
 use App\Models\Container;
 use App\Models\Party;
 use App\Models\ProformaInvoice;
@@ -12,7 +13,6 @@ use App\Services\Shipping\ShippingQueries;
 use App\Support\Access\Visibility;
 use App\Support\IO\CsvSanitizer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -142,12 +142,12 @@ class ProfitController extends Controller
         return $totals;
     }
 
-    /** @return array{string, string} the year to date unless given */
+    /** @return array{string, string} the financial year to date unless given (B32) */
     private function range(Request $request): array
     {
         $date = fn ($v, $default) => is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) ? $v : $default;
         $to = $date($request->query('to'), now()->toDateString());
-        $from = $date($request->query('from'), Carbon::parse($to)->startOfYear()->toDateString());
+        $from = $date($request->query('from'), BusinessSetting::current()->financialYearStart($to));
 
         return $from > $to ? [$to, $from] : [$from, $to];
     }

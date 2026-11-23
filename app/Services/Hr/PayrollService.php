@@ -9,6 +9,7 @@ use App\Models\Lookup;
 use App\Models\PayrollLine;
 use App\Models\PayrollRun;
 use App\Models\User;
+use App\Services\Accounting\OpenPeriods;
 use App\Services\Accounting\PostingService;
 use App\Services\Numbering\NumberingService;
 use App\Support\Audit\AuditTrail;
@@ -43,9 +44,14 @@ class PayrollService
         if (! array_key_exists($currency, Lookup::options('currency'))) {
             throw ValidationException::withMessages(['currency' => __('Choose a currency from the list of currencies.')]);
         }
+        OpenPeriods::assert(CarbonImmutable::parse($period)->endOfMonth()->toDateString(), 'period');
         $existing = PayrollRun::query()->where('period', $period)->where('currency', $currency)->where('status', '<>', 'void')->first();
         if ($existing) {
-            throw ValidationException::withMessages(['period' => __('The :currency payroll of this month is :number already.', ['currency' => $currency, 'number' => $existing->number])]);
+            // B33: say which run, in words; the screen links to it (PayrollController::store).
+            $month = CarbonImmutable::parse($period)->locale(app()->getLocale())->isoFormat('MMMM YYYY');
+            throw ValidationException::withMessages(['period' => $existing->status === 'draft'
+                ? __('There is already a draft :currency payroll for :month.', ['currency' => $currency, 'month' => $month])
+                : __('There is already an approved :currency payroll for :month (:number).', ['currency' => $currency, 'month' => $month, 'number' => $existing->number])]);
         }
         $payDate = $this->optionalDate($data['pay_date'] ?? null, 'pay_date');
 
@@ -103,7 +109,7 @@ class PayrollService
         $values = [];
         foreach (PayrollLine::EDITABLE as $field) {
             if (array_key_exists($field, $data)) {
-                $values[$field] = Money::amount($data[$field], $field, decimals: in_array($field, ['overtime_hours', 'unpaid_days'], true) ? 2 : 4);
+                $values[$field] = Money::amount($data[$field], $field, decimals: 2);
             }
         }
         $values['note'] = $this->text($data['note'] ?? null);
@@ -262,10 +268,16 @@ class PayrollService
     private function period(mixed $value): string
     {
         try {
-            return CarbonImmutable::createFromFormat('!Y-m', (string) $value)->startOfMonth()->toDateString();
+            $month = CarbonImmutable::createFromFormat('!Y-m', (string) $value)->startOfMonth();
         } catch (\Throwable) {
             throw ValidationException::withMessages(['period' => __('Choose the month.')]);
         }
+        // B28: a month's payroll is prepared once the month has begun.
+        if ($month->gt(CarbonImmutable::today()->startOfMonth())) {
+            throw ValidationException::withMessages(['period' => __(':month has not begun: prepare its payroll once it has.', ['month' => $month->format('Y-m')])]);
+        }
+
+        return $month->toDateString();
     }
 
     private function optionalDate(mixed $value, string $field): ?string

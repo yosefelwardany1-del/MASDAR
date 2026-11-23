@@ -25,9 +25,21 @@ class ImportResult
         return count($this->errors);
     }
 
+    /** B33: "1 new, 2 updates, 1 error (4 rows)" — each count in its singular or plural, in the reader's language. */
+    public static function summary(int $created, int $updated, int $failed, int $total): string
+    {
+        return __(':created, :updated, :failed (:total)', [
+            'created' => trans_choice('{1} :count new|[0,*] :count new', $created, ['count' => $created]),
+            'updated' => trans_choice('{1} :count update|[0,*] :count updates', $updated, ['count' => $updated]),
+            'failed' => trans_choice('{1} :count error|[0,*] :count errors', $failed, ['count' => $failed]),
+            'total' => trans_choice('{1} :count row|[0,*] :count rows', $total, ['count' => $total]),
+        ]);
+    }
+
     public function toArray(): array
     {
         return [
+            'summary' => self::summary($this->created, $this->updated, $this->failed(), $this->totalRows),
             'total_rows' => $this->totalRows,
             'created' => $this->created,
             'updated' => $this->updated,

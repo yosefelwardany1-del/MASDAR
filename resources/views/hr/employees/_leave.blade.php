@@ -16,14 +16,17 @@
                     <div class="row g-2">
                         <div class="col-7">
                             <label class="visually-hidden" for="alw-type">{{ __('Kind of leave') }}</label>
-                            <select name="leave_type" id="alw-type" class="form-select form-select-sm">
-                                @foreach($leaveTypes as $code => $t)<option value="{{ $code }}">{{ $t['label'] }}</option>@endforeach
+                            <select name="leave_type" id="alw-type" class="form-select form-select-sm @error('leave_type') is-invalid @enderror">
+                                @foreach($leaveTypes as $code => $t)<option value="{{ $code }}" @selected(old('leave_type') === $code)>{{ $t['label'] }}</option>@endforeach
                             </select>
+                            @error('leave_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-3">
                             <label class="visually-hidden" for="alw-days">{{ __('Days') }}</label>
-                            <input name="days" id="alw-days" inputmode="decimal" dir="ltr" class="form-control form-control-sm app-num @error('days') is-invalid @enderror" placeholder="{{ __('Days') }}" required>
+                            <input name="days" id="alw-days" inputmode="decimal" dir="ltr" value="{{ old('days') }}" class="form-control form-control-sm app-num @error('days') is-invalid @enderror" placeholder="{{ __('Days') }}" required>
                         </div>
+                        {{-- Under the row: the field is narrow, the message is not. --}}
+                        @error('days')<div class="col-12"><div class="invalid-feedback d-block">{{ $message }}</div></div>@enderror
                         <div class="col-2 d-grid"><button class="btn btn-sm btn-light" title="{{ __('Save') }}" aria-label="{{ __('Save') }}"><i class="bi bi-check2" aria-hidden="true"></i></button></div>
                     </div>
                     <div class="form-text">{{ __('e.g. statutory annual leave of 5, 10 or 15 days by years worked.') }}</div>

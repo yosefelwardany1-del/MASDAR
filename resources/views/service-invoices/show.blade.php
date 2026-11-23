@@ -57,12 +57,12 @@
     </div>
     @if($editable)
         <form method="POST" action="{{ route('service-invoices.lines.store', $invoice) }}" class="row g-2 align-items-end p-3 border-top">@csrf
-            <div class="col-md-3"><label class="form-label small" for="category">{{ __('For') }}</label><select id="category" name="category" class="form-select form-select-sm">@foreach($categories as $code => $label)<option value="{{ $code }}">{{ $label }}</option>@endforeach</select></div>
-            <div class="col-md-4"><label class="form-label small" for="description">{{ __('Description') }}</label><input id="description" name="description" class="form-control form-control-sm" required dir="auto"></div>
-            <div class="col-md-1"><label class="form-label small" for="quantity">{{ __('Quantity') }}</label><input id="quantity" name="quantity" value="1" inputmode="decimal" class="form-control form-control-sm"></div>
-            <div class="col-md-2"><label class="form-label small" for="unit_price">{{ __('Unit price') }}</label><input id="unit_price" name="unit_price" inputmode="decimal" class="form-control form-control-sm" required></div>
-            <div class="col-md-2"><button class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __('Add the line') }}</button></div>
-            @foreach(['category', 'description', 'quantity', 'unit_price'] as $field)@error($field)<div class="col-12 text-danger small">{{ $message }}</div>@enderror @endforeach
+            {{-- Each field says what is wrong with it, under it (the brief's "refused without an error message"). --}}
+            <div class="col-md-3"><label class="form-label small" for="category">{{ __('For') }}</label><select id="category" name="category" class="form-select form-select-sm @error('category') is-invalid @enderror">@foreach($categories as $code => $label)<option value="{{ $code }}" @selected(old('category') === $code)>{{ $label }}</option>@endforeach</select>@error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-4"><label class="form-label small" for="description">{{ __('Description') }}</label><input id="description" name="description" value="{{ old('description') }}" class="form-control form-control-sm @error('description') is-invalid @enderror" required dir="auto">@error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-1"><label class="form-label small" for="quantity">{{ __('Quantity') }}</label><input id="quantity" name="quantity" value="{{ old('quantity', '1') }}" inputmode="decimal" class="form-control form-control-sm @error('quantity') is-invalid @enderror">@error('quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-2"><label class="form-label small" for="unit_price">{{ __('Unit price') }}</label><input id="unit_price" name="unit_price" value="{{ old('unit_price') }}" inputmode="decimal" class="form-control form-control-sm @error('unit_price') is-invalid @enderror" required>@error('unit_price')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-2 align-self-start pt-4"><button class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ __('Add the line') }}</button></div>
         </form>
     @endif
 </x-section>

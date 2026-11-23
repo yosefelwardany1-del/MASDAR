@@ -22,7 +22,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label" for="fx-date">{{ __('Date') }}<span class="app-req" aria-hidden="true">*</span></label>
-                <input type="date" name="rate_date" id="fx-date" class="form-control @error('rate_date') is-invalid @enderror" value="{{ old('rate_date', now()->toDateString()) }}" required>
+                <input type="date" max="{{ now()->toDateString() }}" name="rate_date" id="fx-date" class="form-control @error('rate_date') is-invalid @enderror" value="{{ old('rate_date', now()->toDateString()) }}" required>
                 @error('rate_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-md-4">

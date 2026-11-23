@@ -9,10 +9,12 @@ use App\Models\Party;
 use App\Models\ProformaInvoice;
 use App\Models\SupplierOrder;
 use App\Models\User;
+use App\Services\Accounting\Decimal;
 use App\Services\Hr\Money;
 use App\Services\Numbering\NumberingService;
 use App\Support\Access\Visibility;
 use App\Support\Audit\AuditTrail;
+use App\Support\Database\Refusal;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -87,7 +89,13 @@ class ClaimService
             }
             $amount = null;
             if ($status === 'agreed' && filled($agreedAmount)) {
-                $amount = $this->amount($agreedAmount, 'agreed_amount', true);
+                // B14: above zero, and never more than what was claimed.
+                $amount = Money::amount($agreedAmount, 'agreed_amount', true, decimals: 2);
+                if ($claim->claimed_amount !== null && bccomp($amount, (string) $claim->claimed_amount, 4) > 0) {
+                    throw ValidationException::withMessages(['agreed_amount' => __('The amount agreed can\'t be more than the :amount claimed.', [
+                        'amount' => Decimal::format((string) $claim->claimed_amount).' '.$claim->currency,
+                    ])]);
+                }
             }
             $event = ClaimEvent::create([
                 'claim_id' => $claim->id, 'status' => $status, 'agreed_amount' => $amount,
@@ -196,7 +204,7 @@ class ClaimService
 
     private function amount(mixed $value, string $field, bool $zeroAllowed = false): string
     {
-        return Money::amount($value, $field, ! $zeroAllowed);
+        return Money::amount($value, $field, ! $zeroAllowed, decimals: 2);
     }
 
     private function assertVisible(Claim $claim, User $by): void
@@ -219,16 +227,9 @@ class ClaimService
             return DB::transaction($write);
         } catch (QueryException $e) {
             if (in_array($e->getCode(), ['23514', '23001', 'P0001'], true)) {
-                throw ValidationException::withMessages(['claim' => __('The database refused this change: :reason', ['reason' => self::reason($e)])]);
+                throw ValidationException::withMessages(['claim' => Refusal::message($e)]);
             }
             throw $e;
         }
-    }
-
-    public static function reason(QueryException $e): string
-    {
-        $message = $e->getPrevious()?->getMessage() ?? $e->getMessage();
-
-        return preg_match('/ERROR:\s+(.+?)(?:\n|CONTEXT|$)/s', $message, $m) ? trim($m[1]) : $message;
     }
 }

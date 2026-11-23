@@ -13,6 +13,7 @@ use App\Models\Setting;
 use App\Services\Claims\NoteQueries;
 use App\Services\ProformaInvoices\PiAmounts;
 use App\Services\ProformaInvoices\ProformaInvoiceService;
+use App\Services\SupplierOrders\SupplierOrderService;
 use App\Support\Access\Visibility;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -94,6 +95,7 @@ class ProformaInvoiceController extends Controller
             'pendingRevision' => $revisions->firstWhere('status', 'draft'),
             'paid' => $paid,
             'depositRequired' => PiAmounts::depositRequired($totals->amount, (string) $pi->deposit_percent),
+            'depositMet' => bccomp($paid, PiAmounts::round(PiAmounts::depositRequired($totals->amount, (string) $pi->deposit_percent), 2), 4) >= 0,
             'credited' => $credited,
             'outstanding' => PiAmounts::subtract(PiAmounts::subtract($totals->amount, $paid), $credited),
             'payments' => $user->can('payments.view')
@@ -103,6 +105,9 @@ class ProformaInvoiceController extends Controller
             'canEdit' => $canEdit,
             'mayIssue' => $this->service->mayIssue($user),
             'seeSuppliers' => $seeSuppliers,
+            // B01: the way into purchase orders — a PI that can be ordered with lines on no order yet.
+            'makeOrders' => $seeSuppliers && $user->can('supplier_orders.edit') && SupplierOrderService::isOrderable($pi)
+                && app(SupplierOrderService::class)->unassignedLines($pi)->isNotEmpty(),
             'lineForms' => $lineForms,
             'products' => $lineForms ? Product::query()->where('active', true)->orderBy('name')->get(['id', 'code', 'name', 'unit']) : collect(),
             'suppliers' => $lineForms && $seeSuppliers ? Party::query()->suppliers()->where('active', true)->orderBy('name')->get(['id', 'code', 'name']) : collect(),

@@ -29,13 +29,9 @@ class QuotationController extends Controller
     {
         $user = $request->user();
         $status = in_array($request->query('status'), self::STATUSES, true) ? $request->query('status') : 'all';
-        $today = now()->toDateString();
-
         $quotations = Quotation::query()->whereIn('client_id', Party::query()->clients()->visibleTo($user)->select('parties.id'))
             ->with(['client:id,code,name', 'proformaInvoice:id,pi_number,revision'])->withCount('lines')
-            ->when($status === 'expired', fn ($q) => $q->where('status', 'sent')->where('valid_until', '<', $today))
-            ->when($status === 'sent', fn ($q) => $q->where('status', 'sent')->where('valid_until', '>=', $today))
-            ->when(! in_array($status, ['all', 'expired', 'sent'], true), fn ($q) => $q->where('status', $status))
+            ->shownAs($status)
             ->orderByDesc('quoted_on')->orderByDesc('id')
             ->paginate(30)->withQueryString();
 
@@ -115,7 +111,7 @@ class QuotationController extends Controller
     public function send(Request $request, Quotation $quotation): RedirectResponse
     {
         $this->visible($request, $quotation);
-        $quotation = $this->service->send($quotation, $request->user());
+        $quotation = $this->service->send($quotation, $request->user(), $request->boolean('anyway'));
 
         return redirect()->route('quotations.show', $quotation)->with('success', __('Quotation :number is ready to send: print it or save it as PDF.', ['number' => $quotation->number]));
     }

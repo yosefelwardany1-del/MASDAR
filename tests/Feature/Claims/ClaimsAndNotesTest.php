@@ -146,15 +146,18 @@ class ClaimsAndNotesTest extends TestCase
         $entry = app(PostingService::class)->postTradeNote($note, $this->manager);
         $lines = $entry->lines()->with('account')->get()->keyBy(fn ($l) => $l->account->code);
         $this->assertSame($this->order->supplier_id, $lines['2201']->party_id);
-        $this->assertSame('124.9920', $lines['5102']->credit, '892.80 CNY at 0.14');
+        $this->assertSame('124.9900', $lines['5102']->credit, '892.80 CNY at 0.14 = 124.992, to the cent (B09)');
 
         // Paying the rest (16,992 − 5,000 deposit − 892.80 debit note) completes every payment step.
         $payments = app(PaymentService::class);
         $rmb = MoneyAccount::where('name', 'Yiwu bank — RMB')->sole();
-        app(PaymentService::class)->transfer(['from_account_id' => MoneyAccount::where('name', 'HSBC Hong Kong — USD')->value('id'),
-            'to_account_id' => $rmb->id, 'paid_on' => now()->toDateString(), 'amount' => '1600.00', 'in_amount' => '11099.20'], $this->manager);
+        ['out' => $out] = app(PaymentService::class)->transfer(['from_account_id' => MoneyAccount::where('name', 'HSBC Hong Kong — USD')->value('id'),
+            'to_account_id' => $rmb->id, 'paid_on' => now()->toDateString(), 'amount' => '1600.00', 'in_amount' => '11099.20'], $accountant = User::where('email', 'accountant@example.test')->sole());
+        // The RMB has arrived once the transfer is approved; until then it cannot be paid on (B06). The
+        // accountant records and the manager approves: nobody approves their own payment (B16).
+        $payments->approve($out, $this->manager);
         $payment = $payments->record(['kind' => 'supplier_payment', 'paid_on' => now()->toDateString(), 'money_account_id' => $rmb->id, 'amount' => '11099.20',
-            'party_id' => $this->order->supplier_id, 'supplier_order_id' => $this->order->id], $this->manager);
+            'party_id' => $this->order->supplier_id, 'supplier_order_id' => $this->order->id], $accountant);
         $payments->approve($payment, $this->manager);
         $done = DB::table('supplier_order_step_events as e')->join('order_step_definitions as d', 'd.id', '=', 'e.step_definition_id')
             ->where('e.supplier_order_id', $this->order->id)->where('d.kind', 'payment')->where('e.status', 'done')->distinct()->count('d.code');

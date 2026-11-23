@@ -17,12 +17,22 @@
 
     // When the container first reached each phase of the stepper, from its events in order.
     $reachedOn = [];
+    $anchorCodes = array_values(array_filter(['booked', 'loaded_sealed', 'on_board', 'arrived'], fn ($c) => isset($statusSorts[$c])));
     foreach ($container->events as $event) {
         $sort = $statusSorts[$event->status] ?? null;
-        foreach (['booked', 'loaded_sealed', 'on_board', 'arrived'] as $code) {
-            if ($sort !== null && isset($statusSorts[$code]) && $sort >= $statusSorts[$code] && ! isset($reachedOn[$code])) {
+        foreach ($anchorCodes as $code) {
+            if ($sort !== null && $sort >= $statusSorts[$code] && ! isset($reachedOn[$code])) {
                 $reachedOn[$code] = $event->happened_at?->format('Y-m-d');
             }
+        }
+    }
+    // B15: a phase passed without any status of its own recorded was skipped, not done.
+    $skipped = [];
+    foreach ($anchorCodes as $i => $code) {
+        $from = $statusSorts[$code];
+        $to = isset($anchorCodes[$i + 1]) ? $statusSorts[$anchorCodes[$i + 1]] : PHP_INT_MAX;
+        if (! $container->events->contains(fn ($e) => ($s = $statusSorts[$e->status] ?? null) !== null && $s >= $from && $s < $to)) {
+            $skipped[] = $code;
         }
     }
     $latest = $container->events->last();
@@ -93,7 +103,7 @@
         <span class="app-section__title" id="journey-title">{{ __('Where the container is') }}</span>
     </div>
     <div class="app-section__body">
-        @include('containers._phases', ['statusSort' => $row->status_sort, 'sorts' => $statusSorts, 'flag' => $eta, 'mode' => $shipment->mode,
+        @include('containers._phases', ['statusSort' => $row->status_sort, 'sorts' => $statusSorts, 'flag' => $eta, 'mode' => $shipment->mode, 'skipped' => $skipped,
             'etd' => $shipment->etd?->toDateString(), 'eta' => $shipment->eta?->toDateString(), 'reachedOn' => $reachedOn])
         @include('containers._route-strip', ['shipment' => $shipment])
         <div class="app-fu-journey__now mt-3">
@@ -282,7 +292,7 @@
                 <tfoot><tr class="fw-semibold">
                     <td colspan="3">{{ __('Total') }}</td>
                     <td class="app-num text-end">{{ $num($totals->cartons) }}</td>
-                    <td class="app-num text-end">{{ $num($totals->qty) }}</td>
+                    <td class="app-num text-end">{{ $totals->qty !== null ? $num($totals->qty) : '' }}</td>
                     <td class="app-num text-end">{{ $num($totals->cbm) }}</td>
                     <td class="app-num text-end">{{ $num($totals->kg) }}</td>
                     @can('containers.edit')<td></td>@endcan

@@ -8,8 +8,8 @@ use App\Models\BankStatementLine;
 use App\Models\MoneyAccount;
 use App\Models\Payment;
 use App\Models\User;
-use App\Services\Claims\ClaimService;
 use App\Support\Audit\AuditTrail;
+use App\Support\Database\Refusal;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -33,7 +33,7 @@ class BankReconciliationService
      * @param  list<list<string>>  $rows  the CSV rows after the header
      * @param  array{date: int, description?: ?int, reference?: ?int, amount?: ?int, money_in?: ?int, money_out?: ?int, balance?: ?int, date_format: string}  $map  column indexes
      */
-    public function import(MoneyAccount $account, array $rows, array $map, User $by, ?string $fileName = null, ?string $opening = null, ?string $closing = null): BankStatement
+    public function import(MoneyAccount $account, array $rows, array $map, User $by, ?string $fileName = null, ?string $opening = null, ?string $closing = null, bool $anyway = false): BankStatement
     {
         $this->authorize($by);
         $format = in_array($map['date_format'] ?? '', self::DATE_FORMATS, true) ? $map['date_format'] : 'Y-m-d';
@@ -76,10 +76,37 @@ class BankReconciliationService
             throw ValidationException::withMessages(['file' => __('The file has no lines with an amount.')]);
         }
 
-        return $this->write(function () use ($account, $lines, $by, $fileName, $opening, $closing) {
+        // B21: the same statement twice is refused; lines already on another statement of the account
+        // (the dates overlap) are imported only when the person says so.
+        $hash = hash('sha256', implode("\n", array_map(fn ($l) => implode('|', [$l['booked_on'], bcadd($l['amount'], '0', 4), $l['description'], $l['reference']]), $lines)));
+        if ($same = BankStatement::query()->where('money_account_id', $account->id)->where('content_hash', $hash)->first()) {
+            throw ValidationException::withMessages(['file' => __('This statement is already imported (:file, :from – :to). Nothing was added.', [
+                'file' => $same->file_name ?? '#'.$same->id, 'from' => $same->period_from->toDateString(), 'to' => $same->period_to->toDateString(),
+            ])]);
+        }
+        if (! $anyway) {
+            $dates = array_column($lines, 'booked_on');
+            $known = DB::table('bank_statement_lines as l')->join('bank_statements as s', 's.id', '=', 'l.bank_statement_id')
+                ->where('s.money_account_id', $account->id)->whereBetween('l.booked_on', [min($dates), max($dates)])
+                ->get(['l.booked_on', 'l.amount', 'l.description'])
+                ->map(fn ($l) => substr((string) $l->booked_on, 0, 10).'|'.bcadd((string) $l->amount, '0', 4).'|'.$l->description)->countBy()->all();
+            $repeated = 0;
+            foreach ($lines as $l) {
+                $key = $l['booked_on'].'|'.bcadd($l['amount'], '0', 4).'|'.$l['description'];
+                if (($known[$key] ?? 0) > 0) {
+                    $repeated++;
+                    $known[$key]--;
+                }
+            }
+            if ($repeated > 0) {
+                throw ValidationException::withMessages(['file' => __(':count of these lines are already on another statement of this account (the dates overlap). Check the file, or tick "Import anyway".', ['count' => $repeated])]);
+            }
+        }
+
+        return $this->write(function () use ($account, $lines, $by, $fileName, $opening, $closing, $hash) {
             $dates = array_column($lines, 'booked_on');
             $statement = BankStatement::create([
-                'money_account_id' => $account->id, 'period_from' => min($dates), 'period_to' => max($dates),
+                'money_account_id' => $account->id, 'period_from' => min($dates), 'period_to' => max($dates), 'content_hash' => $hash,
                 'opening_amount' => $opening, 'closing_amount' => $closing ?? (end($lines)['running_amount'] ?? null),
                 'file_name' => $fileName !== null ? mb_substr($fileName, 0, 200) : null, 'imported_by' => $by->id,
             ]);
@@ -111,6 +138,13 @@ class BankReconciliationService
         $this->authorize($by);
         if (! $this->payments->isEffective($payment)) {
             throw ValidationException::withMessages(['payment_id' => __('Payment :number does not count yet (awaiting approval).', ['number' => $payment->number])]);
+        }
+        // B10: the trigger's rule, said first.
+        if ((int) $payment->money_account_id !== (int) $line->statement->money_account_id) {
+            throw ValidationException::withMessages(['payment_id' => __('This payment is in another money account than the statement.')]);
+        }
+        if (bccomp((string) $payment->signed_amount, (string) $line->amount, 4) !== 0) {
+            throw ValidationException::withMessages(['payment_id' => __('This payment\'s amount is different from the statement line.')]);
         }
 
         return $this->write(function () use ($line, $payment, $by) {
@@ -216,7 +250,7 @@ class BankReconciliationService
             if (in_array($e->getCode(), ['23514', '23001', 'P0001', '23505'], true)) {
                 throw ValidationException::withMessages(['statement' => $e->getCode() === '23505'
                     ? __('That line or that payment is already matched.')
-                    : __('The database refused this change: :reason', ['reason' => ClaimService::reason($e)])]);
+                    : Refusal::message($e)]);
             }
             throw $e;
         }

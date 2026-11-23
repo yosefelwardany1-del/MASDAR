@@ -17,10 +17,12 @@ use App\Services\Parties\PartyKind;
 use App\Services\Parties\PartyService;
 use App\Services\WhatsApp\PhoneNumber;
 use App\Support\Access\Visibility;
+use App\Support\SameName;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * One controller for the three party screens (spec §5.1): clients, suppliers and shipping
@@ -41,6 +43,24 @@ abstract class PartyController extends Controller
     public function __construct(protected PartyService $parties) {}
 
     abstract protected function kind(): PartyKind;
+
+    /**
+     * B23: another party of this kind with the same name (case and spacing aside) is said before
+     * saving, with a link to it; ticking "Save anyway" saves it all the same.
+     */
+    private function warnIfSameName(Request $request, string $name, ?Party $self): void
+    {
+        if ($request->boolean('save_anyway') || trim($name) === '') {
+            return;
+        }
+        $kind = $this->kind();
+        $same = SameName::scope(Party::query()->where($kind->column(), true), $name)
+            ->when($self, fn ($q) => $q->whereKeyNot($self->id))->first();
+        if ($same) {
+            session()->flash('same_name', ['url' => route($kind->routePrefix().'.show', $same), 'label' => $same->code.' — '.$same->name]);
+            throw ValidationException::withMessages(['name' => __(':name already exists (:code). Open it, or tick "Save anyway" to add another.', ['name' => $same->name, 'code' => $same->code])]);
+        }
+    }
 
     public function index(Request $request)
     {
@@ -69,15 +89,20 @@ abstract class PartyController extends Controller
         $query->when($filters['active'] !== 'all', fn ($q) => $q->where('active', $filters['active'] === '1'))
             ->when($filters['country'] !== '', fn ($q) => $q->where('country', $filters['country']));
         if ($kind === PartyKind::Client) {
-            $query->when($filters['stage'] !== '', fn ($q) => $q->where('stage', $filters['stage']))
-                ->when($filters['manager'], fn ($q) => $q->where('account_manager_id', $filters['manager']));
+            $query->when($filters['manager'], fn ($q) => $q->where('account_manager_id', $filters['manager']));
+            // B11: the stage now — typed, or read from the documents — as on the client page and the Pipeline.
+            if ($filters['stage'] !== '') {
+                $query->whereIn('parties.id', app(CrmQueries::class)->clientIdsAtStage($query, $filters['stage']));
+            }
         }
 
         $parties = $query->orderBy('name')->paginate(25)->withQueryString();
+        $crmStages = $kind === PartyKind::Client ? app(CrmQueries::class)->stagesFor($parties->pluck('id')->all()) : [];
 
         return view('parties.index', [
             'kind' => $kind,
             'parties' => $parties,
+            'crmStages' => $crmStages,
             'filters' => $filters,
             'countries' => Lookup::options('country'),
             'stages' => Lookup::options('client_stage'),
@@ -94,6 +119,7 @@ abstract class PartyController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request, null);
+        $this->warnIfSameName($request, $data['name'] ?? '', null);
         $party = $this->parties->create($data, $request->user());
 
         return $this->redirectToParty($request, $party, __(':code created.', ['code' => $party->code]));
@@ -142,6 +168,7 @@ abstract class PartyController extends Controller
     {
         $party = $this->find($request, $id);
         $data = $this->validated($request, $party);
+        $this->warnIfSameName($request, $data['name'] ?? $party->name, $party);
         $this->parties->update($party, $data, $request->user());
 
         return $this->redirectToParty($request, $party, __(':code saved.', ['code' => $party->code]));
@@ -294,7 +321,7 @@ abstract class PartyController extends Controller
                 'party_source' => Lookup::options('party_source'),
                 // Only the stages a person sets: those from "PI sent" on follow the documents (spec §5.1).
                 'client_stage' => Lookup::query()->ofList('client_stage')->where('active', true)->get()
-                    ->reject(fn (Lookup $l) => (int) ($l->meta['from_documents'] ?? 0) === 1)
+                    ->reject(fn (Lookup $l) => CrmQueries::isDocumentStage($l->code, $l))
                     ->mapWithKeys(fn (Lookup $l) => [$l->code => $l->displayName()])->all(),
                 'shipping_company_kind' => Lookup::options('shipping_company_kind'),
             ],
@@ -375,7 +402,16 @@ abstract class PartyController extends Controller
         }
         if ($writes(PartyKind::Shipping)) {
             $rules['shipping_kind'] = ['nullable', 'string', $lookup('shipping_company_kind')];
-            $rules['tracking_url_template'] = ['nullable', 'string', 'max:255', 'regex:#^https?://[^\s]+$#'];
+            $rules['tracking_url_template'] = ['nullable', 'string', 'max:255', 'regex:#^https?://[^\s]+$#', function (string $attribute, mixed $value, Closure $fail) {
+                // B28: the address takes the container's own numbers: {container}, {bl} or {booking}, nothing else.
+                preg_match_all('/\{([^}]*)\}/', (string) $value, $m);
+                $unknown = array_diff($m[1], ['container', 'bl', 'booking']);
+                if ($unknown !== []) {
+                    $fail(__('Only {container}, {bl} and {booking} can be filled in; {:name} cannot.', ['name' => reset($unknown)]));
+                } elseif ($m[1] === []) {
+                    $fail(__('Put {container}, {bl} or {booking} where the number goes in the address.'));
+                }
+            }];
         }
 
         $data = $request->validate($rules);

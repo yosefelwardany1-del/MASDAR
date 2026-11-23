@@ -53,12 +53,14 @@
                     @csrf
                     <label class="form-label" for="status">{{ __('New status') }}</label>
                     <select id="status" name="status" class="form-select mb-2" required>
-                        @foreach($moves as $to)<option value="{{ $to }}">{{ $to === 'open' && $claim->isFinished() ? __('Reopen') : Claim::statusLabel($to) }}</option>@endforeach
+                        @foreach($moves as $to)<option value="{{ $to }}" @selected(old('status') === $to)>{{ $to === 'open' && $claim->isFinished() ? __('Reopen') : Claim::statusLabel($to) }}</option>@endforeach
                     </select>
                     <label class="form-label" for="agreed_amount">{{ __('Amount agreed (when agreed)') }}</label>
-                    <input id="agreed_amount" name="agreed_amount" inputmode="decimal" class="form-control mb-2" placeholder="{{ $claim->currency }}">
+                    <input id="agreed_amount" name="agreed_amount" inputmode="decimal" class="form-control mb-2 @error('agreed_amount') is-invalid @enderror" placeholder="{{ $claim->currency }}" value="{{ old('agreed_amount') }}" aria-describedby="agreed-help">
+                    @error('agreed_amount')<div class="invalid-feedback mt-n1 mb-2">{{ $message }}</div>@enderror
+                    @if($claim->claimed_amount !== null)<div id="agreed-help" class="form-text mt-n1 mb-2">{{ __('Above zero and at most the :amount claimed.', ['amount' => Decimal::format((string) $claim->claimed_amount).' '.$claim->currency]) }}</div>@endif
                     <label class="form-label" for="note">{{ __('Note') }}</label>
-                    <textarea id="note" name="note" rows="2" class="form-control mb-2" dir="auto"></textarea>
+                    <textarea id="note" name="note" rows="2" class="form-control mb-2" dir="auto">{{ old('note') }}</textarea>
                     <button class="btn btn-primary w-100"><i class="bi bi-check2" aria-hidden="true"></i>{{ __('Save') }}</button>
                 </form>
             @else

@@ -107,10 +107,13 @@
                 <td class="num">{{ PiAmounts::number($line->total_kg) }}</td>
             </tr>
         @endforeach
+        {{-- B30: cartons always add up; quantities only when every line is in the same unit. --}}
         <tr class="total">
-            <td colspan="5">Total</td>
-            <td class="num">{{ PiAmounts::number($totals->total_qty) }}</td>
+            <td colspan="3">Total</td>
+            <td class="num">{{ PiAmounts::number($totals->cartons) }}</td>
             <td></td>
+            <td class="num">{{ $totals->total_qty !== null ? PiAmounts::number($totals->total_qty) : '' }}</td>
+            <td>{{ $totals->unit !== null ? ($unitNames[$totals->unit] ?? $totals->unit) : '' }}</td>
             <td></td>
             <td class="num">{{ $money($totals->amount) }}</td>
             <td class="num">{{ PiAmounts::number($totals->total_cbm) }}</td>
